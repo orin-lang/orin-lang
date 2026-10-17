@@ -60,15 +60,15 @@ export type OrbitPlan = {
 };
 
 export function orbitPlan(c: EffContext): OrbitPlan {
-  let requires: string[] = ["log/v1"];
+  let clock = false;
   let errors: Diagnostic[] = [];
   let seen: string[] = [];
   const rep = buildReport(c);
   for (const v of rep.entryEffects) {
     const m = isUnknownOp(v.op) ? CapMap { known: true, cap: "clock/v1" } : capabilityOf(v.op);
     if (m.known) {
-      if (m.cap != "" && !requires.includes(m.cap)) {
-        requires.push(m.cap);
+      if (m.cap == "clock/v1") {
+        clock = true;
       }
       continue;
     }
@@ -84,7 +84,9 @@ export function orbitPlan(c: EffContext): OrbitPlan {
     d.notes = pathLines(v, "");
     errors.push(d);
   }
-  return OrbitPlan { requires: requires.sort((a, b) => a < b ? -1 : a > b ? 1 : 0), errors: errors };
+  // sorted: the only capabilities are clock/v1 and log/v1 (no string ordering: the seed compiler lacks `<` on strings)
+  const requires: string[] = clock ? ["clock/v1", "log/v1"] : ["log/v1"];
+  return OrbitPlan { requires: requires, errors: errors };
 }
 
 // The JSON payload of the section.
