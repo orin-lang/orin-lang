@@ -23,6 +23,21 @@ function text(b: Bytes): string {
   return b.toRawString();
 }
 
+// the Fill of a read; an error reads as FillLimit (callers that care check isErr)
+function fillOf(r: Result<Fill, NetError>): Fill {
+  return match (r) {
+    Ok(f) => f,
+    Err(e) => FillLimit
+  };
+}
+
+function isErr(r: Result<Fill, NetError>): bool {
+  return match (r) {
+    Ok(f) => false,
+    Err(e) => true
+  };
+}
+
 function serve(ln: Listener, net: NetGrant): void {
   const port = portOf(ln);
   say("port", port > 0);
@@ -37,8 +52,8 @@ function serve(ln: Listener, net: NetGrant): void {
       console.log("recv cap 4: " + kind(r1));
       let rd = new StreamReader(1024);
       const line = rd.readUntil(s, fromString("\r\n"), 100, milliseconds(1000));
-      match (line) {
-        Ok(Filled(b)) => { console.log("line: " + text(b).length.toString()); },
+      match (fillOf(line)) {
+        Filled(b) => { console.log("line: " + text(b).length.toString()); },
         _ => { console.log("line: FAIL"); }
       }
       // nothing more to read: a bounded wait times out, it does not hang
@@ -48,9 +63,9 @@ function serve(ln: Listener, net: NetGrant): void {
       say("waited", monotonicMillis(s) - t0 >= 40);
       // the client half-closes: EOF after the remaining bytes
       const rest = rd.readExact(s, 4, milliseconds(1000));
-      match (rest) {
-        Ok(Filled(b)) => { console.log("rest: " + text(b)); },
-        Ok(FillClosed(b)) => { console.log("rest closed: " + text(b)); },
+      match (fillOf(rest)) {
+        Filled(b) => { console.log("rest: " + text(b)); },
+        FillClosed(b) => { console.log("rest closed: " + text(b)); },
         _ => { console.log("rest: FAIL"); }
       }
       say("shutdown", shutdownWrite(s).isOk());
@@ -66,8 +81,8 @@ function serve(ln: Listener, net: NetGrant): void {
     useAccepted(ln2, milliseconds(1000), (s: Stream, peer) => {
       let rd = new StreamReader(64);
       const f = rd.readUntil(s, fromString("\n"), 5, milliseconds(500));
-      match (f) {
-        Ok(FillLimit) => { console.log("limit: ok"); },
+      match (fillOf(f)) {
+        FillLimit => { console.log(isErr(f) ? "limit: FAIL" : "limit: ok"); },
         _ => { console.log("limit: FAIL"); }
       }
       say("buffered at most the limit", rd.buffered().length() <= 5);
