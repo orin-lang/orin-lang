@@ -1,6 +1,9 @@
 /* Orin L0 platform layer: the PURE primitives (no OS, no libc), shared by every platform implementation: the native one
  * (orin_platform.c) and the WebAssembly one (orbit/orin_platform_orbit.c, ADR-0055). Contracts: orin_platform.h.
- * Not a translation unit of its own: each implementation #includes it once. Plain loops, so CBMC covers them whole. */
+ * Not a translation unit of its own: each implementation #includes it once (definitions, not declarations; named .h so the
+ * `*.c` globs of the tools and the release driver never compile it alone). Plain loops, so CBMC covers them whole. */
+#ifndef ORIN_PLATFORM_PURE_H
+#define ORIN_PLATFORM_PURE_H
 
 /* ---------------------------------------------------------------- memory */
 
@@ -105,3 +108,5 @@ int orin_platform_millis_split(int64_t ms, int64_t *sec, int64_t *nsec) {
     *nsec = (ms % 1000) * 1000000;
     return 0;
 }
+
+#endif

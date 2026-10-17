@@ -416,7 +416,7 @@ native_build() {
   [ "$backend" != llvm ] || sources+=("$RT/orin_runtime_llvm.c")
   if [ "$wasm" = true ]; then
     # ADR-0055: a freestanding wasm64 module over the Orbit host ABI; its own L0 and mini libc, no WASI, entry `orin_main`.
-    sources=("$RT/orin_runtime.c" "$PF/orbit/orin_platform_orbit.c" "$PF/orbit/orin_libc_orbit.c" "$PF/orbit/orin_float_orbit.c")
+    sources=("$RT/orin_runtime.c" "$PF/orbit/orin_platform_orbit.c" "$PF/orbit/orin_libc_orbit.c" "$PF/orbit/orin_float_orbit.c" "$PF/orbit/orin_builtins_orbit.c")
     flags=(--target=wasm64-unknown-unknown -mbulk-memory -ffreestanding -nostdlib -I "$PF/orbit/include" -I "$RT")
     link=(-Wl,--no-entry -Wl,--stack-first -Wl,-z,stack-size=1048576)
   fi

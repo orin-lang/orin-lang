@@ -18,7 +18,7 @@
  * Entry point: the export `orin_main` runs the program's main and returns its exit status. */
 #include "../orin_platform.h"
 
-#include "../orin_platform_pure.c"
+#include "../orin_platform_pure.h"
 
 #define ORBIT_IMPORT(m, n) __attribute__((import_module(m), import_name(n)))
 ORBIT_IMPORT("orbit:log/v1", "write") int32_t orbit_log_write(int32_t level, int64_t ptr, int64_t len);
@@ -114,8 +114,8 @@ static void line_emit(LineBuf *lb, int level) {
 static void line_put(LineBuf *lb, int level, const char *p, size_t n) {
     for (size_t i = 0; i < n; i++) {
         if (p[i] == '\n') {
-            if (lb->n == 0) lb->b[lb->n++] = ' '; /* an empty line is still a record */
-            line_emit(lb, level);
+            orbit_log_write(level, (int64_t)(uintptr_t)lb->b, (int64_t)lb->n); /* an empty line is still a record */
+            lb->n = 0;
             continue;
         }
         if (lb->n == LOG_MAX) line_emit(lb, level);

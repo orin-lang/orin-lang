@@ -27,7 +27,7 @@ _Static_assert(ORIN_PLATFORM_EINVAL == EINVAL, "EINVAL value");
 _Static_assert(ORIN_PLATFORM_ENOMEM == ENOMEM, "ENOMEM value");
 _Static_assert(ORIN_PLATFORM_EBUSY == EBUSY, "EBUSY value");
 
-#include "orin_platform_pure.c" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split */
+#include "orin_platform_pure.h" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split */
 
 /* ---------------------------------------------------------------- process */
 

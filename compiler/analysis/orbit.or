@@ -15,7 +15,12 @@
 //   Process.Exit, Process.Args, Stdio.Read,
 //   Host.Acquire                                     -> no capability: handled inside the guest (exit traps after recording
 //                                                       the status, the arguments are just ["main"], stdin is empty)
-//   anything else (Fs.*, Process.Spawn, Process.Narrow, Net.*, Stream.*, Task.*, Channel.*, Unknown.*)
+//   Unknown.* (a call the analysis cannot resolve,  -> no error, but "clock/v1" is required too: the guest can import only
+//   such as a call of a function value)               log/v1 and clock/v1, so requiring both is the safe over-approximation
+//                                                       (a manifest must list every capability the module imports). The
+//                                                       unresolved call cannot reach anything else: the guest has no other
+//                                                       imports, so the import list, not the effect set, bounds what it can do
+//   anything else (Fs.*, Process.Spawn, Process.Narrow, Net.*, Stream.*, Task.*, Channel.*)
 //                                                    -> NOT available on this target: error E0523, one diagnostic per effect,
 //                                                       located at the evidence the analysis has
 //
@@ -26,7 +31,7 @@
 // The producer string is "orin": the compiler does not know its own version (orin.toml is not embedded).
 
 import { Diagnostic, diag } from "../diag";
-import { EffContext, EffView, buildReport, pathLines, reasonText } from "./effectsum";
+import { EffContext, EffView, buildReport, pathLines } from "./effectsum";
 import { isUnknownOp } from "./effects";
 
 export const ORBIT_TARGET: string = "wasm64-orbit";
@@ -60,7 +65,7 @@ export function orbitPlan(c: EffContext): OrbitPlan {
   let seen: string[] = [];
   const rep = buildReport(c);
   for (const v of rep.entryEffects) {
-    const m = capabilityOf(v.op);
+    const m = isUnknownOp(v.op) ? CapMap { known: true, cap: "clock/v1" } : capabilityOf(v.op);
     if (m.known) {
       if (m.cap != "" && !requires.includes(m.cap)) {
         requires.push(m.cap);
@@ -71,13 +76,10 @@ export function orbitPlan(c: EffContext): OrbitPlan {
       continue;
     }
     seen.push(v.op);
-    const what = isUnknownOp(v.op)
-        ? "an effect whose target is not known (" + reasonText(v.op) + ")"
-        : v.op;
     let d = diag(
       ORBIT_ERROR,
       v.start,
-      "`main` needs " + what + ", which the " + ORBIT_TARGET + " target does not provide",
+      "`main` needs " + v.op + ", which the " + ORBIT_TARGET + " target does not provide",
     );
     d.notes = pathLines(v, "");
     errors.push(d);

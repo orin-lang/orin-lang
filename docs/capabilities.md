@@ -279,7 +279,8 @@ the generated C, as the very last lines: a custom section `orbit.manifest` whose
 | `Console.Write`, `Stdio.Write` | `log/v1` |
 | `Clock.Now` | `clock/v1` |
 | `Process.Exit`, `Process.Args`, `Stdio.Read`, `Host.Acquire` | none (handled in the guest: exit traps after recording the status, args are `["main"]`, stdin is empty) |
-| anything else (`Fs.*`, `Process.Spawn`, `Net.*`, `Stream.*`, `Task.*`, `Channel.*`, `Unknown.*`) | not available: error E0523 |
+| `Unknown.*` (an unresolved call, e.g. of a function value) | no error; `clock/v1` is required as well (the safe over-approximation: the guest can import only `log/v1` and `clock/v1`) |
+| anything else (`Fs.*`, `Process.Spawn`, `Net.*`, `Stream.*`, `Task.*`, `Channel.*`) | not available: error E0523 |
 
 `log/v1` is always required (a runtime trap prints its message to stderr, which maps to the log capability); the list is sorted
 without duplicates. E0523 is reported once per unavailable effect, located at the evidence the analysis has

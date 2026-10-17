@@ -352,6 +352,7 @@ def main():
         "hello": ["log/v1"],
         "clock": ["clock/v1", "log/v1"],
         "exit": ["log/v1"],
+        "closure": ["clock/v1", "log/v1"],  # an unresolved call (Unknown.*): conservative, not an error
     }
     for name, req in want.items():
         rc, err, text = manifest_of(name)
