@@ -70,7 +70,8 @@ What does the compiler emit, which memory width, which C library and which host 
    This needs no atomics and no WebAssembly feature beyond bulk memory (the module still runs in Node and Orbit unchanged); the
    obvious alternative, `-matomics` TLS, was tried and rejected: wasm-ld (LLVM 18 and 19, non-shared memory) emits
    `__tls_base + absolute address`, which is out of bounds. The L0 refuses to create a task if the runtime's heap block is
-   outside the section (a build without the flag). What this cannot do: **two tasks that need each other to run at the same
+   outside the section (a build without the flag). Cost: the block (about 90 KB, mostly zeros) is stored as data in every module, because a named section is
+   not zero-filled (bss) by the linker. What this cannot do: **two tasks that need each other to run at the same
    time** (ping-pong over bounded channels, a producer that blocks on a full channel while its consumer waits for the next
    item) would need a second stack; they end with the deadlock line instead of hanging. **A task that traps** cannot be
    unwound to its join without the exception-handling proposal, so the whole module ends (`wasm64-orbit: a task trapped:
