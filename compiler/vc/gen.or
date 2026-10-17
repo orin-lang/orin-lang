@@ -95,6 +95,10 @@ export class Gen {
     return this.facts;
   }
 
+  declsList(): string[] {
+    return this.decls;
+  }
+
   // Lemma facts: valid theorems about recursive definitions (sums); asserted like facts, kept apart so that the
   // query text shows them in one place.
   @Ensures(this.lemmas.length == old(this.lemmas.length) + 1)

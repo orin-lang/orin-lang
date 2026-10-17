@@ -1,0 +1,118 @@
+// Cone-of-influence slicing of the facts of a solver query (ADR-0053 Addendum A, group U5).
+//
+// A query asserts every fact of the function (a fresh constant equals the term it names, a pure callee satisfies its
+// contract, ...) next to the path condition and the negated goal. Most of them mention constants of other paths and
+// other expressions than the goal does. The facts are linked through the constants they mention (`declare-const`): a
+// fact is relevant when it mentions a constant that the goal, the path condition, the assumptions or an already
+// relevant fact mention. Facts without any constant (axioms about uninterpreted functions, datatypes) are always kept.
+//
+// Soundness: a slice asserts a subset of the assumptions, so a query that is `unsat` with the slice is `unsat` with
+// all of them (a proof stays a proof); a slice that is `sat` or `unknown` says nothing, and the caller then asks the
+// full query. Declarations are never dropped.
+
+const DECL_CONST: string = "(declare-const ";
+
+function isSep(c: usize): bool {
+  return c == 32 || c == 10 || c == 13 || c == 9 || c == 40 || c == 41;
+}
+
+// The numbered `declare-const` names of the declarations.
+export type Consts = { ids: Map<string, usize>; count: usize; };
+
+export function constIds(decls: string[]): Consts {
+  let ids = new Map<string, usize>();
+  let n: usize = 0;
+  for (const d of decls) {
+    if (d.startsWith(DECL_CONST)) {
+      const start = DECL_CONST.length;
+      let j = start;
+      while (j < d.length && !isSep(d.charCodeAt(j).toUsize())) {
+        j += 1;
+      }
+      ids.set(d.substring(start, j), n);
+      n += 1;
+    }
+  }
+  return Consts { ids: ids, count: n };
+}
+
+// The ids of the declared constants a text mentions (with repeats).
+function constsIn(text: string, ids: Map<string, usize>): usize[] {
+  let out: usize[] = [];
+  const n = text.length;
+  let i: usize = 0;
+  while (i < n) {
+    const c = text.charCodeAt(i).toUsize();
+    if (isSep(c)) {
+      i += 1;
+    } else {
+      let j = i + 1;
+      while (j < n && !isSep(text.charCodeAt(j).toUsize())) {
+        j += 1;
+      }
+      if (c < 48 || c > 57) {
+        const id = ids.get(text.substring(i, j));
+        if (id.isSome()) {
+          out.push(id.unwrap());
+        }
+      }
+      i = j;
+    }
+  }
+  return out;
+}
+
+// Which of `items` (assertions) are relevant to `seeds` (the texts that are asserted anyway: goal, path condition,
+// assumptions). The result has one flag per item.
+export function sliceKeep(cs: Consts, items: string[], seeds: string[]): bool[] {
+  const ids = cs.ids;
+  const nc = cs.count;
+  let by: usize[][] = [];
+  let k: usize = 0;
+  while (k < nc) {
+    by.push([]);
+    k += 1;
+  }
+  let keep: bool[] = [];
+  let ofItem: usize[][] = [];
+  let i: usize = 0;
+  while (i < items.length) {
+    const cs = constsIn(items[i], ids);
+    keep.push(cs.length == 0);
+    for (const c of cs) {
+      by[c].push(i);
+    }
+    ofItem.push(cs);
+    i += 1;
+  }
+  let reached: bool[] = [];
+  k = 0;
+  while (k < nc) {
+    reached.push(false);
+    k += 1;
+  }
+  let work: usize[] = [];
+  for (const s of seeds) {
+    for (const c of constsIn(s, ids)) {
+      if (!reached[c]) {
+        reached[c] = true;
+        work.push(c);
+      }
+    }
+  }
+  while (work.length > 0) {
+    const c = work.pop().unwrap();
+    for (const it of by[c]) {
+      if (!keep[it]) {
+        keep[it] = true;
+        for (const d of ofItem[it]) {
+          if (!reached[d]) {
+            reached[d] = true;
+            work.push(d);
+          }
+        }
+      }
+    }
+  }
+  return keep;
+}

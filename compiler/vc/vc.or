@@ -48,6 +48,7 @@ import {
 } from "./ctx";
 import { tr, trClause, wdOf, sigOf, invTerms, valueInvariants, Cl, Sig, isUnit, clHyp, clGoal } from "./expr";
 import { execStmts, emit } from "./stmt";
+import { constIds, sliceKeep } from "./slice";
 
 export { Report, Res, QWarn } from "./report";
 
@@ -369,6 +370,16 @@ function assertAll(xs: string[]): string {
 // The query text for "does `goal` follow from the facts, the assumptions `base` and the path condition `pc`":
 // everything asserted and `(not goal)`; `unsat` means it follows.
 function queryText(g: Gen, base: string[], pc: string[], goal: string, probes: Probe[], withLemmas: bool, extra: string[]): string {
+  return queryOf(g, base, pc, goal, probes, withLemmas, extra, false).text;
+}
+
+// A query text and the number of facts it leaves out (slicing).
+type Q = { text: string; dropped: usize; total: usize; };
+
+// With `slice` the assertions (facts, lemmas, assumptions, path condition) that share no constant with the goal, directly
+// or through other assertions, are left out (slice.or): a subset of the assumptions, so `unsat` of the slice proves the
+// goal and nothing else is concluded from it. `extra` is always asserted.
+function queryOf(g: Gen, base: string[], pc: string[], goal: string, probes: Probe[], withLemmas: bool, extra: string[], slice: bool): Q {
   let get = "";
   if (probes.length > 0) {
     let ts: string[] = [];
@@ -377,8 +388,28 @@ function queryText(g: Gen, base: string[], pc: string[], goal: string, probes: P
     }
     get = "(get-value (" + ts.join(" ") + "))\n";
   }
-  return g.declsText() + "\n" + assertAll(g.factsList()) + (withLemmas ? assertAll(g.lemmasList()) : "") + assertAll(base) + assertAll(pc)
-    + assertAll(extra) + "(assert (not " + goal + "))\n(check-sat)\n" + get;
+  let items = g.factsList();
+  if (withLemmas) {
+    items = concat(items, g.lemmasList());
+  }
+  items = concat(concat(items, base), pc);
+  let kept = items;
+  let dropped: usize = 0;
+  if (slice) {
+    const keep = sliceKeep(constIds(g.declsList()), items, concat(extra, [goal]));
+    kept = [];
+    let i: usize = 0;
+    while (i < items.length) {
+      if (keep[i]) {
+        kept.push(items[i]);
+      } else {
+        dropped += 1;
+      }
+      i += 1;
+    }
+  }
+  return Q { text: g.declsText() + "\n" + assertAll(kept) + assertAll(extra) + "(assert (not " + goal + "))\n(check-sat)\n" + get,
+    dropped: dropped, total: items.length };
 }
 
 // The solver's answers, by query. With one thread a query is solved when it is asked. With more, `solve` cannot run
@@ -389,20 +420,30 @@ function queryText(g: Gen, base: string[], pc: string[], goal: string, probes: P
 // threads.
 type Oracle = { z3: string; lim: SolverLimits; deferred: bool; answers: Map<string, Result<Solved, string>>; };
 
-// The solver budget of one run (`orin verify --contracts --timeout-ms N --retry-ms N --rlimit N`). `timeoutMs` is the wall
+// The solver budget of one run (`orin verify --contracts --timeout-ms N --retry-ms N --rlimit N --slice`). `timeoutMs` is the wall
 // time of the first query of an obligation; `retryMs` the wall time of the bounded-search retry after an `unknown`
 // (rawProve), 0 = no retry; `rlimit` is z3's deterministic resource limit (0 = none), applied to both queries on top of
 // the wall time, so that a query that runs out of it gives `unknown` on every machine.
-export type SolverLimits = { timeoutMs: int; retryMs: int; rlimit: int; };
+export type SolverLimits = { timeoutMs: int; retryMs: int; rlimit: int; slice: bool; };
 
 export function defaultSolverLimits(): SolverLimits {
-  return SolverLimits { timeoutMs: 4000, retryMs: 1000, rlimit: 0 };
+  return SolverLimits { timeoutMs: 4000, retryMs: 1000, rlimit: 0, slice: false };
 }
 
 const PENDING: string = "pending";
 
+// A slice that leaves out fewer facts than this is not worth a query of its own (it is as hard as the full one).
+const SLICE_MIN_DROP: usize = 16;
+
+// The wall time of a sliced query: a quarter of the first query's (it has fewer facts; when it does not solve quickly the full
+// query is asked).
+function sliceMs(lim: SolverLimits): int {
+  const q = lim.timeoutMs / 4;
+  return q < 1 ? 1 : q;
+}
+
 function solverCommand(z3: string, lim: SolverLimits, base: string): string {
-  const ms = base.endsWith("b") ? lim.retryMs : lim.timeoutMs;
+  const ms = base.endsWith("b") ? lim.retryMs : base.endsWith("s") ? sliceMs(lim) : lim.timeoutMs;
   const hard = (ms + 999) / 1000 + 2;
   const rl = lim.rlimit > 0 ? " rlimit=" + lim.rlimit.toString() : "";
   return z3 + " -in -t:" + ms.toString() + " -T:" + hard.toString() + rl + " < " + base + ".smt2 > " + base + ".out 2>&1";
@@ -747,6 +788,22 @@ type Raw = { status: string; reason: string; values: string[]; miss: string[]; }
 // length of every array and string that is shown in the counterexample: a model found that way is a model of the
 // original query, hence a real counterexample.
 function rawProve(fs: FsGrant, proc: ProcessGrant, or: Oracle, fi: usize, qn: usize, g: Gen, base: string[], pc: string[], goal: string, probes: Probe[]): Raw {
+  // First the sliced query (slice.or): `unsat` is a proof. Anything else (a model of fewer assumptions, `unknown`) is
+  // no answer, the full query is asked as before, so slicing can only add proofs and costs a query when it fails.
+  if (or.lim.slice) {
+    const qs = queryOf(g, base, pc, goal, probes, true, [], true);
+    if (qs.dropped >= SLICE_MIN_DROP && qs.dropped * 4 >= qs.total) {
+      const ss = solve(fs, proc, or, fi, qn, "s", qs.text);
+      if (ss.isOk()) {
+        if (ss.unwrap().status == PENDING) {
+          return Raw { status: "error", reason: PENDING, values: [], miss: ss.unwrap().values };
+        }
+        if (ss.unwrap().status == "unsat") {
+          return Raw { status: "unsat", reason: "", values: [], miss: [] };
+        }
+      }
+    }
+  }
   const q = queryText(g, base, pc, goal, probes, true, []);
   const s = solve(fs, proc, or, fi, qn, "", q);
   if (s.isErr()) {

@@ -1,0 +1,46 @@
+// Inputs for tools/test_verify_contracts.py (orin verify --contracts). Expected statuses are in the
+// `// expect:` lines: `function kind status`. Facts about 12 `map` results of independent arrays, most of them
+// unrelated to the goal: with `--slice` the solver is first given the slice of the facts the goal depends on
+// (docs/contracts.md, "Fact slicing"); a slice that does not prove the goal is not used (the full query finds a proof that
+// needs the other facts, and a counterexample of a slice is not reported). The statuses are the same with and without
+// `--slice` (tools/test_verify_contracts.py checks that).
+// expect: lenAll ensures VERIFIED
+// expect: lenFirst ensures VERIFIED
+
+@Requires(a0.length < 100)
+@Ensures(result == a0.length + a1.length + a2.length + a3.length + a4.length + a5.length + a6.length + a7.length + a8.length + a9.length + a10.length + a11.length)
+function lenAll(a0: int[], a1: int[], a2: int[], a3: int[], a4: int[], a5: int[], a6: int[], a7: int[], a8: int[], a9: int[], a10: int[], a11: int[]): usize {
+  const c0: int[] = a0.map(x => x + 1);
+  const c1: int[] = a1.map(x => x + 2);
+  const c2: int[] = a2.map(x => x + 3);
+  const c3: int[] = a3.map(x => x + 4);
+  const c4: int[] = a4.map(x => x + 5);
+  const c5: int[] = a5.map(x => x + 6);
+  const c6: int[] = a6.map(x => x + 7);
+  const c7: int[] = a7.map(x => x + 8);
+  const c8: int[] = a8.map(x => x + 9);
+  const c9: int[] = a9.map(x => x + 10);
+  const c10: int[] = a10.map(x => x + 11);
+  const c11: int[] = a11.map(x => x + 12);
+  return c0.length + c1.length + c2.length + c3.length + c4.length + c5.length + c6.length + c7.length + c8.length + c9.length + c10.length + c11.length;
+}
+
+@Requires(a0.length < 100)
+@Ensures(result >= a0.length)
+function lenFirst(a0: int[], a1: int[], a2: int[], a3: int[], a4: int[], a5: int[], a6: int[], a7: int[], a8: int[], a9: int[], a10: int[], a11: int[]): usize {
+  const c0: int[] = a0.map(x => x + 1);
+  const c1: int[] = a1.map(x => x + 2);
+  const c2: int[] = a2.map(x => x + 3);
+  const c3: int[] = a3.map(x => x + 4);
+  const c4: int[] = a4.map(x => x + 5);
+  const c5: int[] = a5.map(x => x + 6);
+  const c6: int[] = a6.map(x => x + 7);
+  const c7: int[] = a7.map(x => x + 8);
+  const c8: int[] = a8.map(x => x + 9);
+  const c9: int[] = a9.map(x => x + 10);
+  const c10: int[] = a10.map(x => x + 11);
+  const c11: int[] = a11.map(x => x + 12);
+  return c0.length;
+}
+
+function main(): void {}

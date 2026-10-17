@@ -148,6 +148,12 @@ def check_extras(orinc):
         r = run(orinc, "--format=json", *flags, "tests/contracts/verify_basic.or", case="_extras")
         got = [(x["function"], x["kind"], x["line"], x["status"]) for x in json.loads(r.stdout.decode())["results"]]
         check(got == want, "solver budget flags %s keep the statuses" % flags)
+    # Fact slicing (compiler/vc/slice.or): the statuses are the same with `--slice` (off by default), on a file whose queries are sliced.
+    for rel in ("tests/contracts/verify_basic.or", "tests/contracts/verify_slice.or"):
+        a = json.loads(run(orinc, "--format=json", rel, case="_extras").stdout.decode())
+        b = json.loads(run(orinc, "--format=json", "--slice", rel, case="_extras").stdout.decode())
+        key = lambda rep: [(x["function"], x["kind"], x["line"], x["status"]) for x in rep["results"]]  # noqa: E731
+        check(key(a) == key(b) and len(key(a)) > 0, "%s: --slice keeps the statuses" % rel)
     for bad in (["--timeout-ms", "0"], ["--timeout-ms", "x"], ["--retry-ms"], ["--rlimit", "-1"]):
         r = run(orinc, *bad, "tests/contracts/verify_basic.or", case="_extras")
         check(r.returncode == 2 and b"error: " + bad[0].encode() in r.stderr, "bad %s is a usage error" % bad)
