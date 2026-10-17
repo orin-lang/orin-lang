@@ -34,7 +34,12 @@ What does the compiler emit, which memory width, which C library and which host 
    - `orin_platform_orbit.c` implements every function of `orin_platform.h` over two Orbit imports,
      `orbit:log/v1 write` and `orbit:clock/v1 now_unix_nanos / monotonic_nanos`;
    - `orin_libc_orbit.c` is the C library the header and the runtime need (allocator, `mem*`, `strlen`; no imports, memory
-     from `memory.grow`); `include/` holds the matching `stdlib.h`, `string.h`, `errno.h`;
+     from `memory.grow`); `include/` holds the matching `stdlib.h`, `string.h`, `errno.h`. The allocator has a 16-byte
+     header per block (its size and the size of the block before it) and 16-byte aligned payloads. Blocks up to 64 KiB are
+     powers of two with a free list per class (the fast path, as before). Larger blocks are rounded to 16 bytes, kept on a
+     best-fit free list, split when the remainder is itself large, and merged with free neighbours; the block at the heap
+     top grows in place with `memory.grow`, and freeing it lowers the top, so a growing array costs about its own size.
+     `runtime/platform/orbit/tests/alloc_test.c` stresses it natively (see section 6);
    - `orin_float_orbit.c` is the exact `%.*e` formatting and correctly rounded `strtod`/`strtof` (big-integer arithmetic,
      byte-identical to glibc: `tools/test_wasm_float.sh`, 16.6 million checks, 0 mismatches);
    - `orin_builtins_orbit.c` holds the compiler support routines clang calls for operations without a WebAssembly
@@ -69,13 +74,13 @@ What does the compiler emit, which memory width, which C library and which host 
 6. **Tests and CI.** `tools/run_tests.py --target wasm64-orbit` builds every conformance test as a module and runs it under
    Node >= 24 with `tools/wasm_run.mjs`, a 100-line host that serves the same two capabilities with Orbit's load-time checks
    (orbit-prefixed imports only, manifest covers imports). A test whose program needs an unavailable effect is SKIP, not a
-   failure. `tools/test_wasm.sh` runs that, the float differential test and the builtins differential test; the CI job
+   failure. `tools/test_wasm.sh` runs that, the float, the builtins and the allocator tests; the CI job
    `wasm` runs it. State at acceptance: 1002 passed, 0 failed, 32 skipped (file system, network, tasks, stdin).
 
 7. **Budget.** `runtime/platform/orbit/` is not part of a native binary, so it does not count against the native L0 budget
-   (ADR-0054); it has its own ceiling of **900 code lines** (counted like `tools/verify_platform.sh`; 805 at acceptance).
+   (ADR-0054); it has its own ceiling of **900 code lines** (counted like `tools/verify_platform.sh`; 805 at acceptance, 900 with the large-block allocator).
    Evidence instead of CBMC for now: the shared pure primitives keep their harnesses; the rest is covered by the conformance
-   suite under WebAssembly and the two differential tests.
+   suite under WebAssembly and the three tests (float, builtins, allocator).
 
 ## Measurements (2026-10-17, one Linux x86_64 container, best of 3, wall time)
 
@@ -90,8 +95,12 @@ Orin benchmarks (`bench/*/main.or`), native C backend `-O2` vs the same program 
 | nbody | 0.059 s | 0.221 s | 0.203 s | 0.273 s |
 
 Orbit compiles the module and meters fuel on every run (`consume_fuel(true)`); without fuel fib is 1.8x faster. That is an
-Orbit setting, reported to the Orbit project. Peak memory: sieve 273 MB as WebAssembly vs 77 MB native, because the
-power-of-two allocator rounds the growing 80 MB array up and keeps the smaller blocks (see "Later").
+Orbit setting, reported to the Orbit project. Peak memory: sieve was 273 MB as WebAssembly vs 77 MB native, because the
+first allocator (pure power-of-two classes) rounded the growing 80 MB array up and kept the smaller blocks. With the
+large-block allocator (decision 3) the same sieve peaks at 130 MB under Node 24 (314 MB before; the module's memory also
+holds the 1 MiB stack, the data and Node's own footprint), and runs 0.36 s instead of 0.48 s (best of 15) because the
+array grows in place instead of being copied. bintrees, fib and nbody are unchanged within noise (best of 15: 0.742 s vs
+0.720 s, 0.648 s vs 0.640 s, 0.218 s vs 0.219 s; peak RSS identical).
 
 The cost of Memory64 itself, isolated from Orin: the C reference programs (`bench/*/main.c`) built freestanding as wasm32 and
 as wasm64 with the same clang flags, run by `wasmtime run` (29.0.1, no fuel):
@@ -112,7 +121,6 @@ So Memory64 costs roughly 15-40 % on pointer-heavy code today; fuel metering cos
   width-dependent (the Orin-written heap reads fixed offsets); and the L0 (`orin_libc_orbit.c` class limit) for 32-bit
   `size_t`. Estimated as a multi-PR change across compiler and runtime; worth it once Orbit density measurements show the
   bounds checks matter.
-- **Allocator**: grow the top block in place and split large classes, to bring sieve-like programs near native memory.
 - **Tasks**: run `std:task` sequentially (Orbit integration request 5) and lift E0523 for `Task.*`/`Channel.*` where the
   program cannot deadlock; or a scheduler-backed task capability in Orbit.
 - **Capabilities**: `random/v1` once std has a randomness effect; `kv/v1` and files once Orin has effects for them.

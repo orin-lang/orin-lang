@@ -23,6 +23,8 @@ sh tools/test_wasm_float.sh
 echo "[wasm] compiler support routines (128-bit helpers, round) vs the native compiler and libm"
 mkdir -p build/wasm
 cc -O1 runtime/platform/orbit/tests/i128_test.c -o build/wasm/i128_test -lm && build/wasm/i128_test
+echo "[wasm] allocator of the WebAssembly L0 (random malloc/calloc/realloc/free, growth pattern) on a fake heap"
+cc -O2 -Wno-attributes runtime/platform/orbit/tests/alloc_test.c -o build/wasm/alloc_test && build/wasm/alloc_test
 echo "[wasm] conformance suites as wasm64-orbit modules"
 python3 tools/run_tests.py --orinc "$ORINC" --target wasm64-orbit --suite all
 echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 900 code lines, counted like tools/verify_platform.sh)"
