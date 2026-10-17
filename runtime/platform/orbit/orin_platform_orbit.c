@@ -34,7 +34,7 @@ static int g_argc;
 static char **g_argv;
 static void (*g_exit_fns[32])(void);
 static int g_nexit;
-static int32_t g_exit_status;
+static int32_t g_exit_status = -1; /* -1 until main returned or exit was called */
 __attribute__((export_name("orin_exit_status"))) int32_t orin_exit_status(void) { return g_exit_status; }
 
 void orin_platform_init(int argc, char **argv) {
