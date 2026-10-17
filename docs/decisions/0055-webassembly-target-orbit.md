@@ -54,9 +54,28 @@ What does the compiler emit, which memory width, which C library and which host 
 
 4. **Behaviour of the L0, fail closed.** stdout and stderr become log records (one per line; stdout = info, stderr = error,
    partial lines on flush). Arguments are `["main"]`, the environment is empty, stdin is at end of input, `ORIN_DENY` does not
-   exist (the host grant is the policy). Files, processes and the network return `EPERM`. There is one thread: a task runs to
-   completion inside `orin_platform_thread_create`; a monitor wait that nobody could notify traps with a message instead of
-   deadlocking. `exit` flushes, records the status and traps (no unwinding without the exception-handling proposal).
+   exist (the host grant is the policy). Files, processes and the network return `EPERM`. There is one thread, and tasks
+   run on it one at a time, to completion, **when someone would otherwise block** (rev. 2026-10-17, "tasks"):
+   `orin_platform_thread_create` only queues the task; `thread_join` of a queued task runs it; `monitor_wait` and
+   `monitor_wait_until` give the thread to the next queued task (the monitor is released meanwhile and locked again
+   afterwards) and return as a spurious wake-up, which the contract allows and every caller handles by re-checking in a loop;
+   tasks nobody joined run when `orin_main` returns. A wait with nothing queued ends the module (`wasm64-orbit: deadlock: ...`,
+   trap, status 134); a timed wait with nothing queued returns as timed out at once (the L0 has no way to sleep). Monitors know
+   their owner, so a lock held by a context suspended lower on the stack is reported as that deadlock. The runtime keeps its
+   per-task state (heap block, grants, files, the running task) in `__thread` objects, which one stack and one memory would
+   share: the build compiles the runtime with `-D__thread=__attribute__((section("orin_tls")))` (tools/run_tests.py,
+   dist/orin-cli.sh), which turns each into an ordinary object of one section, and the linker's `__start_orin_tls` /
+   `__stop_orin_tls` bound that block. Starting a task saves the block, installs its pristine image (copied at the start of
+   `orin_main`), runs the task and restores the block; the thread id and the bound wake source are switched the same way.
+   This needs no atomics and no WebAssembly feature beyond bulk memory (the module still runs in Node and Orbit unchanged); the
+   obvious alternative, `-matomics` TLS, was tried and rejected: wasm-ld (LLVM 18 and 19, non-shared memory) emits
+   `__tls_base + absolute address`, which is out of bounds. The L0 refuses to create a task if the runtime's heap block is
+   outside the section (a build without the flag). What this cannot do: **two tasks that need each other to run at the same
+   time** (ping-pong over bounded channels, a producer that blocks on a full channel while its consumer waits for the next
+   item) would need a second stack; they end with the deadlock line instead of hanging. **A task that traps** cannot be
+   unwound to its join without the exception-handling proposal, so the whole module ends (`wasm64-orbit: a task trapped:
+   <message>`, status 101), where natively the joiner sees the trap. Both print a line with the prefix `wasm64-orbit: `, which
+   `tools/run_tests.py --target wasm64-orbit` reports as SKIP (with the reason) when the test's result differs. `exit` flushes, records the status and traps (no unwinding without the exception-handling proposal).
    Entry point: the export `orin_main() -> i32` runs `main` and returns the exit status; after a trap, the export
    `orin_exit_status() -> i32` returns the status passed to `exit` (101 for an Orin trap), or -1 for any other trap.
 
@@ -65,7 +84,7 @@ What does the compiler emit, which memory width, which C library and which host 
    file). `requires` is derived from the transitive effects of `main` (`compiler/analysis/orbit.or`, table in
    [capabilities.md](../capabilities.md)): `Console.Write`/`Stdio.Write` -> `log/v1`, `Clock.Now` -> `clock/v1`; `log/v1` is
    always listed (a trap message goes to stderr). An effect the target does not provide (`Fs.*`, `Process.Spawn`, `Net.*`,
-   `Stream.*`, `Task.*`, `Channel.*`) fails the build with **E0523** and the evidence path, so a program never compiles into a
+   `Stream.*`) fails the build with **E0523**; `Task.*` and `Channel.*` need no capability (decision 4), so they are listed as available and the evidence path, so a program never compiles into a
    module that would only fail at run time. An unresolved call (`Unknown.*`, e.g. calling a function value) is not an error:
    the guest can import only `log/v1` and `clock/v1`, so the manifest then lists both (a manifest must cover every import;
    listing one more is the safe over-approximation). The manifest **describes**; the host's grant authorises (Orbit rejects
@@ -74,11 +93,15 @@ What does the compiler emit, which memory width, which C library and which host 
 6. **Tests and CI.** `tools/run_tests.py --target wasm64-orbit` builds every conformance test as a module and runs it under
    Node >= 24 with `tools/wasm_run.mjs`, a 100-line host that serves the same two capabilities with Orbit's load-time checks
    (orbit-prefixed imports only, manifest covers imports). A test whose program needs an unavailable effect is SKIP, not a
-   failure. `tools/test_wasm.sh` runs that, the float, the builtins and the allocator tests; the CI job
-   `wasm` runs it. State at acceptance: 1002 passed, 0 failed, 32 skipped (file system, network, tasks, stdin).
+   failure. `tools/test_wasm.sh` runs that, the float, builtins and allocator tests and the `orin_tls` check (decision 4); the
+   CI job `wasm` runs it. State at acceptance: 1002 passed, 0 failed, 32 skipped (file system, network, tasks, stdin); with
+   tasks and the large-block allocator (2026-10-17, PR 2): 1039 passed, 0 failed, 23 skipped (file system, network, stdin, and
+   4 task tests that need interleaving or a trapping task, decision 4).
 
 7. **Budget.** `runtime/platform/orbit/` is not part of a native binary, so it does not count against the native L0 budget
-   (ADR-0054); it has its own ceiling of **900 code lines** (counted like `tools/verify_platform.sh`; 805 at acceptance, 900 with the large-block allocator).
+   (ADR-0054); it has its own ceiling of **1100 code lines** (counted like `tools/verify_platform.sh`). 805 at acceptance with
+   a ceiling of 900; raised to 1100 with the large-block allocator and the task scheduler (988 lines), because both are
+   needed for real programs (memory near native, `std:task`) and each is covered by its own test.
    Evidence instead of CBMC for now: the shared pure primitives keep their harnesses; the rest is covered by the conformance
    suite under WebAssembly and the three tests (float, builtins, allocator).
 
@@ -116,13 +139,21 @@ So Memory64 costs roughly 15-40 % on pointer-heavy code today; fuel metering cos
 
 ## Later
 
-- **wasm32** would remove the Memory64 cost and open older browsers. It needs: a target-dependent `usize`/pointer width in
-  the compiler's type layout and both backends; the heap block layout and the `_Static_assert`s in `runtime/core` made
-  width-dependent (the Orin-written heap reads fixed offsets); and the L0 (`orin_libc_orbit.c` class limit) for 32-bit
-  `size_t`. Estimated as a multi-PR change across compiler and runtime; worth it once Orbit density measurements show the
-  bounds checks matter.
-- **Tasks**: run `std:task` sequentially (Orbit integration request 5) and lift E0523 for `Task.*`/`Channel.*` where the
-  program cannot deadlock; or a scheduler-backed task capability in Orbit.
+- **wasm32** would remove the Memory64 cost and open older browsers. Two variants were costed (2026-10-17):
+  - *Cheap: 64-bit Orin values, 32-bit C pointers.* Slots, `usize` (ADR-0022) and the IR stay 64-bit; the C backend already
+    casts every pointer through `uint64_t`/`uintptr_t`. What breaks is only the runtime's pointer-holding ABI fields
+    (`OrinArray.items`, `FreeNode.next`, `SbClass.head`, the `OrinHeap` free-list heads, `dstack` in
+    `runtime/core/orin_runtime.h`), which the Orin-written runtime (`heap.or`, `object.or`, `array.or`, `leaf.or`) reads with
+    `load64`/`store64` at fixed offsets; for wasm32 they become 64-bit storage (a union with a zeroed high word), and the 13
+    `_Static_assert`s at `orin_runtime.h:264-277` follow (they are the only errors when `orin_runtime.c` is compiled for
+    wasm32). About 120-180 lines: ~80 in `runtime/core` plus the copy in `bootstrap/seed`, ~25 in the compiler (target
+    name), the rest in this L0, the tools and docs. It saves the bounds checks, not memory (slots stay 8 bytes).
+    **Planned**: the runtime change after R3e of the runtime-in-Orin work (ADR-0052), then `wasm32-orbit` here.
+  - *Full: 32-bit `usize` and 4-byte slots.* A 4-byte slot cannot hold `i64`/`f64`, which breaks the IR's "slot = 64-bit
+    scalar or reference"; about 60-100 files and 3-6k lines across compiler, runtime and std plus a new seed. Rejected.
+- **Tasks**: done sequentially (decision 4). Left: tasks that need interleaving and tasks that trap need either stack switching
+  (the WebAssembly stack-switching proposal; Orbit does not enable it) or the exception-handling proposal (a trapping task
+  would unwind to its join); or a scheduler-backed task capability in Orbit.
 - **Capabilities**: `random/v1` once std has a randomness effect; `kv/v1` and files once Orin has effects for them.
 - **LLVM backend** for this target (triple and data layout per target).
 - **Reactor services**: named exported handlers instead of one `orin_main`, `orbit_alloc` for host-to-guest payloads.
