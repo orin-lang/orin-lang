@@ -3,7 +3,8 @@
 #   1. the float formatting / parsing of the WebAssembly L0 against glibc (tools/test_wasm_float.sh);
 #   2. its compiler support routines (orin_builtins_orbit.c) against the native __int128 arithmetic and libm round;
 #   3. the conformance suites built as WebAssembly modules and run under Node with the Orbit import contract
-#      (tools/run_tests.py --target wasm64-orbit, tools/wasm_run.mjs); a test needing an effect the target lacks is SKIP;
+#      (tools/run_tests.py --target wasm64-orbit, tools/wasm_run.mjs); a test needing an effect the target lacks is SKIP,
+#      and so is a test whose tasks need to run at the same time or trap (the L0 ends the module with a `wasm64-orbit: <reason>` line);
 #   4. the size budget of runtime/platform/orbit (900 code lines).
 #
 #   tools/test_wasm.sh [--orinc COMPILER]      default build/bootstrap/orin2; needs clang with the WebAssembly backend, wasm-ld
@@ -23,6 +24,11 @@ sh tools/test_wasm_float.sh
 echo "[wasm] compiler support routines (128-bit helpers, round) vs the native compiler and libm"
 mkdir -p build/wasm
 cc -O1 runtime/platform/orbit/tests/i128_test.c -o build/wasm/i128_test -lm && build/wasm/i128_test
+echo "[wasm] every __thread object of the runtime lands in the section orin_tls (the L0 switches tasks by copying that block)"
+clang --target=wasm64-unknown-unknown -mbulk-memory -ffreestanding -nostdlib -O2 -w -Iruntime/platform/orbit/include -Iruntime/core \
+  '-D__thread=__attribute__((section("orin_tls")))' -S runtime/core/orin_runtime.c -o build/wasm/runtime.s
+grep -q 'orin_tls' build/wasm/runtime.s || { echo "test_wasm: the runtime has no orin_tls section" >&2; exit 1; }
+! grep -q '\.t\(bss\|data\)\|thread_local' build/wasm/runtime.s || { echo "test_wasm: the runtime has thread-local data outside orin_tls" >&2; exit 1; }
 echo "[wasm] conformance suites as wasm64-orbit modules"
 python3 tools/run_tests.py --orinc "$ORINC" --target wasm64-orbit --suite all
 echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 900 code lines, counted like tools/verify_platform.sh)"
