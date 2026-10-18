@@ -33,6 +33,8 @@ Not much, and we say so:
   `changes/` fragments); read them before upgrading.
 - **Diagnostic codes** (`E0300`, `W0440`, ...) are stable identifiers. Their **message text** is not: do not
   match on it. `orin check --format=json` gives you the code.
+- **Runtime in 1.0:** 1.0 ships with the C object model next to the Orin runtime core (roadmap D8, decided
+  2026-10-18); deleting the C object model (R3f, ADR-0052) is a 1.x change that no program can observe.
 - **Not stable at all, in any release before or after 1.0:** the runtime ABI, the MIR format
   ([mir.md](mir.md)), and the generated C or LLVM IR. Do not link against them or depend on their shape.
 - Bug fixes are not breaking changes, even if a program that relied on the bug stops compiling. Soundness

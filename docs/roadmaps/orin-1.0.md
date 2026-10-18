@@ -21,7 +21,7 @@ recommendation of every open decision. Henry can still overturn each one; a reve
 | D5 | Amend: 1.0 requires a self-hosted, reproducible, behaviour-stable compiler, not the finished ADR-0015 rewrite |
 | D6 | A short named experimental list; everything else frozen under ADR-0048 |
 | D7 | Raise the L0 budget to 1,400 code lines by ADR, each addition with contracts and a CBMC harness (ADR-0054) |
-| D8 | Do not gate 1.0 on R3f; gate on R3d/R3e being merged |
+| D8 | **Decided 2026-10-18 by the owner:** 1.0 ships without R3f; R3f follows in 1.x. 1.0 gates on R3d/R3e being merged |
 | D9 | Park T6 #98 and T5 #91 until after 1.0 |
 | D10 | `v1.0.0-beta.1` at M4, `-rc.N` at M5, `--prerelease` tied to the tag suffix |
 | D11 | Beta freezes syntax and std names; semantic fixes allowed |
@@ -219,7 +219,7 @@ executor) and moves the 1.0 date behind S1-S4 plus Y1-Y6. That is a decision to 
 | R3c | capability, fs, file, net, process shells over L0 | not started | must precede concurrency WPs that change net/fs shells (C3, C4) or be coordinated with them |
 | R3d | allocator, small-block cache, RC, `make_unique`, destroy | design addendum in progress | ADR-0052 starts it only after the ADR-0038 `runtime/core` work (packed arrays, in-place reuse) is merged; progress.md lists that work as not built, so the gate is open (section 6); hot-path benchmark gate |
 | R3e | task transfer and per-task heap | not started | **owner of the concurrency/runtime seam**; C2 and S1 depend on it |
-| R3f | delete the C object model and `orin_runtime_llvm.c` | not started | until then C and Orin copies coexist; see D8 on whether 1.0 needs R3f |
+| R3f | delete the C object model and `orin_runtime_llvm.c` | not started; **1.x** (D8) | C and Orin copies coexist in 1.0; the release notes name the runtime a build contains |
 
 L0 stays C (ADR-0052 decision 2). With L0 at 999/1,000 code lines, items C1, C3, C6 and S2/S3 need an
 explicit decision (D7): raise the budget by ADR, or remove code first (for example formatting helpers
@@ -302,7 +302,7 @@ language PRs touch: `compiler/check/expr.or`, `compiler/main.or`, `compiler/load
 |---|---|---|---|---|---|
 | M0 | Org move and tap | PR #150, #149 | `.github/`, `install.sh`, `dist/`, README, docs links, `editors/vscode` | owner executes the move | URLs updated, installer works from the new location, tap formula tested on macOS arm64 |
 | M1 | Std API unification + language prerequisites | "Compiler und std-APIs aufräumen" (ADR-0048, ADR-0049); ADR-0040/0034 as new small threads | `library/`, `docs/std-*.md`, `compiler/loader/embedded_*`, `compiler/mcp/apitable.or`; ADR-0040/0034 in `compiler/check`, `compiler/hir` | layout done (yes) | ADR-0048 rows 1-8 merged; ADR-0040 and ADR-0034 implemented or explicitly dropped from the freeze; `orin doc --check` in CI |
-| M2 | Runtime R3 | "Runtime in Orin schreiben" (ADR-0052) | `runtime/core`, new `core` modules, `compiler/` for R3a only | R3a/b merged (#141) | R3a-R3e merged; R3f merged or deferred by D8; benchmark gate holds |
+| M2 | Runtime R3 | "Runtime in Orin schreiben" (ADR-0052) | `runtime/core`, new `core` modules, `compiler/` for R3a only | R3a/b merged (#141) | R3a-R3e merged; R3f deferred to 1.x (D8); benchmark gate holds |
 | M2b | Annotations S3-S6 | "Annotations als Sprachfeature" (ADR-0046) | `compiler/loader`, `compiler/check/userannos.or`, `library/std/meta*`, `std:json` (S6) | S1-S3 merged | S4-S6 merged, `@Json` example only |
 | M3a | Concurrency floor (Gate 1) | new thread, ADR-0017 amendment | `library/std/task*.or`, `library/std/net.or`, `runtime/platform` (L0), `tests/concurrency`, `tests/net`, checker rules for C4 | C0 can start now; C1/C3 need D7 | C0-C5 merged; acceptance campaign green; API reviewed against ADR-0048 |
 | M3b | Scheduler (Gate 2) | same thread, scheduler ADR | `runtime/core` (task parts, after R3e), `runtime/platform`, `library/std/task*.or` | M3a done, R3e merged | S1-S4 merged with measurements, or deferred to 1.x with a note |
@@ -375,7 +375,7 @@ removing existing L0 code, or add a second platform file per target that is not 
 budget. Recommendation: a budget ADR with a stated ceiling (for example 1,400) and a CBMC/contract
 requirement for every addition, because C1 and C3 cannot be built without it. Decide before M3a starts.
 
-**D8. Must R3f (delete the C object model) be complete before 1.0?**
+**D8. Must R3f (delete the C object model) be complete before 1.0?** Decided 2026-10-18 by the owner (Henry): no, the fastest way to 1.0; R3f follows in 1.x.
 Options: required; or required only for R3a-R3e with R3f following in 1.x. Recommendation: do not gate 1.0
 on R3f, but gate on R3d/R3e being merged so the concurrency work is not built twice. The C object model
 being present during 1.0 is a TCB statement ([tcb.md](../tcb.md)), not a user-visible one; the release
