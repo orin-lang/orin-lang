@@ -1,0 +1,7 @@
+import { Host, withProcess, withStdio } from "std:host";
+import { args } from "std:process";
+import { readLine } from "std:io";
+function main(host: Host): void {
+  withProcess(host, p => { console.log(args(p).length.toString()); });
+  withStdio(host, s => { console.log(readLine(s).isSome().toString()); });
+}

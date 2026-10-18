@@ -1,0 +1,5 @@
+import { Host, withProcess } from "std:host";
+import { shell } from "std:io";
+function main(host: Host): void {
+  withProcess(host, p => { console.log(shell(p, "true").isOk().toString()); });
+}
