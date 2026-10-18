@@ -1,7 +1,7 @@
 // exit: 101
 // A task that panics ends its wait too: `joinTimeout` with a long timeout must return promptly (not after 60 s) and, like `join`,
 // trap in the joiner with "task panicked: ...", status 101. (The end of a task is announced by the runtime also on a trap.)
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { seconds } from "std:time";
 import { scopeClockDo, spawn } from "std:task";
 
@@ -12,7 +12,7 @@ function leaf(): int {
 
 function main(host: Host): void {
   console.log("start");
-  useClock(host, clock => {
+  withClock(host, clock => {
     scopeClockDo(clock, (s, c) => {
       const h = spawn(s, () => leaf());
       console.log("joining");
