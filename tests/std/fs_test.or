@@ -154,7 +154,7 @@ function scopeErrors(host: Host): void {
 // withX takes void bodies (ADR-0048); the old use* names stay one release as @Deprecated wrappers (warning W0440, same behaviour).
 @Test
 function voidBodiesAndDeprecatedTwins(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_twins";
     prepare(proc, DIR);
     assertEqBool(withFile(fs, DIR + "/v.txt", Write, f => { f.writeLine("w"); }).isOk(), true, "withFile with a void body");
