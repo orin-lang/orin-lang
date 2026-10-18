@@ -1,0 +1,5 @@
+ok: 3 entries, total 42
+error: line 2: missing '='
+error: line 1: empty key
+error: duplicate key: a
+error: line 2: not an integer: x2

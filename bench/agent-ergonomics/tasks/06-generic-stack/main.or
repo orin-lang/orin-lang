@@ -1,0 +1,62 @@
+// A generic Stack<T> class with a generic method (mapTo) and a bounded generic function.
+class Stack<T> {
+  items: T[] = [];
+
+  push(x: T): void {
+    this.items.push(x);
+  }
+
+  pop(): Option<T> {
+    if (this.items.length == 0) {
+      return None;
+    }
+    return this.items.pop();
+  }
+
+  peek(): Option<T> {
+    return this.items.get(this.items.length - 1);
+  }
+
+  size(): usize {
+    return this.items.length;
+  }
+
+  isEmpty(): bool {
+    return this.items.length == 0;
+  }
+
+  // A generic method: the result stack has another element type.
+  mapTo<U>(f: (x: T) => U): Stack<U> {
+    let out = new Stack<U>();
+    for (const x of this.items) {
+      out.push(f(x));
+    }
+    return out;
+  }
+}
+
+function largestOf<T extends Ord>(s: Stack<T>): Option<T> {
+  let best: Option<T> = None;
+  for (const x of s.items) {
+    if (best.isNone() || x > best.unwrap()) {
+      best = Some(x);
+    }
+  }
+  return best;
+}
+
+function main(): void {
+  let s = new Stack<int>();
+  s.push(3);
+  s.push(9);
+  s.push(4);
+  console.log("size " + s.size().toString());
+  console.log("peek " + s.peek().unwrap().toString());
+  console.log("largest " + largestOf(s).unwrap().toString());
+  const labels = s.mapTo(x => "#" + x.toString());
+  console.log("labels " + labels.items.join(" "));
+  while (!s.isEmpty()) {
+    console.log("pop " + s.pop().unwrap().toString());
+  }
+  console.log("empty pop is none: " + s.pop().isNone().toString());
+}
