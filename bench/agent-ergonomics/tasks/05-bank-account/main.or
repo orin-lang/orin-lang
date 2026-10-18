@@ -1,0 +1,65 @@
+// A bank account with contracts: preconditions, postconditions with old(), and a class invariant.
+import { assertEq } from "std:test";
+
+@Invariant(this.balance >= 0)
+class Account {
+  @Requires(balance >= 0)
+  constructor(public owner: string, public balance: int) {}
+
+  @Requires(amount > 0)
+  @Ensures(this.balance == old(this.balance) + amount)
+  deposit(amount: int): void {
+    this.balance += amount;
+  }
+
+  @Requires(amount > 0 && amount <= this.balance)
+  @Ensures(this.balance == old(this.balance) - amount)
+  withdraw(amount: int): void {
+    this.balance -= amount;
+  }
+
+  // Total function: refuses instead of requiring.
+  @Ensures(result ==> this.balance == old(this.balance) - amount)
+  @Ensures(!result ==> this.balance == old(this.balance))
+  tryWithdraw(amount: int): bool {
+    if (amount <= 0 || amount > this.balance) {
+      return false;
+    }
+    this.balance -= amount;
+    return true;
+  }
+}
+
+type Accounts = { src: Account; dst: Account; };
+
+// Parameters are immutable, so a transfer returns the two changed accounts.
+@Requires(src.balance >= amount && amount > 0)
+@Ensures(result.src.balance == src.balance - amount && result.dst.balance == dst.balance + amount)
+function transfer(src: Account, dst: Account, amount: int): Accounts {
+  let s = src;
+  let d = dst;
+  s.withdraw(amount);
+  d.deposit(amount);
+  return Accounts { src: s, dst: d };
+}
+
+@Test
+function depositAndWithdraw(): void {
+  let a = new Account("ann", 100);
+  a.deposit(50);
+  a.withdraw(30);
+  assertEq(a.balance, 120, "balance");
+}
+
+function main(): void {
+  let a = new Account("ann", 100);
+  let b = new Account("bob", 0);
+  a.deposit(50);
+  console.log(a.owner + " " + a.balance.toString());
+  console.log("withdraw 500: " + a.tryWithdraw(500).toString());
+  console.log("withdraw 20: " + a.tryWithdraw(20).toString());
+  const t = transfer(a, b, 100);
+  a = t.src;
+  b = t.dst;
+  console.log(a.owner + " " + a.balance.toString() + ", " + b.owner + " " + b.balance.toString());
+}
