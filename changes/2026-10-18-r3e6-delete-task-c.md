@@ -1,0 +1,1 @@
+- Runtime: the C task, transfer, lend and monitor functions are deleted from `runtime/core/orin_runtime.c` (452 code lines, ADR-0052 R3e.6); generated code already ran the Orin versions, and the C unit tests now call them through the `--rt-wrappers` stub under the former C names.

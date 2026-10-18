@@ -145,7 +145,7 @@ docs/formal.md "L0 platform layer".
 ## Tasks (ADR-0017 stage 0)
 
 A task is a thread with its own heap: allocation, free lists, counters, the grant table and the file table are thread-local
-(`__thread`), reference counts stay non-atomic, and a value crosses between tasks only through `orin_rt_transfer_put` / `take` (move
+(`__thread`), reference counts stay non-atomic, and a value crosses between tasks only through `transfer.put` / `take` (runtime/core/transfer.or) (move
 if its graph is uniquely owned, else deep copy). `std:task` (Orin) keeps its shared state in L0 **monitors** (a mutex, two condition
 queues, integer words). The platform layer is now thread-safe (the stdout buffer is locked). Details, porting table and assurance:
 [concurrency.md](concurrency.md).

@@ -1,7 +1,8 @@
 /* Task runtime tests (ADR-0017 stage 0): transfer by move or deep copy, task start / join / trap, monitors, grants moving
  * into a task, per-task heaps. Build and run:
  *     cc -g -I runtime/core runtime/core/tests/task_test.c runtime/core/orin_runtime.c runtime/platform/orin_platform.c $(tools/rt_stub.sh build/rt_stub.o) -lm -o build/task_test
- * (tools/rt_stub.sh: the object model is Orin code since ADR-0052 R3d.3; the stub object defines its C names for the C shells)
+ * (tools/rt_stub.sh: the object model, monitors, transfer, lend and tasks are Orin code (ADR-0052 R3d.3, R3e); the stub object defines their C
+ * names, orin_mon_* and orin_rt_*, as wrappers of the Orin functions: the live runtime has no C definition of them since R3e.6)
  * and the same with -fsanitize=thread, and with -fsanitize=address,undefined (tools/test_concurrency.sh does all three).
  * Exits 0 and prints "task_test: N checks passed" on success. */
 #define _GNU_SOURCE
@@ -10,33 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef ORIN_TRANSFER_IN_ORIN
-/* The transfer, lend, thread-count and task operations of runtime/core/{transfer,lend,task}.or (the functions std:task calls) instead of the
- * C ones, through the test wrappers of `--rt-wrappers` (tools/rt_stub.sh; ADR-0052 Addendum B, R3e.2 to R3e.4). The C code of the lend and
- * the grants works on the same slot table. `orin_trap` is the Orin function in every build (the stub defines it), so a task started by the
- * C `orin_rt_task_spawn` also ends on a trap through task.or (it finds its record in the heap block). */
-uint64_t orin_t_transfer_put(OrinObj *box);
-OrinObj *orin_t_transfer_take(uint64_t token);
-void orin_t_transfer_drop(uint64_t token);
-uint64_t orin_t_transfer_count(uint64_t which);
-uint64_t orin_t_lend(OrinObj *box);
-uint64_t orin_t_par_threads(void);
-uint64_t orin_t_task_spawn(uint64_t token);
-uint64_t orin_t_task_join(uint64_t thread);
-OrinObj *orin_t_task_message(void);
-void orin_t_task_watch(uint64_t monitor);
-#define orin_rt_task_spawn orin_t_task_spawn
-#define orin_rt_task_join orin_t_task_join
-#define orin_rt_task_message orin_t_task_message
-#define orin_rt_task_watch orin_t_task_watch
-#define orin_rt_lend orin_t_lend
-#define orin_rt_par_threads orin_t_par_threads
-#define orin_rt_transfer_put orin_t_transfer_put
-#define orin_rt_transfer_take orin_t_transfer_take
-#define orin_rt_transfer_drop orin_t_transfer_drop
-#define orin_rt_transfer_count orin_t_transfer_count
-#endif
 
 static int checks, failures;
 #define CHECK(c)                                                                                \

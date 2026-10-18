@@ -43,8 +43,9 @@ for W in wasm32 wasm64; do
   grep -q 'orin_tls' build/wasm/runtime-$W.s || { echo "test_wasm: the runtime has no orin_tls section ($W)" >&2; exit 1; }
   ! grep -q '\.t\(bss\|data\)\|thread_local' build/wasm/runtime-$W.s || { echo "test_wasm: the runtime has thread-local data outside orin_tls ($W)" >&2; exit 1; }
 done
-echo "[wasm] the RtTask layout orin_platform_thread_exit reads (trapped at 8, msg at 24; fixed-width fields, so the same on both widths) still matches runtime/core/orin_runtime.c"
-grep -Pzq 'uint64_t tok;[^\n]*\n\s*int trapped;[^\n]*\n\s*uint64_t done_mon;[^\n]*\n\s*char msg\[TASK_MSG\];' runtime/core/orin_runtime.c ||
+echo "[wasm] the RtTask layout orin_platform_thread_exit reads (trapped at 8 as a 64-bit word, msg at 24; fixed-width fields, so the same on both widths) still matches runtime/core/task.or"
+grep -q '^const T_TRAPPED: usize = 8;' runtime/core/task.or && grep -q '^const T_MSG: usize = 24;' runtime/core/task.or &&
+  grep -q 'store64(wadd(t, T_TRAPPED), 1);' runtime/core/task.or ||
   { echo "test_wasm: RtTask changed: adapt orin_platform_thread_exit in runtime/platform/orbit/orin_platform_orbit.c" >&2; exit 1; }
 for T in wasm64-orbit wasm32-orbit; do
   echo "[wasm] conformance suites as $T modules"

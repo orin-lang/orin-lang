@@ -108,14 +108,16 @@ delegated grant).
 |---|---|---|---|
 | `std:task` (L2) | scope table and task bookkeeping (`Ledger`, `drain`), join results, panic propagation, channel buffers (`Ring`), `Sender` / `Receiver`, grant delegation, `parallelMap` | **Orin**, `library/std/task.or`, and the pure state machines `Ring` and `Ledger` in `library/std/taskcore.or` | 508 (`task.or` 416 + `taskcore.or` 92), with 8 `@Invariant` and 26 `@Requires` / `@Ensures` |
 | L0 platform | thread create / join / exit / id; monitors (mutex + 2 condition queues + integer words); the runtime lock; the lock of the stdout buffer | **C, forever** (`runtime/platform/orin_platform.{c,h}`) | +243 (platform total 700 of the 1,000 budget). Why a monitor has words: Orin values cannot be shared between tasks, so the state that tasks DO share (the task table of a scope, the buffer of a channel) needs minimal shared memory with the OS's mutual exclusion; integers behind a lock are the smallest such cell (an "atomic counter" with a lock, handle-checked), and they let every line of channel and scope logic stay Orin |
-| runtime, temporary | transfer (`orin_rt_transfer_*`), task start / join / trap (`orin_rt_task_*`, `orin_rt_heap_exit`), forwarders that trap on a failed L0 call (`orin_mon_*`), grant clone / move / adopt (`orin_cap_*`) | **C, until R3** (`runtime/core/orin_runtime.c`, section "tasks and transfer") | 342 (transfer 130, tasks 80, `orin_mon_*` 35, trap forwarder 8, grants 70, rest 19), plus about 30 changed lines for per-task state |
+| runtime, ported | transfer, lend, task start / join / trap, heap retire, the monitor operations that trap on a failed L0 call | **Orin since ADR-0052 R3e.1 to R3e.4; the C was deleted in R3e.6** (`runtime/core/{sync,transfer,lend,task}.or`) | 699 code lines of Orin; the 452 C lines of the former section are gone |
+| runtime, temporary | grant clone / move / adopt (`orin_cap_*`) | **C, until R3c** (`runtime/core/orin_runtime.c`, section "grants moving into a task") | 75 |
 
-Everything in the third row needs the object model (reference counts, struct / array / string layout, thread-local free
-lists) and therefore cannot be Orin before R3. It is one interface, declared in one block of `runtime/core/orin_runtime.h`
-("tasks"). Each function maps 1:1 onto a planned Orin core-dialect function (spec 19 R3; the core dialect has raw
-addresses, load / store, `size_of` and header access, and calls L0 only through the closed list):
+**Porting status: done except the grants.** The transfer, lend, task, trap, heap-retire and monitor rows of the table below were ported to Orin in
+ADR-0052 R3e.1 to R3e.4 and their C deleted in R3e.6; the "planned" column is now the implementation (`runtime/core/{sync,transfer,lend,task}.or`;
+`graph_unique`, `copy_node`, `deep_copy` and the slot table live in `transfer.or`). The C names survive only as the test wrappers of
+`--rt-wrappers` that the C unit tests call (`orin_rt_*`, `orin_mon_*`, declared in `runtime/core/orin_runtime.h`). The grant rows
+(`orin_cap_clone` / `move` / `adopt_*`) stay C until R3c (R3e.5). The table keeps the original design text:
 
-| C function (runtime, temporary) | What it does | Planned R3 Orin function (module `core/task`, `core = true`) |
+| C function (former; **done**, now Orin) | What it does | Orin function (module `core/task` and neighbours) |
 |---|---|---|
 | `orin_rt_transfer_put(box)` | detach the value of a one-field record: move if its graph is uniquely owned, deep copy otherwise; publish it in a slot; return a token | `core.transfer.put(box: Obj): usize` (uses `core.rc.isUnique`, `core.copy.deep`) |
 | `orin_rt_transfer_take(tok)` / `orin_rt_transfer_drop(tok)` | claim the box of a token exactly once (stale token: trap); drop frees it | `core.transfer.take` / `core.transfer.drop` |

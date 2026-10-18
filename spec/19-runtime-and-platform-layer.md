@@ -260,7 +260,7 @@ separator is raised through `process.exit(101)` after printing the same message.
     | 512 | 272 | `sb[17]` (`{head, n}` pairs, 16 bytes each) | `sb_list`, `sb_cnt` (u32) | small-block cache by 16-byte class 0..16 (`SB_MAX` 256): list head @+0, length @+8, cap `SB_CAP` = 2^15 |
     | 784 | 240 | reserved | | up to 1024 bytes (128 words) |
 
-    **Not moved (they stay `static __thread` in C until R3e; the census tables stay C, R3d.5):** `t_sites`, `t_pairs`, `t_calls` (census), `g_grants`, `g_files`, `t_task`, `t_joined_msg`, `orin_site_cur`, `orin_site_par`.
+    **Not moved (they stay `static __thread` in C until R3e; the census tables stay C, R3d.5):** `t_sites`, `t_pairs`, `t_calls` (census), `g_grants`, `g_files`, `orin_site_cur`, `orin_site_par`.
     Offsets do not depend on the build configuration (the lists and counters exist unused under `-DORIN_NO_FREELIST` or without `ORIN_STATS_ENABLED`) and are pinned by `_Static_assert`s in `runtime/core/orin_runtime.h`.
     `orin_stats` is now `#define orin_stats (orin_heap.stats)`, so inline code and generated C are unchanged; the block is `extern __thread OrinHeap orin_heap` (local-exec as before), `heapBase()` is its address (the C backend emits `&orin_heap`, the LLVM declaration is `[128 x i64]`).
 
@@ -271,9 +271,21 @@ separator is raised through `process.exit(101)` after printing the same message.
     the process trap (the main thread only). Everything but the trap line is read and written only between `plat(RUNTIME_LOCK)` and
     `plat(RUNTIME_UNLOCK)`. `runtime/core/sync.or` holds the eleven monitor operations of `std:task` (`monNew` .. `monWaitUntil`, one `plat`
     call plus the failure test each); the backends call them in place of the C forwarders `orin_mon_*` through `l1Task` in `compiler/mir/rt.or`
-    (entries 30 to 55 are numbered for all of R3e; a missing entry falls back to the C function of the same operation, so the C stays in the live
-    runtime until R3e.6). `--rt-wrappers` (a `compile` flag, used by `tools/rt_stub.sh`) defines the C-named test wrappers of the entries
-    (`rtTestWraps`, empty until R3e.6).
+    (entries 30 to 55 are numbered for all of R3e). `--rt-wrappers` (a `compile` flag, used by `tools/rt_stub.sh`) defines the C-named test
+    wrappers of the entries (`rtTestWraps`).
+  - **R3e.2 to R3e.4 and R3e.6 the rest of the task interface (done, ADR-0052 Addendum B).** `transfer.or` (slot table, tokens, move or deep
+    copy, the void box), `lend.or` (the pin walk) and `task.or` (`RtTask`, spawn / main / join / message / watch, `heapRetire`, `orin_trap` and
+    `trapStr`, `parThreads`) replace the C functions for generated code. R3e.6 deleted the C: the "tasks and transfer" section of
+    `runtime/core/orin_runtime.c` (`orin_rt_transfer_*`, `orin_rt_lend`, `orin_rt_par_threads`, `orin_rt_task_*`, `orin_rt_trap_str`,
+    `orin_rt_heap_exit`, `orin_mon_*`, `t_task`, the slot table `g_tr*`, the pin helpers, `TrSlot` / `RtTask`) and the helpers only they used
+    (`stats_add`, `xrealloc`, `sb_drain`, the free-list macros): 452 of 1,732 code lines. The live runtime has no C definition of these names any
+    more; `rtTestWraps` now carries them (`orin_mon_*` and `orin_rt_*`, declared in `orin_runtime.h`), so `runtime/core/tests/task_test.c`
+    and its stub (`tools/rt_stub.sh`) are unchanged in what they call and run the 184 checks against the Orin functions. What stays C: the
+    grant table and its flight table `g_gf*` (`orin_cap_clone` / `move` / `adopt_*`, R3e.5 waits for R3c), the file and network buffers, and
+    the three hooks `task.heapRetire` uses for them (`HK_REVOKE_GRANTS`, `HK_CLOSE_FILES`, `HK_FREE_NETBUF`), the fold totals and the census
+    fold (`HK_FOLD_*`, `HK_SITE_FOLD`). A program without `$rt` (`--c-builtins`, the hand-built MIR of the emitter tests) still emits the call
+    of the C name (`taskOpC`, the `l1Task` fallback); the `--c-builtins` world links the frozen snapshot `bootstrap/seed/runtime/`, which
+    keeps its C copies.
 
 
   - **R3b strings and numbers (partly done).** `parseI8` .. `parseUsize` moved (`strParseIntK`, one more slot in
