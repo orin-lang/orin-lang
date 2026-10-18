@@ -2,7 +2,7 @@
 //
 // Input comes from std:io (stdin) and arguments from std:process; there is no file access, so the program holds no
 // file-system authority at all (its host policy could deny `fs` and it would not notice).
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { ProcessGrant, args, exit } from "std:process";
 import { StdioGrant, readBytes } from "std:io";
 import { Counts, emptyCounts, feedText } from "./count";
@@ -53,7 +53,7 @@ function showHelp(): int {
 }
 
 function main(host: Host): void {
-  useHost(
+  withHost(
     host,
     (fs, proc, stdio, clock) => {
       const status = run(proc, stdio);

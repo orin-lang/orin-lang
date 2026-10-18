@@ -7,7 +7,7 @@
 //
 // Timing is wall-clock milliseconds from the clock grant. On a machine with fewer free cores than P the speedup is
 // correspondingly smaller (measured numbers: docs/concurrency.md).
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { args } from "std:process";
 import { nowMillis } from "std:time";
 import { parallelMap } from "std:task";
@@ -31,7 +31,7 @@ function total(xs: int[]): int {
 }
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const a = args(proc);
     const n = a.length > 0 ? parseInt(a[0]).unwrapOr(3000000) : 3000000;
     const p = a.length > 1 ? parseInt(a[1]).unwrapOr(4) : 4;

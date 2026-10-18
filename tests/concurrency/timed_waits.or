@@ -8,7 +8,7 @@
 //  4. sleep: lower bound of its duration; sleepUntil of a past deadline returns at once;
 //  5. joinTimeout: times out on a task that is still blocked, the handle stays valid, a later join returns the result;
 //     joinTimeout of a task that has ended returns the result.
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { ClockGrant, monotonicNow, milliseconds, seconds, Deadline, MonotonicInstant } from "std:time";
 import { scopeClock, spawn, spawnDo, spawnClock, channel, select, selectTimeout, sleep, sleepUntil, taskErrorMessage, TaskError, Selected } from "std:task";
 
@@ -178,7 +178,7 @@ function testJoin(clock: ClockGrant): void {
 }
 
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     testRecv(clock);
     testSend(clock);
     testSelect(clock);

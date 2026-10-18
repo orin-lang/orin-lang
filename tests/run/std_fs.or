@@ -1,4 +1,4 @@
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
 import { readFile, writeFile, exists, FsError, fsErrorMessage } from "std:fs";
 
@@ -11,7 +11,7 @@ function roundtrip(fs: FsGrant, path: string, data: string): Result<string, FsEr
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   console.log(writeFile(fs, PATH, "alpha\nbeta").isOk().toString());

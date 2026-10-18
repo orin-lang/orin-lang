@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
+#include <sys/resource.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -1033,6 +1034,24 @@ static void test_wake(void) {
     CHECK(orin_platform_tcp_accept(&ln, 30, 1, &junk, peer, sizeof peer, &pp) == ORIN_PLATFORM_NET_TIMEOUT);
     CHECK(orin_platform_stream_recv(&cs, area, 16, 30, &n) == ORIN_PLATFORM_NET_TIMEOUT);
     CHECK(orin_platform_wake_close(u) == 0);
+
+    /* a set token wins over a resource failure: with no descriptor left for a wake descriptor that was never made (a child source
+     * never polled before), a set ancestor still ends the wait with NET_CANCELLED, never EMFILE (what a task would report as Os) */
+    {
+        int64_t par = orin_platform_wake_open(), kid = orin_platform_wake_open();
+        CHECK(par > 0 && kid > 0 && orin_platform_wake_signal(par) == 1);
+        struct rlimit old, low;
+        int probe = dup(0);
+        CHECK(probe >= 0 && getrlimit(RLIMIT_NOFILE, &old) == 0);
+        low = old, low.rlim_cur = (rlim_t)probe; /* descriptor number `probe` and above cannot be made */
+        close(probe);
+        CHECK(setrlimit(RLIMIT_NOFILE, &low) == 0);
+        CHECK(orin_platform_stream_recv(&cs, area, 16, 1000, &n) == ORIN_PLATFORM_NET_CANCELLED && n == 0);
+        CHECK(orin_platform_stream_send(&cs, "x", 1, 1000, &n) == ORIN_PLATFORM_NET_CANCELLED && n == 0);
+        CHECK(orin_platform_tcp_accept(&ln, 1000, 1, &junk, peer, sizeof peer, &pp) == ORIN_PLATFORM_NET_CANCELLED);
+        CHECK(setrlimit(RLIMIT_NOFILE, &old) == 0);
+        CHECK(orin_platform_wake_close(kid) == 0 && orin_platform_wake_close(par) == 0);
+    }
     CHECK(orin_platform_net_close(&cs) == 0 && orin_platform_net_close(&as) == 0 && orin_platform_net_close(&ln) == 0);
     CHECK(open_fds() == fds); /* the eventfds are closed with their tokens, and no socket leaked */
 }

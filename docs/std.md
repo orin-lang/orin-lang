@@ -30,8 +30,8 @@ The examples below use the namespace form for bytes, encoding, html, path, json,
 | `std:html` | Orin, `library/std/html.or` | `Html` (`@Sealed`), `escape`, `safeUrl`, `escapeUrl`, `renderAll`, `trustHtml`, `fromText`, `fragment`, `render`, `renderDocument`: HTML escaping and the URL-scheme rule; the OX provider `ox()` (`import ox from "std:html";`, ADR-0044; **experimental**, with OX, see stability.md); below, "std:html" |
 | `std:ox` | Orin, `library/std/ox.or` (types only) | `Markup<R>`, `Components<R>`, `AttrRule`, `Escape`: the protocol an OX provider's `ox()` returns (ADR-0044, docs/ox.md; **experimental**); below, "std:ox" |
 | `std:meta` | Orin, `library/std/meta.or` (re-exports `metacore.or`, `metajson.or`) | **experimental, ADR-0046 slice S3:** the pure processor interface: `Input` (annotated declarations, types, constants), the `Output` builder tree (`MDecl`/`MStmt`/`MExpr`/`MType`), `fresh`/`NameGen` hygiene and the stable JSON encoding of both; **experimental** (listed in [stability.md](stability.md)); the compiler already runs processors written against it (`orin expand`, `.gen` companion modules, ADR-0046 S4-S6); [API](std-meta.md) |
-| `std:taskcore` | Orin, `library/std/taskcore.or` | the pure bookkeeping of `std:task` (`Ring` = one channel buffer, `Ledger` = one scope's task table), invariants and contracts, tested and mutated without threads; import `std:task` |
-| `std:task` | Orin, `library/std/task.or` over L0 thread / monitor primitives and a small temporary C interface (`std:fsraw`, internal) | **Gate 1 API frozen at the std freeze, anything beyond it experimental** (stability.md; today still stage 0, ADR-0017 Addendum A): `scope`, `spawn`, `TaskHandle.join`, bounded channels, grant delegation, `parallelMap`, the work-stealing fork/join pool `forkJoin` / `forkJoinUntil` / `parallelism`; see docs/concurrency.md |
+| `std:task/internal` | Orin, `library/std/task_internal.or` | the pure bookkeeping of `std:task` (`Ring` = one channel buffer, `Ledger` = one scope's task table), invariants and contracts, tested and mutated without threads; import `std:task` |
+| `std:task` | Orin, `library/std/task.or` over L0 thread / monitor primitives and a small temporary C interface (`std:fsraw`, internal) | **Gate 1 API frozen at the std freeze, anything beyond it experimental** (stability.md; today still stage 0, ADR-0017 Addendum A; follows ADR-0048): `scope`, `Scope.spawn`, `TaskHandle.join`, bounded channels (`Sender.send` returns `Result<void, TaskError>`; the handle fields of `Sender`, `Receiver`, `Scope` and `TaskHandle` are private), grant delegation, the work-stealing fork/join pool `forkJoin` / `forkJoinUntil` / `parallelism`; `parallelMap` is deprecated for `xs.parallel().map(f)`; every item carries a signature-first doc comment in the source; see docs/concurrency.md |
 | `parallel()` on arrays | Orin prelude (`library/collections/parallel.or`, loaded only for a file that calls it) over `std:task`'s pool | parallel array pipelines (ADR-0039): `map`, `filter`, `reduce`, `some`, `every`, `find`, `findIndex`, `toArray`; below, "Parallel pipelines" |
 | `std:test` | Orin, `library/std/test.or` | done (assertions for `@Test`, ADR-0024) |
 | `std:math` | Orin, `library/collections/math.or` (to move to `library/std/`) | done (ADR-0018) |
@@ -62,15 +62,16 @@ MIR verifier re-checks it). Grants come from scope functions, are revoked when t
 to every std I/O function as the first argument:
 
 ```
-useHost(host, (fs, proc, stdio, clock) => ...)   // all four root grants of the host policy (withHost returns a value)
-useFs(host, fs => ...)  useProcess(host, proc => ...)  useStdio(host, stdio => ...)  useClock(host, clock => ...)
+withHost(host, (fs, proc, stdio, clock) => ...)   // all four root grants of the host policy; returns the body's value (T may be void)
+withFs(host, fs => ...)  withProcess(host, proc => ...)  withStdio(host, stdio => ...)  withClock(host, clock => ...)
 useUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/ (also withUnder<T>); never widens
 useReadOnly(fs, ro => ...)         // cannot create / write / truncate
-useArgsOnly(proc, p => ...)        // `args` but no `shell`
+withArgsOnly(proc, p => ...)       // `args` but no `shell`; returns the body's value (T may be void)
+// useHost, useFs, useProcess, useStdio, useClock, useNet and useArgsOnly are deprecated wrappers (ADR-0048 section 6)
 ```
 
 Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `shell`), `StdioGrant` (`std:io`),
-`ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `useNet(host, ...)`). **Ambient, no grant:**
+`ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `withNet(host, ...)`). **Ambient, no grant:**
 `console.log`, `console.error` and `exit` (a library without grants can therefore still write to stdout / stderr: see
 ADR-0027 D5). **Host policy:** by default every grant is what the OS process has; `ORIN_DENY=fs,process,...` (families
 `fs process stdio clock net all`) denies families: an operation that returns a `Result` returns `Err("... denied by
@@ -78,7 +79,7 @@ the host policy (ORIN_DENY)")`, every other operation traps; a malformed `ORIN_D
 narrowed `FsGrant` compares absolute normalised paths (`..`, `.`, `//`) and resolved symbolic links, and the opened
 path is the checked one; relative paths resolve against the working directory (a filter, not a chroot). Not covered:
 races (TOCTOU), hard links and mounts, `shell` (a spawned command is outside every grant), native code. A closure
-cannot capture a grant: take all you need with `useHost`, pass grants as arguments, or use `withFileFs`.
+cannot capture a grant: take all you need with `withHost`, pass grants as arguments, or use `withFileFs`.
 
 ## std:fs (UNSTABLE: every function takes an `FsGrant` first, ADR-0027)
 
@@ -164,7 +165,7 @@ U+FFFD); raw control characters in strings are errors; duplicate keys are kept a
 
 [Monotonic observations and checked deadline helpers](std-time-monotonic.md) are separate from the wall-clock API below. Sleep remains deferred.
 
-`nowMillis(clock: ClockGrant): int` (wall clock, ms since the Unix epoch, not monotonic; the grant comes from `useClock` / `useHost` of `std:host`). Durations are explicit-unit
+`nowMillis(clock: ClockGrant): int` (wall clock, ms since the Unix epoch, not monotonic; the grant comes from `withClock` / `withHost` of `std:host`). Durations are explicit-unit
 records `Duration { millis }`: `milliseconds/seconds/minutes/hours/days(n)`, `toMillis`, `toSeconds`,
 `addDuration`, `durationBetween(start, end)`, `instantAfter(instant, d)` (`between` and `plus` are deprecated aliases), `formatDuration` ("1h 2m 3s 5ms"). UTC calendar
 (proleptic Gregorian, no zones): `fromMillis(instant): DateTime`, `toInstant(dt): Option<int>` (validates
@@ -691,12 +692,12 @@ checked at run time and by tests; `orin verify --contracts` does not cover strin
 ## std:net (ADR-0033): blocking TCP
 
 ```ts
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { useListener, useAccepted, useConnection, useListen, useConnect, recv, sendAll, StreamReader, resolve } from "std:net";
 
 function main(host: Host): void {
-  useNet(host, net => {                                    // the root NetGrant (ORIN_DENY=net: every operation refused)
+  withNet(host, net => {                                    // the root NetGrant (ORIN_DENY=net: every operation refused)
     useListen(net, "127.0.0.1", 8080, l => {               // narrowed: may listen on exactly 127.0.0.1:8080
       useListener(l, "127.0.0.1", 8080, 64, ln => {        // Err(NetError) if refused, in use, ...
         useAccepted(ln, milliseconds(1000), (s, peer) => { // Err(Timeout) if nobody came within 1 s
@@ -714,7 +715,7 @@ function main(host: Host): void {
 
 | Function | Meaning |
 |---|---|
-| `useNet / withNet(host, body)` (`std:host`) | the root `NetGrant` (may listen and connect anywhere the host policy allows) |
+| `withNet(host, body)` (`useNet` deprecated) (`std:host`) | the root `NetGrant` (may listen and connect anywhere the host policy allows) |
 | `useListen / withListen(net, addr, port, body)` | narrowed grant: listen on exactly `addr:port` (an address literal; port 0 = any) |
 | `useConnect / withConnect(net, hostPattern, portLo, portHi, body)` | narrowed grant: connect to / resolve names matching `"*"`, `"*.sfx"` or an exact text, on those ports |
 | `useListener / withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
@@ -936,7 +937,7 @@ above; a pool lives for one call (worker threads are started per operation, abou
 * `Graph<T>` has no edge weights and needs a caller-supplied tag.
 * Diagnostics print std types with their unit name (`$stdlib/graph.GraphId<int>`).
 * `std:clock` is importable but internal; so is `std:fsraw` (the raw open/close and grant primitives behind `std:fs` and `std:host`; only library code may import it).
-* `std:collections/internal` and `std:bytes/internal` (files `collections_internal.or`, `bytes_internal.or`) hold the contract helpers (`allTrue`, `isStrictlyIncreasing`, `isMinHeap4`, the B-tree shape and order checks, `allBytes`, ...) and the generated B-tree node types behind the public modules (ADR-0048 rule 7.3). They are not API and can change in any release; user code does not import them. `std:taskcore`, `std:metacore` and `std:metajson` are internal in the same way (use `std:task` and `std:meta`). Importing any of them from a file outside the std library is warning W0493 (the std library itself imports them without a warning).
+* `std:collections/internal` and `std:bytes/internal` (files `collections_internal.or`, `bytes_internal.or`) hold the contract helpers (`allTrue`, `isStrictlyIncreasing`, `isMinHeap4`, the B-tree shape and order checks, `allBytes`, ...) and the generated B-tree node types behind the public modules (ADR-0048 rule 7.3). They are not API and can change in any release; user code does not import them. `std:task/internal`, `std:metacore` and `std:metajson` are internal in the same way (use `std:task` and `std:meta`). Importing any of them from a file outside the std library is warning W0493 (the std library itself imports them without a warning).
 * `std:fs` streaming: text/byte-string API without seek, no directory operations, at most 256 open files.
 
 ## Bounded shell execution (unstable)
@@ -956,11 +957,11 @@ checks; O(command bytes) allocation plus a child process and its process group.
 Output is inherited, not captured or size-limited by this primitive.
 
 ```typescript
-import { Host, useProcess } from "std:host";
+import { Host, withProcess } from "std:host";
 import { shellTimeout, processErrorMessage } from "std:io";
 import { seconds } from "std:time";
 function main(host: Host): void {
-  useProcess(host, proc => {
+  withProcess(host, proc => {
     const r = shellTimeout(proc, "printf hello", seconds(1));
     if (r.isOk()) { console.log(r.unwrap().toString()); } // "0"
     else { console.log(processErrorMessage(r.unwrapErr())); } // e.g. "command timed out: printf hello"
