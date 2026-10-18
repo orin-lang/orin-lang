@@ -38,7 +38,7 @@ import { FnCtx, newClosureCtx } from "./fnctx";
 import { builtinSig, methodSig, grantNeeded } from "./builtins";
 import { hasResource } from "./resources";
 import {
-  convMethodKind, convExpr, arithMethodMode, arithExpr, parseFnKind, parseExpr,
+  convMethodKind, convExpr, arithMethodMode, arithExpr, bitMethodMode, bitExpr, parseFnKind, parseExpr,
 } from "./ints";
 import {
   TScope, resolveType, resolveSig, aliasType, instType, instFunc, indexOfName,
@@ -3593,6 +3593,18 @@ export class ExprChecker {
     if (mode >= 0) {
       const a = this.argsExpect(span, "method `" + n + "`", args, [b.ty])?;
       return Ok(Some(arithExpr(mode, b, a[0], span)));
+    }
+    const bit = bitMethodMode(n);
+    if (bit >= 0) {
+      if (bit == 3) {
+        const none3: Type[] = [];
+        this.argsExpect(span, "method `" + n + "`", args, none3)?;
+        const noArg: Option<HExpr> = None;
+        return Ok(Some(bitExpr(bit, b, noArg, span)));
+      }
+      const want = bit >= 4 ? TyInt : b.ty;
+      const a = this.argsExpect(span, "method `" + n + "`", args, [want])?;
+      return Ok(Some(bitExpr(bit, b, Some(a[0]), span)));
     }
     const none2: Option<HExpr> = None;
     return Ok(none2);

@@ -394,6 +394,7 @@ export function builtinC(op: Builtin, a: string[], rt: MType, syms: CSymbols): s
     BFloatIsNaN => "((int64_t)(!!__builtin_isnan(" + a[0] + ")))",
     BFloatIsFinite => "((int64_t)(!!__builtin_isfinite(" + a[0] + ")))",
     BIntId => "(" + a[0] + ")",
+    BIntBit => "orinc_bit(" + a[0] + ", " + a[1] + ", " + a[2] + ", " + a[3] + ")",
     BTask(k) => taskC(syms, k, a),
     BCore(k) => coreC(k, a),
     _ => "?",

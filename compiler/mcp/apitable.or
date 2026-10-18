@@ -247,6 +247,14 @@ function table(): Api[] {
       "x.wrappingAdd(100) // 44 for x: u8 = 200 (x + 100 would trap)",
     ),
     api(
+      "int.bitAnd",
+      "bitAnd(b: T): T  (also bitOr, bitXor; bitNot(): T; shl(n: int): T, shr(n: int): T, rotl(n: int): T, rotr(n: int): T; receiver any integer type T)",
+      "never fails, except shl and shr, which trap unless 0 <= n < the width of T; the result stays in the range of T",
+      "O(1)",
+      "none",
+      "x.rotr(7) // 0xc1 for x: u8 = 0x83; x.shl(4) // 0x30 for x: u8 = 0x83",
+    ),
+    api(
       "int.saturatingAdd",
       "saturatingAdd(b: T): T  (also saturatingSub, saturatingMul)",
       "never fails (clamps to the type's range)",

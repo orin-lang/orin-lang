@@ -1,0 +1,6 @@
+// exit: 101
+// stderr: trap: shift count out of range
+function main(): void {
+  const a: u32 = 1;
+  console.log(a.shl(32).toString());
+}

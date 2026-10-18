@@ -33,6 +33,49 @@ function litOf(o: Operand): int {
 }
 
 // SSA value of operand `n` of the instruction named `p` (a load result for locals).
+// Width in bits of the integer kind (0 i8, 1 i16, 2 i32, 3 i64, 4 isize, 5 u8, 6 u16, 7 u32, 8 u64, 9 usize).
+function bitWidth(kind: int): int {
+  if (kind == 0 || kind == 5) {
+    return 8;
+  }
+  if (kind == 1 || kind == 6) {
+    return 16;
+  }
+  if (kind == 2 || kind == 7) {
+    return 32;
+  }
+  return 64;
+}
+
+// The mask of the low `w` bits as an LLVM i64 literal.
+function bitMask(w: int): string {
+  if (w == 8) {
+    return "255";
+  }
+  if (w == 16) {
+    return "65535";
+  }
+  if (w == 32) {
+    return "4294967295";
+  }
+  return "-1";
+}
+
+// `text` defines the i64 value `x`; reduce it to the kind: sign-extend the low w bits, or clear the bits above them.
+function bitCanon(p: string, w: int, sg: bool, text: string, x: string): R {
+  if (w == 64) {
+    return R { text: text, val: x };
+  }
+  if (sg) {
+    const sh = (64 - w).toString();
+    return R {
+      text: text + "  " + p + "k1 = shl i64 " + x + ", " + sh + "\n  " + p + "k2 = ashr i64 " + p + "k1, " + sh + "\n",
+      val: p + "k2",
+    };
+  }
+  return R { text: text + "  " + p + "k2 = and i64 " + x + ", " + bitMask(w) + "\n", val: p + "k2" };
+}
+
 function ov(p: string, n: usize, o: Operand): string {
   return match (o) {
     OLocal(_) => p + "o" + u(n),
@@ -785,6 +828,54 @@ export class LlvmFunctionEmitter {
         };
   }
 
+  // The bit operations of `BIntBit(mode, a, b, kind)`, inline (the same results as `orinc_bit` of the C backend; mode and kind are
+  // literals). Values are the 64-bit patterns: sign-extended for the signed kinds, zero-extended for u8 / u16 / u32.
+  private bitR(p: string, args: Operand[]): R {
+    const mode = match (args[0]) {
+      OInt(v) => v,
+      _ => 0,
+    };
+    const kind = match (args[3]) {
+      OInt(v) => v,
+      _ => 3,
+    };
+    const a = ov(p, 1, args[1]);
+    const b = ov(p, 2, args[2]);
+    const w = bitWidth(kind);
+    const sg = kind <= 4;
+    const mask = bitMask(w);
+    const lim = (w - 1).toString();
+    if (mode == 0) {
+      return R { text: "  " + p + "r = and i64 " + a + ", " + b + "\n", val: p + "r" };
+    }
+    if (mode == 1) {
+      return R { text: "  " + p + "r = or i64 " + a + ", " + b + "\n", val: p + "r" };
+    }
+    if (mode == 2) {
+      return R { text: "  " + p + "r = xor i64 " + a + ", " + b + "\n", val: p + "r" };
+    }
+    if (mode == 3) {
+      return bitCanon(p, w, sg, "  " + p + "n = xor i64 " + a + ", -1\n", p + "n");
+    }
+    if (mode == 4 || mode == 5) {
+      const chk = this.guardInline(p + "s", "  " + p + "sc = icmp ugt i64 " + b + ", " + lim + "\n", p + "sc", 11);
+      if (mode == 5) {
+        return R { text: chk + "  " + p + "r = " + (sg ? "ashr" : "lshr") + " i64 " + a + ", " + b + "\n", val: p + "r" };
+      }
+      return bitCanon(p, w, sg, chk + "  " + p + "l = shl i64 " + a + ", " + b + "\n", p + "l");
+    }
+    // rotations: the count modulo w (a power of two); the pattern is the low w bits of a
+    const u = w == 64 ? a : p + "u";
+    const pre = w == 64 ? "" : "  " + p + "u = and i64 " + a + ", " + mask + "\n";
+    const n = "  " + p + "n = and i64 " + b + ", " + lim + "\n  " + p + "m0 = sub i64 " + w.toString() + ", " + p + "n\n  "
+        + p + "m = and i64 " + p + "m0, " + lim + "\n";
+    const first = mode == 6 ? "shl" : "lshr";
+    const second = mode == 6 ? "lshr" : "shl";
+    const body = "  " + p + "x1 = " + first + " i64 " + u + ", " + p + "n\n  " + p + "x2 = " + second + " i64 " + u + ", " + p + "m\n  "
+        + p + "x = or i64 " + p + "x1, " + p + "x2\n";
+    return bitCanon(p, w, sg, pre + n + body, p + "x");
+  }
+
   private guardR(p: string, cond: string, msg: usize, val: string): R {
     return R { text: this.guardInline(p, cond, p + "c", msg), val: val };
   }
@@ -920,6 +1011,7 @@ export class LlvmFunctionEmitter {
       },
       BF32ToFloat => R { text: "", val: a0 },
       BIntId => R { text: "", val: a0 },
+      BIntBit => this.bitR(p, args),
       BCore(k) => this.coreR(p, k, args),
       BFloatFloor => R {
         text: "  " + r + " = call double @llvm.floor.f64(double " + a0 + ")\n",

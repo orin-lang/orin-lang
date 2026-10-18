@@ -181,6 +181,7 @@ export function builtinName(b: Builtin): string {
     BIntId => "int.id",
     BIntOp => "int.op",
     BIntChk => "int.chk",
+    BIntBit => "int.bit",
     BParseIntK => "parseIntK"
   };
 }
