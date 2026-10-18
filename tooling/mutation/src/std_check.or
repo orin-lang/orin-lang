@@ -44,7 +44,7 @@ export const FAIL_TIMEOUT: int = -2;
 // The std modules a mutant directory holds (copied, imports rewritten); `net` is not among them. `x_internal` is the file
 // of `std:x/internal` (ADR-0048 rule 7.3); mutants of its code have the target `x_internal` and run the tests of `x`.
 export function stdModules(): string[] {
-  return ["bytes", "bytes_internal", "encoding", "utf8", "collections", "collections_internal", "http", "text", "html", "ox", "taskcore"];
+  return ["bytes", "bytes_internal", "encoding", "utf8", "collections", "collections_internal", "http", "text", "html", "ox", "task_internal"];
 }
 
 // Further test files of a module that also run against every mutant.
@@ -70,6 +70,9 @@ export function isEarlyExit(target: string): bool {
 export function testFiles(target: string): string[] {
   if (target == "http") {
     return ["http_reject_test", "http_test", "http_split_test", "http_prop_test"];
+  }
+  if (target == "task_internal") {
+    return ["task_internal_test"];  // the tests of `std:task` itself need threads and the whole module; the mutated code is the pure part
   }
   const base = target.endsWith("_internal") ? target.substring(0, target.length - 9) : target;
   return [base + "_test"].concat(extraTests(target));
@@ -108,7 +111,9 @@ export function dirName(m: StdMutant): string {
 
 // `"std:bytes"` -> `"./bytes"` for every module of the mutant directory.
 export function rewriteImports(text: string): string {
-  let s = text;
+  // `task_internal.or` imports the transfer counter of `std:fsraw` for its test hooks; mutant directories are user code and may not
+  // import `std:fsraw`, and the mutated bookkeeping does not use the counter, so it is replaced by a stub.
+  let s = replaceAll(text, "import { transferCount } from \"std:fsraw\";", "function transferCount(which: usize): usize { return 0; }");
   for (const m of stdModules()) {
     s = replaceAll(s, "\"std:" + m.split("_").join("/") + "\"", "\"./" + m + "\"");
   }
