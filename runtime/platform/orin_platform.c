@@ -27,7 +27,7 @@ _Static_assert(ORIN_PLATFORM_EINVAL == EINVAL, "EINVAL value");
 _Static_assert(ORIN_PLATFORM_ENOMEM == ENOMEM, "ENOMEM value");
 _Static_assert(ORIN_PLATFORM_EBUSY == EBUSY, "EBUSY value");
 
-#include "orin_platform_pure.h" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split */
+#include "orin_platform_pure.h" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split, net_ok / net_scope / net_narrow */
 
 /* ---------------------------------------------------------------- process */
 
@@ -727,60 +727,6 @@ int64_t orin_platform_monotonic_millis(void) {
     if (clock_gettime(CLOCK_MONOTONIC, &ts) || ts.tv_sec < 0 || ts.tv_nsec < 0 || ts.tv_nsec >= 1000000000) return -1;
     if ((uint64_t)ts.tv_sec > (uint64_t)(INT64_MAX - ts.tv_nsec / 1000000) / 1000) return -1;
     return (int64_t)ts.tv_sec * 1000 + (int64_t)(ts.tv_nsec / 1000000);
-}
-
-static int net_ok(const orin_platform_net *h, unsigned kind) { /* identity, liveness and policy: 0 or EPERM */
-    int live = h && h->magic == ORIN_PLATFORM_NET_MAGIC && h->kind == kind && !h->deny;
-    return live && (kind == ORIN_PLATFORM_NET_GRANT ? h->can != 0 : h->fd >= 0) ? 0 : ORIN_PLATFORM_EPERM;
-}
-
-static int ieq(const char *a, const char *b, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        char x = a[i], y = b[i];
-        if (x >= 'A' && x <= 'Z') x = (char)(x + 32);
-        if (y >= 'A' && y <= 'Z') y = (char)(y + 32);
-        if (x != y) return 0;
-    }
-    return 1;
-}
-
-/* Does pattern p cover s? s is a name or itself a "*.sfx" pattern (then every name s covers must be covered). */
-static int net_cover(const char *p, size_t pl, const char *s, size_t sl) {
-    int sw = sl >= 2 && s[0] == '*' && s[1] == '.';
-    if (pl == 1 && p[0] == '*') return 1;
-    if (pl >= 2 && p[0] == '*' && p[1] == '.')
-        return (sw ? sl - 1 >= pl - 1 : sl > pl - 1) && ieq(s + sl - (pl - 1), p + 1, pl - 1);
-    return !sw && pl == sl && ieq(p, s, pl);
-}
-
-static int net_text(const char *h, size_t hl) { /* a usable host text: 1..63 bytes, no NUL, no '*' */
-    for (size_t i = 0; i < hl; i++)
-        if (h[i] == 0 || h[i] == '*') return 0;
-    return hl >= 1 && hl <= 63;
-}
-
-static int net_scope(const orin_platform_net *g, unsigned what, const char *h, size_t hl, int port) {
-    const orin_platform_scope *s = &g->sc[what - 1];
-    return (g->can & what) && net_text(h, hl) && port >= 0 && (unsigned)port >= s->lo && (unsigned)port <= s->hi &&
-           net_cover(s->h, s->hl, h, hl);
-}
-
-int orin_platform_net_narrow(const orin_platform_net *p, unsigned what, const char *h, size_t hl, int lo, int hi,
-                             orin_platform_net *out) {
-    if (!p || p->magic != ORIN_PLATFORM_NET_MAGIC || p->kind != ORIN_PLATFORM_NET_GRANT) return ORIN_PLATFORM_EPERM;
-    int pat = (hl == 1 && h[0] == '*') || net_text(h, hl) || (hl > 2 && h[0] == '*' && h[1] == '.' && net_text(h + 2, hl - 2));
-    if ((what != ORIN_PLATFORM_NET_LISTEN && what != ORIN_PLATFORM_NET_CONNECT) || !pat || lo < 0 || hi > 65535 || lo > hi)
-        return ORIN_PLATFORM_EINVAL;
-    const orin_platform_scope *ps = &p->sc[what - 1];
-    int in = (p->can & what) && (unsigned)lo >= ps->lo && (unsigned)hi <= ps->hi && net_cover(ps->h, ps->hl, h, hl);
-    *out = *p;
-    out->can = in ? what : 0;
-    if (in) {
-        orin_platform_scope *ns = &out->sc[what - 1];
-        ns->hl = hl, ns->lo = (unsigned)lo, ns->hi = (unsigned)hi;
-        orin_platform_mem_copy(ns->h, h, hl);
-    }
-    return 0;
 }
 
 /* A fresh record for socket fd: non-blocking, close-on-exec, no SIGPIPE. fd < 0 or a failure: the errno (fd closed). */
