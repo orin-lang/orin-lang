@@ -22,7 +22,7 @@ import {
   noChks, noExp, lookupVar, prefix, tailFrom, mk, sortS, tyOf, fresh, freshFree, typeFact, arrLen, arrData, arrMk, arrSel, inBounds, isSomeT, isOkT,
   recField, mapHas, mapSize, mapFact, tfOf, assignedIn, hasJump, rootOf, isThisExpr, clausesOfList, exprOf, hasClauses, valKey
 } from "./ctx";
-import { tr, trClause, wdOf, callFnX, isUnit, sigOf, Cl, clHyp, clGoal, matchPattern } from "./expr";
+import { tr, trClause, wdOf, callFnX, isUnit, sigOf, Cl, clHyp, clGoal, matchPattern, tfOfInv } from "./expr";
 
 // ------------------------------------------------------------------------------------------ emitting
 
@@ -797,7 +797,7 @@ function tryOn(g0: Gen, st0: St, cx: Cx, e: Expr, v: string, vt: VT): Result<Try
   const ret = Ret { st: stRet, val: retVal, vt: cx.ret, isVoid: false };
   st.pc.push(good);
   if (!isUnit(pvt)) {
-    const tf = tfOf(g, cx, pvt, pay)?;
+    const tf = tfOfInv(g, cx, pvt, pay)?;
     const em = emit(tf.g, st, cx, tf.chks);
     g = em.g;
     st = em.st;
@@ -1281,7 +1281,7 @@ function execMatchFrom(g0: Gen, st: St, cx: Cx, s: TR, sn: string, arms: MatchAr
   }
   let tfs: string[] = [];
   for (const bd of mp.binds) {
-    const tfb = tfOf(g, cx, bd.vt, bd.term)?;
+    const tfb = tfOfInv(g, cx, bd.vt, bd.term)?;
     g = tfb.g;
     for (const c of tfb.chks) {
       tfs.push(c.goal);

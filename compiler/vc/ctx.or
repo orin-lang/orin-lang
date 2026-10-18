@@ -440,12 +440,12 @@ export function wfOf(g0: Gen, cx: Cx, term: string, vt: VT, depth: usize): Resul
     VStr => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      return Ok(WF { g: g, f: "(and (>= (slen " + term + ") 0) (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))" });
+      return Ok(WF { g: g, f: "(and " + strLenOk(term) + " (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))" });
     },
     VArr(e) => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      let parts: string[] = ["(>= " + arrLen(so.s, term) + " 0)"];
+      let parts: string[] = [arrLenOk(so.s, term)];
       // The elements are constrained only for fixed-width integers (a `u8` array is in 0..255): a quantified
       // well-formedness over every element of every nested array makes the queries slow and rarely matters.
       const narrow = match (e) {
@@ -553,12 +553,12 @@ export function tfOf(g0: Gen, cx: Cx, vt: VT, term: string): Result<TFR, string>
     VStr => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      out.push(tfChk("(and (>= (slen " + term + ") 0) (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))"));
+      out.push(tfChk("(and " + strLenOk(term) + " (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))"));
     },
     VArr(_) => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      out.push(tfChk("(>= " + arrLen(so.s, term) + " 0)"));
+      out.push(tfChk(arrLenOk(so.s, term)));
     },
     VMap(_, _) => {
       const so = sortS(g, cx, vt)?;
@@ -593,6 +593,20 @@ export function freshFree(g0: Gen, cx: Cx, vt: VT): Result<Fresh, string> {
 }
 
 // ----------------------------------------------------------------------------------------- term builders
+
+// The largest length of a real array, `1 << 40` (the runtime traps "array too large" above it: arrayNew and growItems,
+// runtime/core/object.or and array.or) and of a real string, `1 << 48` (strAlloc traps "string too large"): a length is
+// in 0..max. Stated as part of the well-formedness of a value (docs/contracts.md).
+export const ARR_LEN_MAX: string = "1099511627776";
+export const STR_LEN_MAX: string = "281474976710656";
+
+export function arrLenOk(sn: string, t: string): string {
+  return "(and (>= " + arrLen(sn, t) + " 0) (<= " + arrLen(sn, t) + " " + ARR_LEN_MAX + "))";
+}
+
+export function strLenOk(t: string): string {
+  return "(and (>= (slen " + t + ") 0) (<= (slen " + t + ") " + STR_LEN_MAX + "))";
+}
 
 export function arrLen(sn: string, t: string): string {
   return "(" + sn + "n " + t + ")";
