@@ -1,12 +1,12 @@
 // Non-flaky real-clock smoke: equal millisecond samples are allowed; no tight timing bounds.
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { monotonicNow, deadlineAfter, milliseconds, remaining } from "std:time";
 import { assert } from "std:test";
 import { checkMonotonicArithmetic } from "../../std/time_monotonic_test";
 
 function main(host: Host): void {
   checkMonotonicArithmetic();
-  useClock(
+  withClock(
     host,
     clock => {
       const first = monotonicNow(clock).unwrap();
