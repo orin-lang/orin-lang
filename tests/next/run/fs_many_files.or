@@ -1,6 +1,6 @@
 // The runtime keeps at most 256 files open; the 257th open fails with an Err (EMFILE) and everything that was
 // opened is closed again on the way out.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
 import { withFile, withFileFs, useFile, Read, Write, File } from "std:fs";
 
@@ -19,7 +19,7 @@ function nest(fs: FsGrant, depth: int, opened: int): int {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   useFile(fs, PATH, Write, f => { f.writeLine("x"); }).unwrap();
