@@ -327,7 +327,7 @@ parent), at most 33 levels. Handles are `generation << 32 | (index + 1)`; a clos
 `Scope.token()`, `Scope.cancel()`, `CancelToken.cancel()` and `isCancelled()` are in the API table above.
 
 **std:net.** `NetErrorKind` has `Cancelled`; the absolute forms `recvUntil`, `sendUntil`, `sendAllUntil`, `StreamReader.readExactUntil` /
-`readDelimitedUntil`, `withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil`, `useConnectionUntil` take a `Deadline` shared by any number
+`readDelimitedUntil`, `withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil`, `withConnectionUntil` take a `Deadline` shared by any number
 of calls; `withListenerNet` and `withConnectionBeside` return the value of their body. Header comment of `library/std/net.or`: "Time" and "Cancellation".
 
 **Limits, stated.** `getaddrinfo` (the lookup of `resolve` and the one `connect` makes for a name) is neither bounded nor interruptible; a resolver pool

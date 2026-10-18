@@ -945,7 +945,7 @@ export function scopeClock<R>(clock: ClockGrant, body: (s: Scope, g: ClockGrant)
 }
 
 // scopeNet(net, body): R -- `scope` for a body that also uses a NetGrant (ADR-0017 Addendum C), for spawnNet and for a server that
-// binds a listener inside the scope (`useListener(g, ..)`) and hands accepted connections to tasks. Errors and blocking as for scope.
+// binds a listener inside the scope (`withListener(g, ..)`) and hands accepted connections to tasks. Errors and blocking as for scope.
 export function scopeNet<R>(net: NetGrant, body: (s: Scope, g: NetGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), net);

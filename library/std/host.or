@@ -13,7 +13,7 @@
 //   ProcessGrant  std:io       `shell`, `shellTimeout`; std:process `args` (further narrowed by `withArgsOnly`: no spawning)
 //   StdioGrant    std:io       read stdin, `writeStdout`
 //   ClockGrant    std:time     `nowMillis`
-//   NetGrant      std:net      listen / connect / resolve (`useNet`; narrowed by `useListen`, `useConnect`)
+//   NetGrant      std:net      listen / connect / resolve (`useNet`; narrowed by `withListen`, `withConnect`)
 // (`useHost` hands out the first four only: take the network grant with `useNet`.) `console.log` / `console.error` and
 // `exit` need no grant (ADR-0027, "ambient output"); they are still recorded as primitive OUTPUT / CONTROL events by
 // the OSIG.
@@ -100,7 +100,7 @@ export function useClock(host: Host, body: (clock: ClockGrant) => void): void {
 
 // withNet<T>(host, body: (net: NetGrant) => T): T
 // The network grant (std:net, ADR-0033): may listen and connect anywhere the host policy allows (unless the policy denies
-// `net`: then every network operation is refused). Narrow it with `useListen` / `useConnect` of std:net. Revoked when
+// `net`: then every network operation is refused). Narrow it with `withListen` / `withConnect` of std:net. Revoked when
 // `body` returns.
 export function withNet<T>(host: Host, body: (net: NetGrant) => T): T {
   const g = grantNet(host);

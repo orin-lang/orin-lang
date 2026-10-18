@@ -15,8 +15,8 @@ import {
   TooManyHeaders, UnsupportedVersion,
 } from "std:http";
 import {
-  NetGrant, Listener, Stream, Peer, Accepted, Cancelled, useListener, acceptDetached,
-  serveAcceptedDo, dropAccepted, portOf, recv, sendAll, shutdownWrite, monotonicMillis, isTimeout,
+  NetGrant, Listener, Stream, Peer, Accepted, Cancelled, withListener, acceptDetached,
+  serveAccepted, dropAccepted, portOf, recv, sendAll, shutdownWrite, monotonicMillis, isTimeout,
   netErrorMessage,
 } from "std:net";
 import { Answer, errorAnswer } from "./api";
@@ -187,7 +187,7 @@ function workerLoop(rx: Receiver<Accepted>, commands: Sender<Command>): int {
     const next = rx.recv();
     match (next) {
       Some(a) => {
-        serveAcceptedDo(
+        serveAccepted(
           a,
           (s: Stream, peer: Peer) => {
             serveConnection(s, commands);
@@ -263,7 +263,7 @@ export function run(host: Host, cfg: Settings): void {
       scopeNetDo(
         net,
         (s: Scope, g: NetGrant) => {
-          const r = useListener(
+          const r = withListener(
             g,
             "127.0.0.1",
             cfg.port,

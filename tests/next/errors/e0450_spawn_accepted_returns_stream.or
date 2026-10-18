@@ -3,12 +3,12 @@
 import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Scope, scopeNetDo } from "std:task";
-import { NetGrant, Listener, Stream, useListener, spawnAccepted } from "std:net";
+import { NetGrant, Listener, Stream, withListener, spawnAccepted } from "std:net";
 
 function main(host: Host): void {
   withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
-      useListener(g, "127.0.0.1", 0, 4, (ln: Listener) => {
+      withListener(g, "127.0.0.1", 0, 4, (ln: Listener) => {
         spawnAccepted(sc, ln, milliseconds(100), (s: Stream, p) => s);
       });
     });

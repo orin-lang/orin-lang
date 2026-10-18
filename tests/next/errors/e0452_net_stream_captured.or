@@ -1,13 +1,13 @@
 // error: E0452
 // A Stream is a resource handle: a closure (here the body of an inner scope) cannot capture it, so it cannot outlive its scope.
 import { Host, withNet } from "std:host";
-import { useListener, useAccepted, Listener, Stream, recv } from "std:net";
+import { withListener, withAccepted, Listener, Stream, recv } from "std:net";
 import { milliseconds } from "std:time";
 function main(host: Host): void {
   withNet(host, net => {
-    const r = useListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
-      useAccepted(ln, milliseconds(100), (s: Stream, p) => {
-        const inner = useAccepted(ln, milliseconds(100), (s2: Stream, p2) => { recv(s, 10, milliseconds(10)); });
+    const r = withListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
+      withAccepted(ln, milliseconds(100), (s: Stream, p) => {
+        const inner = withAccepted(ln, milliseconds(100), (s2: Stream, p2) => { recv(s, 10, milliseconds(10)); });
       });
     });
   });

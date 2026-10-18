@@ -5,7 +5,7 @@ import { ProcessGrant, args } from "std:process";
 import { StdioGrant, readLine, shell } from "std:io";
 import { ClockGrant, nowMillis, milliseconds } from "std:time";
 import { Bytes, fromString } from "std:bytes";
-import { NetGrant, Listener, Stream, useListener, useAccepted, withConnection, useListen, recv, sendAll } from "std:net";
+import { NetGrant, Listener, Stream, withListener, withAccepted, withConnection, withListen, recv, sendAll } from "std:net";
 
 function load(fs: FsGrant, path: string): string {
   const r = readFile(fs, path);
@@ -39,14 +39,14 @@ function scoped(fs: FsGrant): void {
 }
 
 function netio(net: NetGrant): void {
-  useListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
-    useAccepted(ln, milliseconds(10), (s: Stream, p) => {
+  withListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
+    withAccepted(ln, milliseconds(10), (s: Stream, p) => {
       recv(s, 4, milliseconds(10));
       sendAll(s, fromString("x"), milliseconds(10));
     });
   });
   withConnection(net, "127.0.0.1", 80, milliseconds(10), (s: Stream) => 1);
-  useListen(net, "127.0.0.1", 8080, l => { console.log("narrowed"); });
+  withListen(net, "127.0.0.1", 8080, l => { console.log("narrowed"); });
 }
 
 function pure(n: int): int {

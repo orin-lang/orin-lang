@@ -24,7 +24,7 @@ The examples below use the namespace form for bytes, encoding, html, path, json,
 | `std:utf8` | Orin, `library/std/utf8.or` | validated decoding, encoding, `Utf8String` ("always valid UTF-8"), `CodePointCursor`; ADR-0030 |
 | `std:collections` | Orin, `library/std/collections.or` | `Set<T extends Hash>`, `OrderedMap<K extends Ord, V>`, `MinHeap<T extends Ord>` (ADR-0034), `IntSet`, `StringSet`, `Deque<T>`, `SortedMap<V>`, `SortedStringMap<V>`, `PriorityQueue<T>`; ADR-0030 |
 | `std:http` | Orin, `library/std/http.or` | the **pure** part of HTTP/1.1: `Request`, `Response`, `Headers`, `Status`, an incremental request and response parser (smuggling-safe, limits as parameters) and a serializer with a round-trip contract; the sockets are `std:net` (ADR-0033); `examples/http_server.or` joins them; ADR-0030 |
-| `std:net` | Orin, `library/std/net.or` over the network primitives of `std:fsraw` (L0: ADR-0033) | blocking TCP: `Listener`, `Stream` (resources), `connect`, `resolve`, `readExact`, `readUntil`, deadlines, half-close; takes a `NetGrant` first, narrowed by `useListen` / `useConnect`; **unstable** (ADR-0033, below) |
+| `std:net` | Orin, `library/std/net.or` over the network primitives of `std:fsraw` (L0: ADR-0033) | blocking TCP: `Listener`, `Stream` (resources), `connect`, `resolve`, `readExact`, `readUntil`, deadlines, half-close; takes a `NetGrant` first, narrowed by `withListen` / `withConnect`; **unstable** (ADR-0033, below) |
 | `std:seq` | Orin, `library/std/seq.or` | `range(lo, hi)`, `sum(xs)`, `sumBy(xs, f)`: pure aggregates for contracts and code; `orin verify --contracts` reads them as bounded quantifiers and recursive sums (ADR-0036) |
 | `std:text` | Orin, `library/std/text.or` | `trimBlankLines`, `dedent` (common indentation *prefix*, as Python's `textwrap.dedent`), `indentLines`, `normalizeNewlines`, `isBlankLine`, `leadingIndent`: pure byte-oriented text layout for diagnostics, documentation and CLIs (UTF-8 bytes are preserved; code points belong to `std:utf8`) |
 | `std:html` | Orin, `library/std/html.or` | `Html` (`@Sealed`), `escape`, `safeUrl`, `escapeUrl`, `renderAll`, `trustHtml`, `fromText`, `fragment`, `render`, `renderDocument`: HTML escaping and the URL-scheme rule; the OX provider `ox()` (`import ox from "std:html";`, ADR-0044; **experimental**, with OX, see stability.md); below, "std:html" |
@@ -708,20 +708,20 @@ checked at run time and by tests; `orin verify --contracts` does not cover strin
 ```ts
 import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
-import { useListener, useAccepted, useConnection, useListen, useConnect, recv, sendAll, StreamReader, resolve } from "std:net";
+import { withListener, withAccepted, withConnection, withListen, withConnect, recv, sendAll, StreamReader, resolve } from "std:net";
 
 function main(host: Host): void {
   withNet(host, net => {                                    // the root NetGrant (ORIN_DENY=net: every operation refused)
-    useListen(net, "127.0.0.1", 8080, l => {               // narrowed: may listen on exactly 127.0.0.1:8080
-      useListener(l, "127.0.0.1", 8080, 64, ln => {        // Err(NetError) if refused, in use, ...
-        useAccepted(ln, milliseconds(1000), (s, peer) => { // Err(Timeout) if nobody came within 1 s
+    withListen(net, "127.0.0.1", 8080, l => {               // narrowed: may listen on exactly 127.0.0.1:8080
+      withListener(l, "127.0.0.1", 8080, 64, ln => {        // Err(NetError) if refused, in use, ...
+        withAccepted(ln, milliseconds(1000), (s, peer) => { // Err(Timeout) if nobody came within 1 s
           const r = recv(s, 4096, milliseconds(1000));     // Result<Bytes, NetError>: Err(Closed) at EOF, Err(Timeout), ...
           sendAll(s, ..., milliseconds(1000));             // all bytes, whole-call deadline
         });
       });
     });
-    useConnect(net, "*.example.com", 443, 443, c => {      // narrowed: only names below example.com, port 443
-      useConnection(c, "api.example.com", 443, milliseconds(2000), s => { ... });
+    withConnect(net, "*.example.com", 443, 443, c => {      // narrowed: only names below example.com, port 443
+      withConnection(c, "api.example.com", 443, milliseconds(2000), s => { ... });
     });
   });
 }
@@ -730,19 +730,17 @@ function main(host: Host): void {
 | Function | Meaning |
 |---|---|
 | `withNet(host, body)` (`useNet` deprecated) (`std:host`) | the root `NetGrant` (may listen and connect anywhere the host policy allows) |
-| `useListen / withListen(net, addr, port, body)` | narrowed grant: listen on exactly `addr:port` (an address literal; port 0 = any) |
-| `useConnect / withConnect(net, hostPattern, portLo, portHi, body)` | narrowed grant: connect to / resolve names matching `"*"`, `"*.sfx"` or an exact text, on those ports |
-| `useListenerNet(net, addr, port, backlog, body: (Listener, NetGrant) => ..)` / `useConnectionBeside(net, host, port, timeout, ln, body: (Stream, Listener) => ..)` | one process as server and client: connect first (the backlog holds it), then `useAccepted(ln2, ..)` inside the client body; port 0 picks a free port, `portOf(ln)` reads it |
-| `useListener / withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
-| `useAccepted / withAccepted(ln, timeout: Duration, body: (Stream, Peer) => ..)` | accept (TCP_NODELAY), run body, close the stream; `Err(Timeout)` (`isTimeout`) |
-| `useConnection / withConnection(net, host, port, timeout: Duration, body: (Stream) => ..)` | connect, run body, close |
-| `useListenerNet`, `useConnectionBeside` | variants whose body also receives the `NetGrant` / the `Listener` again (a closure cannot capture a handle): client and server in one process |
+| `withListen(net, addr, port, body)` | narrowed grant: listen on exactly `addr:port` (an address literal; port 0 = any) |
+| `withConnect(net, hostPattern, portLo, portHi, body)` | narrowed grant: connect to / resolve names matching `"*"`, `"*.sfx"` or an exact text, on those ports |
+| `withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
+| `withAccepted(ln, timeout: Duration, body: (Stream, Peer) => ..)` | accept (TCP_NODELAY), run body, close the stream; `Err(Timeout)` (`isTimeout`) |
+| `withConnection(net, host, port, timeout: Duration, body: (Stream) => ..)` | connect, run body, close |
+| `withListenerNet(net, addr, port, backlog, body: (Listener, NetGrant) => ..)` / `withConnectionBeside(net, host, port, timeout, ln, body: (Stream, Listener) => ..)` | one process as server and client (a closure cannot capture a handle): connect first (the backlog holds it), then `withAccepted(ln2, ..)` inside the client body; port 0 picks a free port, `portOf(ln)` reads it |
 | `recv(s, maxBytes, timeout: Duration): Result<Bytes, NetError>` | one wait, 1..min(maxBytes, 64 KiB) bytes, one copy into a fresh `u8[]` (never one string per byte); the end of the stream is `Err(Closed)` (`isClosed`), a wait that ran out `Err(Timeout)`, `maxBytes` 0 `Err(InvalidArgument)` |
 | `send(s, data, timeout: Duration)` / `sendAll(s, data, timeout: Duration)` | one attempt (partial write reported) / all bytes, deadline for the whole call |
 | `shutdownWrite(s)` | half-close (FIN); a graceful close is this, a bounded drain with `recv`, then the scope ends |
 | `StreamReader(cap)`: `readExact(s, n, ms)`, `readUntil(s, delim, limit, ms)`, `readSome`, `buffered`, `unread`, `take` | read-ahead buffer next to the stream (a stream cannot be stored); results `Result<Fill, NetError>` with `Fill = Filled | FillClosed | FillLimit` (a deadline that passed is `Err(Timeout)`, a reset `Err(Reset)`, a cancellation `Err(Cancelled)`); at most `cap` bytes are ever buffered, `readUntil` receives at most `limit - buffered` bytes at a time; the ms is a deadline for the whole call |
-| `recvUntil / sendUntil / sendAllUntil(s, .., deadline: Deadline)`, `StreamReader.readExactUntil / readDelimitedUntil`, `withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil / useConnectionUntil` | ADR-0017 Addendum D: the same operations on an ABSOLUTE `Deadline` (std:time) that any number of calls can share, so one deadline covers a whole exchange of many small reads and writes |
-| `withListenerNet`, `withConnectionBeside` | value-returning twins of `useListenerNet` / `useConnectionBeside` |
+| `recvUntil / sendUntil / sendAllUntil(s, .., deadline: Deadline)`, `StreamReader.readExactUntil / readDelimitedUntil`, `withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil` | ADR-0017 Addendum D: the same operations on an ABSOLUTE `Deadline` (std:time) that any number of calls can share, so one deadline covers a whole exchange of many small reads and writes |
 | `monotonicMillis(s)` | monotonic clock via a live stream (deadlines without a clock grant); not `time.nowMillis` (the wall clock) |
 | `resolve(net, name): Result<string[], NetError>` | numeric addresses; the grant's scope must cover `name` |
 | `parsePeer(text): Result<Peer, NetError>` | `"1.2.3.4:5"` / `"[::1]:5"`; `Err(InvalidPeer)` with the byte offset for anything else (no port-0 sentinel) |

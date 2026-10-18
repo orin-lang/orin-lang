@@ -125,7 +125,7 @@ channels, `join`, `select` and `sleep` (C2), and computation.
 Tests: tests/net/interrupt.or (via tools/test_net.sh), tests/std/net_test.or, tests/concurrency/cancel_storm.or.
 
 **TSK-15d. Operation-wide deadlines.** `recvUntil`, `sendUntil`, `sendAllUntil`, `StreamReader.readExactUntil`, `readDelimitedUntil`,
-`withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil` and `useConnectionUntil` end at an absolute `Deadline` however many
+`withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil` and `withConnectionUntil` end at an absolute `Deadline` however many
 reads or writes the operation takes; an operation that is ready at a deadline that has passed still completes once. `Timeout` is the kind
 when the deadline passes.
 Tests: tests/net/interrupt.or, tests/std/net_test.or.
