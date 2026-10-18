@@ -1,6 +1,6 @@
 // std:fs scope API: error paths. The scope returns Err when the file cannot be opened (the body is not run) and
 // when an operation on the file failed (wrong mode), and the file is closed on every path.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant, fsErrorMessage } from "std:fs";
 import { withFile, withFiles, Read, Write, File, FsError } from "std:fs";
 
@@ -25,7 +25,7 @@ function twoLines(fs: FsGrant, path: string): Result<string, FsError> {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   withFile(fs, OK_PATH, Write, f => { f.writeLine("one"); f.writeLine("two"); }).unwrap();

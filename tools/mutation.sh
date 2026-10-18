@@ -3,7 +3,7 @@
 # `python3 tools/mutate_std.py` and `python3 tools/mutate_ox.py` in CI and in the tools; the flags are the same, after the
 # name of the check:
 #
-#   tools/mutation.sh std [--orinc COMPILER] [--module bytes|utf8|collections|http|net|text|html|taskcore] [--list]
+#   tools/mutation.sh std [--orinc COMPILER] [--module bytes|utf8|collections|http|net|text|html|task] [--list]
 #                         [--shard I/N] [-j N]
 #   tools/mutation.sh ox  [--orinc COMPILER] [--cc CC] [--list] [--only NAME[,NAME]] [-j N]
 #   tools/mutation.sh --build-only        build build/mutation/orin-mutation and stop

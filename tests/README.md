@@ -88,5 +88,5 @@ program with the annotations deleted, and the existing suites (`run`, `next/run`
 ordinary conformance cases that run in every backend mode; they print only values that do not depend on timing or on the optimiser.
 `tests/concurrency/` holds the stress tests (thousands of tasks, tens of thousands of messages) and `move_counts.or`, which pins
 what the *default* build moves and copies; they are driven by `tools/test_concurrency.sh` (plain, ThreadSanitizer, ASan + UBSan,
-no object live at exit), not by `run_tests.py`. `tests/std/task_test.or`, `taskcore_test.or` and `tests/std/expect_trap/task_*.or`
+no object live at exit), not by `run_tests.py`. `tests/std/task_test.or`, `task_internal_test.or` and `tests/std/expect_trap/task_*.or`
 run with `tools/test_std.sh`; `tests/osig/tasks` is checked by `tools/clitests.sh osig`.

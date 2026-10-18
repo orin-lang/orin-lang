@@ -1,0 +1,1 @@
+- std:host: each withX/useX pair is one withX that accepts a void body (ADR-0048 row 8; the use* names are deprecated wrappers); std:time needed no change (ADR-0048 addendum).

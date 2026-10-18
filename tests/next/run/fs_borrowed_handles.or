@@ -1,5 +1,5 @@
 // A File is passed to functions (borrowed): helpers, recursion, function values taking a File.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
 import { withFile, Read, Write, File } from "std:fs";
 
@@ -58,7 +58,7 @@ function apply(f: File, g: (h: File) => int): int {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   withFile(fs, PATH, Write, f => { writeNumbers(f, 10); }).unwrap();

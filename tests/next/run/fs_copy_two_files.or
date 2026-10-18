@@ -1,5 +1,5 @@
-// Two files open at the same time: stream one into another line by line (withFiles / withFiles).
-import { Host, useFs } from "std:host";
+// Two files open at the same time: stream one into another line by line (withFiles).
+import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
 import { withFiles, withFile, Read, Write, Append, File } from "std:fs";
 
@@ -20,7 +20,7 @@ function pump(a: File, b: File): int {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   withFile(fs, SRC, Write, f => {

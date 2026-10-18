@@ -1,6 +1,6 @@
 // std:net on the loopback interface, one process: a listener, a client that connects (the kernel completes the handshake
 // before accept), accept, byte exchange, partial reads, readExact / readUntil, half-close, timeouts, scope refusals.
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Bytes, fromString, fromArray } from "std:bytes";
 import {
@@ -95,7 +95,7 @@ function serve(ln: Listener, net: NetGrant): void {
 }
 
 function main(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 16, (ln, n) => { serve(ln, n); });
     say("listen", l.isOk());
     // a connect to a port nobody listens on is refused (the OS), and times out or fails, never hangs
@@ -106,7 +106,7 @@ function main(host: Host): void {
     say("resolve", rr.isOk() && rr.unwrap().length > 0);
   });
   // narrowing never widens
-  useNet(host, net => {
+  withNet(host, net => {
     useConnect(net, "*.example.com", 80, 443, c => {
       const a = useConnection(c, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
       say("connect outside the granted pattern", a.isErr() && isDenied(a.unwrapErr()));

@@ -1,5 +1,5 @@
 // stdin (std:io) into a file through the scope API, then back out again; and a large file round trip.
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { FsGrant } from "std:fs";
 import { StdioGrant } from "std:io";
 import { readLine } from "std:io";
@@ -9,7 +9,7 @@ const PATH: string = "build/tests/fs_stdin_to_file.txt";
 const BIG: string = "build/tests/fs_stdin_big.txt";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => { run(fs, stdio); });
+  withHost(host, (fs, proc, stdio, clock) => { run(fs, stdio); });
 }
 function run(fs: FsGrant, stdio: StdioGrant): void {
   // a closure cannot capture the stdio grant (ADR-0027), so stdin is read before the file scope starts
