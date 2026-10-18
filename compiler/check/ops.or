@@ -3,6 +3,7 @@
 // reports, and the receiver purity rule of hoisted mutating calls. Nothing here reads or changes a
 // checking context; what needs one lives in fnctx.or or in the checkers.
 
+import { range } from "std:seq";
 import { Span, Diagnostic, diag } from "../diag";
 import {
   Ident, Expr, TypeDecl, TypeExpr, TNamed, AssignOp, BinaryOp, FieldDecl, Stmt, Block, FunctionDecl,
@@ -162,6 +163,7 @@ export function expFn(exp: Option<Type>): Option<Type> {
 @Ensures(result.isNone() ==> fields.every(f => f.name != name))
 export function fieldIndex(fields: FieldDef[], name: string): Option<usize> {
   let i: usize = 0;
+  @Invariant(range(0, i).every(j => fields[j].name != name))
   for (const f of fields) {
     if (f.name == name) {
       return Some(i);
@@ -176,6 +178,7 @@ export function fieldIndex(fields: FieldDef[], name: string): Option<usize> {
 @Ensures(result.isNone() ==> fields.every(f => f.name.name != name))
 export function fieldDeclIndex(fields: FieldDecl[], name: string): Option<usize> {
   let i: usize = 0;
+  @Invariant(range(0, i).every(j => fields[j].name.name != name))
   for (const f of fields) {
     if (f.name.name == name) {
       return Some(i);
@@ -192,6 +195,7 @@ export function fieldDeclIndex(fields: FieldDecl[], name: string): Option<usize>
 export function missingNames(names: string[], seen: bool[]): string[] {
   let missing: string[] = [];
   let k: usize = 0;
+  @Invariant(k <= names.length && missing.length <= k)
   for (const n of names) {
     if (!seen[k]) {
       missing.push(n);
@@ -252,6 +256,7 @@ export function dummyDecl(name: string, span: Span): FunctionDecl {
 export function tailTypes(ts: Type[]): Type[] {
   let out: Type[] = [];
   let i: usize = 1;
+  @Invariant(i >= 1 && out.length == i - 1)
   while (i < ts.length) {
     out.push(ts[i]);
     i += 1;
@@ -273,6 +278,7 @@ export function bindsOrVoid(binds: Option<Type>[]): Type[] {
 export function noPre(n: usize): Option<HExpr>[] {
   let out: Option<HExpr>[] = [];
   let i: usize = 0;
+  @Invariant(i <= n && out.length == i && out.every(o => o.isNone()))
   while (i < n) {
     out.push(None);
     i += 1;

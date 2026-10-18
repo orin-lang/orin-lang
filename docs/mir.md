@@ -1,4 +1,4 @@
-# MIR and the OIM ownership verifier (v2.6; in/out receivers and `IArrayExtend` are v1.10, unboxed aggregates v2.2, load forwarding `IForward` v2.4, string append primitives v2.5, unchecked array access `IArrayGetU` / `IArraySetU` v2.6)
+# MIR and the OIM ownership verifier (v2.8; in/out receivers and `IArrayExtend` are v1.10, unboxed aggregates v2.2, load forwarding `IForward` v2.4, string append primitives v2.5, unchecked array access `IArrayGetU` / `IArraySetU` v2.6, unique receivers and results v2.7, unchecked struct slots `IGetFieldU` / `ISetFieldU` v2.8)
 
 Normative companion to `compiler/mir/mir.or`. Status: contract defined; implementation in
 progress. Relation to spec 07: MIR is the *memory IR* layer; the verifier is the independent
@@ -58,6 +58,12 @@ decimal text of the scalar `y` (an `int`, or a `usize` when `unsigned`) without 
 those of the concatenation). Runtime: `orin_str_append_int` / `orin_str_append_usize` / `orin_str_append_sub` (in place only when
 the destination has `rc == 1` and is not the source, otherwise a fresh string and the old one released, as `orin_str_append`).
 
+v2.7 (ADR-0038 lever 2, T5) **unique receivers and results across calls**: two flags on `MFunction`, printed after the existing ones in the
+function header (`fn7 Reader.next (params 1, owned l0, inout, unique-in, unique-out) -> int`): `unique-in` (the in/out receiver, local 0, is
+`Unique` on entry) and `unique-out` (the value handed back is `Unique`: local 0 at each return of an `inout` function, the returned local of
+any other function with a reference result). They are declarations that the verifier checks on both sides of every call (rules **U2-U5**,
+section "Unique receivers and results" below); the emitters ignore them. No new instruction. (T5 was first built as v2.5; main took v2.5 and v2.6 for the string append primitives and unchecked access, so it is v2.7 here.)
+
 v2.0 (ADR-0020 D3, rewrite step 3a) **source spans**: every instruction and every terminator carries the span of the HIR node it was
 lowered from. `MBlock` is now `{ instrs; spans; term; termSpan }` (`spans[i]` belongs to `instrs[i]`, record invariant
 `spans.length == instrs.length`); `noSpan()` (file index 4294967295) marks code without a source position (hand-written MIR, code the
@@ -78,6 +84,21 @@ v2.2 (ADR-0038 step 1, unboxing) **unboxed aggregates**: a new type `MAgg(n)` (p
 scalars held **by value** in n + 1 64-bit words (word 0 the tag, words 1..n the payload; 0 <= n <= 3, at most four words). It has no heap
 object, no header and no reference count. Produced only by the optimiser (`compiler/opt/unbox.or`); no new instruction: the existing ones
 take an aggregate where noted in "Unboxed aggregates" below. The verifier treats an aggregate as a scalar (`Init`).
+
+v2.8 (ADR-0038 lever 2, T7) **unchecked struct slots**: two new instructions, `IGetFieldU(d, o, k)` (`d = getfieldu o.k`) and
+`ISetFieldU(x, k, v)` (`setfieldu x.k = v`). Each means exactly `IGetField` / `ISetField` of a **heap struct** **without the check that the object
+is a struct (kind 3) with more than `k` slots** (the C backend's `orinc_chk_slot`, the LLVM backend's `slotInline` guard): the backends read and write
+`slots[k]` directly (`orinc_struct_get_u`, `orinc_struct_set_u` / `orinc_mir_struct_replace_u`; one `getelementptr inbounds`). The operand must be a
+reference local (never an unboxed aggregate: that path has no header to check and is unchanged). Like U1 this is a **memory-safety** fact, so the
+verifier rejects an unchecked access it cannot justify (rule **U6**, `compiler/verify/fieldcheck.or`, section "Unchecked struct slots" below, error
+text `unchecked struct slot access without a dominating check`). The optimiser (`compiler/opt/fieldcheck.or`, its last pass) emits them where U6
+accepts them; the lowering never does. Textual forms `l2 = getfieldu l0.1` and `setfieldu l0.0 = l3`. `ITakeField` / `IPutField` keep their check.
+A third instruction, `IShapeCheck(o, k)` (`shapecheck l0.3`), traps with the shape message unless `o` is a struct with more than `k` slots, and does nothing
+otherwise: the check of the first access of a block, on its own. The optimiser puts one in front of the first access of a struct local when later
+accesses of the same block use higher slots, and then every access of the group is unchecked. Both backends emit just the existing guard
+(`orinc_chk_slot`; the LLVM `slotGuardInline`).
+`--assert-facts` does not re-run the omitted check for these (it would need a new runtime symbol; runtime/ and the seed are frozen for this change).
+(v2.7 is T5, unique receivers and results.)
 
 v2.6 (ADR-0038 lever 2, T2) **unchecked array access**: two new instructions, `IArrayGetU(d, a, i)` (`d = arraygetu a[i]`) and
 `IArraySetU(x, i, v)` (`arraysetu x[i] = v`). Each means exactly `IArrayGet` / `IArraySet` **without the kind check and without the
@@ -128,6 +149,10 @@ hole slot when reading that slot.
   call is an error (second use is Dead). A borrowed-position operand of the same call may not be the
   consumed local or a `Borrowed` alias of it (the callee could release the object while reading the
   alias): **error**. `IBuiltin` operands are all borrowed (no builtin takes ownership).
+  **v2.7:** a call of a `unique-in` function needs `Unique` for argument 0 (U4), and a call of a `unique-out` function defines its
+  result (or, for an `inout` function, the receiver) `Unique` instead of `Owned` (U5). A call of an `inout` function demotes every
+  `Unique` argument in a borrowed position whatever its result type (the callee may keep a counted reference to it in the receiver
+  it hands back).
   Otherwise a call does not change argument states (borrowed for the call), **except** that a `Unique`
   ref argument is demoted to `Owned` when the call has a ref-typed result: the callee may return
   a retained alias of its argument, so uniqueness is no longer provable (found by the verifier;
@@ -149,6 +174,9 @@ hole slot when reading that slot.
   s and o live, slot `key` of o not a hole; d `Init`. Rule F1 must justify the claim (below), else **error** `unjustified forward`.
 - `IArrayGetU(d, a, i)` (v2.6): the rules of `IArrayGet`, and rule U1 must justify the omitted checks (below, by a dominating access or by
   interval facts), else **error** `unchecked array access without a dominating check or a range fact`.
+- `IShapeCheck(o, k)` (v2.8): `o` live (a plain read; it defines nothing, kills no borrow and is no obstacle to a forward).
+- `IGetFieldU(d, o, i)` / `ISetFieldU(x, i, v)` (v2.8): the rules of `IGetField` / `ISetField` for a reference local, and rule U6 must justify the
+  omitted check (below), else **error** `unchecked struct slot access without a dominating check`.
 - `ISetField(x, i, v)` / `IArraySet(x, i, v)` / `IArraySetU(x, i, v)` (v2.6, plus rule U1): x **Unique**; v consumed as for StructNew.
   Effect: invalidates every `Borrowed(x)` local (→ Dead) because the old slot value is released.
 - `ITakeField(d, x, i)` / `IArrayTake(d, x, i)`: x Unique; i not already a hole → d Owned, i added
@@ -222,6 +250,63 @@ basic block with no redefinition of `x` / `v` in between (a `release` of `d` or 
 Mutation corpus: `inout-drop-receiver`, `inout-release-receiver` (tools/mutate_mir.py); hand-written cases:
 `compiler/tests/verify_main.or` `inoutCases`. The Lean model covers the structured fragment without calls, so it is unaffected.
 
+## Unique receivers and results (v2.7, ADR-0038 lever 2 T5, rules U2-U5)
+A mutating method starts with `makeunique this`, a test of `rc == 1`, and after every in/out call the receiver is `Owned` again, so the
+next call tests it again. v2.7 lets a function *declare* that it expects (`unique-in`) or promises (`unique-out`) a `Unique` value, and
+the verifier checks the declaration on both sides. All four rules are local to one function or one call; there is no whole-program
+fixpoint in the verifier.
+- wf (`wf.or`): `unique-in` needs `inout` (only an in/out function has a receiver); `unique-out` needs `inout` or a reference result.
+  `main` is not `unique-in` (the runtime calls it).
+- **U2**, callee entry (`verify.or` `entryState`): if `unique-in`, local 0 starts `Unique` instead of `Owned`.
+- **U3**, return (`rules.or` `uniqueReturn`): if `unique-out`, at every `TReturn` local 0 (`inout`) or the returned local (otherwise; an
+  `OStr` or a missing operand is an error) must be `Unique`, else **error** `... not Unique (rule U3)`. Checked before the return consumes it.
+- **U4**, call site: `ICall` of a `unique-in` function needs argument 0 `Unique` (`needUnique`), else **error** `... requires ... to be Unique`.
+- **U5**, call result: after `ICall` of a `unique-out` function the destination is `Unique` (non-`inout`), or the receiver local that was
+  redefined `Owned` is redefined `Unique` (`inout`).
+- Demotion at calls (v1.1) is unchanged for non-`inout` callees. New in v2.7: an `inout` call also demotes its borrowed `Unique` arguments when
+  the result is a scalar (see "Checked, not assumed" below).
+
+Checked, not assumed. The soundness argument rests on three facts that were checked in the code, not taken from the ADR text:
+1. *An `inout` function is never reached except by a direct `ICall`.* `IClosure` (`wf.or` `closureMsg`) and the vtable check
+   (`verify.or` `vtableMsg`) both require every parameter to be borrowed, and an `inout` function has an owned parameter 0 (wf), so neither can
+   name one. `ICallIndirect` and `ICallVirtual` only call closure and vtable targets. `main` is rejected as `unique-in`. So every call of a
+   `unique-in` function is an `ICall`, and U4 covers all of them: U2's assumption holds at runtime.
+2. *The receiver is the only reference at an `inout` call.* `Unique` means no other counted reference (`rc == 1` from this local) and no
+   live `Borrowed` alias: every way to alias a `Unique` local demotes it (`IDup`, whole `IBorrow`, a closure/iface/struct that consumes it) or
+   consumes it (which runs `killBorrows`); the call consumes argument 0 in an owned position, which kills every `Borrowed` alias of it
+   (`consume` -> `kill` -> `killBorrows`), and a borrowed argument that is the receiver or an alias of it is already an error
+   (`callOwned`). The callee's local 0 is therefore the only reference to the object. *Found while checking:* before v2.7 a `Unique`
+   argument in a **borrowed** position stayed `Unique` after an `inout` call with a scalar or void result, although the callee may
+   `dup` it and store the copy in the receiver it hands back (`push(items, item)` with a borrowed `item`). That made `Unique` unsound for
+   such an argument (harmless while only a runtime `makeunique` consumed the fact, fatal once a callee skips the test). The rule now demotes
+   every borrowed argument of an `inout` call; `compiler/tests/verify_main.or` `uniqueCases` has the case.
+3. *A returned `Unique` local is not reachable from anything the callee keeps (U3 for a non-`inout` result).* The callee can keep nothing:
+   there are no globals, a closure consumes what it captures, a callee cannot store into a borrowed parameter (`needUnique` rejects a store
+   through a `Param`), and an owned parameter it consumes is gone. The only state that outlives the call is the `inout` receiver, and that
+   case is covered by 2 (a stored copy was made by a `dup`, which demotes the original). `KUnique` is produced only by `IStructNew`,
+   `IArrayNew`, `IClosure`, `IIface`, `IMakeUnique` (a fresh or sole object) and a move of a `Unique` local, and lost by every alias-creating
+   instruction, so at a return it means the object has no other reference, and returning it hands the sole reference to the caller.
+   U3 checks only the kind of the returned local, and that is enough.
+Optimiser (`compiler/opt/uniqflags.or`): optimistic assumption and retraction. Candidates: an `inout` function whose block 0 starts with
+the `makeunique` of its receiver is a `unique-in` candidate; an `inout` function or a function with a reference result is a `unique-out`
+candidate when some caller can use the result (the local that receives it is, up to moves, made Unique or passed as a `unique-in`
+receiver) and a flow-insensitive filter says its return is plausibly Unique. A worklist analyses each function with the must-analysis of
+`opt/unique.or` (at most as permissive as the verifier) under the current flags, callees before callers: a `unique-out` with a non-`Unique`
+return is retracted and its callers are analysed again; a `unique-in` with a call site **inside a loop** whose receiver is not `Unique` is
+retracted. A call site outside every loop never costs the flag: a `makeunique` goes before the call (the callee starts with the
+`makeunique` of its receiver, so the copy happens where the callee would have made it, `cow_copies` is unchanged, and it is paid once, not
+per iteration). Flags only go from set to cleared. Compile-time budget (design gate: self-compile +1 %): a function without a loop is not
+analysed, it gets the `makeunique` before every such call and `opt/unique.or` (T1) removes the redundant ones; a function with more than
+12000 blocks times locals gets no `unique-out`, and a loop in it that calls a `unique-in` candidate removes that flag. `opt/unique.or` (T1)
+also knows the entry state (U2) and the results of `unique-out` calls (U5), and drops the `makeunique` instructions they make redundant. The
+result is verified like every pass output.
+Mutation corpus (`tools/mutate_mir.py`, the callee's header seen by the mutated caller is edited too): `uniq-flag-flip-in` (`unique-in` on
+a callee whose call site passes a receiver that is not `Unique`: U4), `uniq-flag-flip-out` (`unique-out` on a function that returns a
+value that is not `Unique`: U3), `uniq-in-shared-caller` (`t = dup x` before a call of a `unique-in` function: U4), `uniq-out-then-dup`
+(`t = dup x` after a call of a `unique-out` function, with a store through `x` after it: U5). Hand-written cases:
+`compiler/tests/verify_main.or` `uniqueCases`; optimiser: `compiler/tests/opt_test.or` (T5 section). The Lean model has no calls, so
+U2-U5 are outside it (docs/tcb.md "rules not yet in the model").
+
 ## Load forwarding (v2.4, ADR-0038 lever 2 T4, rule F1)
 `d = forward s, o[key]` is accepted when a backward scan of **the same block**, over at most 64 instructions (`WINDOW` in `forward.or`),
 finds the *source* before anything that could have changed the slot. Going back from the `forward`, each instruction is classified:
@@ -293,6 +378,24 @@ access without an earlier one): `bce-no-fact`, `bce-across-push`, `bce-after-red
 and the positive controls `bce-makeunique-ok` and `bce-other-index-ok` (accepted; a rejection is a finding). Lean: array length is outside the
 model (`formal/Orin/Machine.lean` has no arrays with a length), so U1 has no lemma; it is listed with the other rules not yet in the model
 (docs/tcb.md, docs/formal.md), not claimed as proved.
+
+## Unchecked struct slots (v2.8, ADR-0038 lever 2 T7, rule U6)
+`d = getfieldu o.k` and `setfieldu o.k = v` skip the check of the runtime (`orin_struct_get` / `orin_struct_set`: the object is a struct and `k < nslots`).
+The verifier accepts one only when a backward scan of **the same block**, over at most 64 instructions (`WINDOW`, `scan.or`), finds an earlier
+`getfield`, `getfieldu`, `setfield`, `setfieldu`, `takefield` or `putfield` of the **same struct local** `o` with slot `k' >= k` (each of them traps unless
+the object is a struct with more than `k'` slots, hence more than `k`), (or an `IShapeCheck(o, k')` with `k' >= k`, or the `IStructNew` that builds `o` with more than `k` slots: the slot count is known statically) with no instruction in between that **defines `o`** (a destination, a move, the
+receiver of an in/out call) and no in-place string / array operation on `o` (fail closed). An access of a lower slot is no source but does not end the
+scan. A source that defines `o` itself (`o = getfield o.k`) justifies nothing after it. *Unlike U1 nothing else ends the scan*: the kind and the slot
+count of a struct are fixed by `IStructNew` and no instruction changes them, and the copy `IMakeUnique` makes of a shared struct has the same header,
+so `makeunique`, takes and puts, stores, calls that receive `o` and any other use leave the fact intact. The operand must be a reference local
+(`wf.or`); an unboxed aggregate is a different local type, so the source is a heap access of the same local. The ordinary rules apply to the
+instruction itself (`getfieldu` is a `getfield`: a hole or a borrow is as for the checked form; `setfieldu` needs a `Unique` object).
+*Trap semantics.* The removed check duplicates one that passed on the same object, so it cannot fire; the first access keeps its check, in its place.
+*Tests.* `compiler/tests/verify_main.or` `fieldCases`, `compiler/tests/opt_test.or` and `emit_test.or` (T7 sections); mutation classes of
+`tools/mutate_mir.py`: `field-no-fact`, `field-after-redef`, `field-across-block`, `field-higher-slot`, `shape-drop`, `shape-too-small` and the positive control `field-makeunique-ok`.
+*Shape checks.* A trap that would have fired at a later, higher-slot access now fires at the shape check in front of the first access, with the same message; it
+only concerns an object of the wrong shape, which is a compiler bug (docs/assurance.md), never a program error.
+`verify_text --facts` reports `field-checked` / `field-none` per unchecked field access.
 
 ### Range facts (v2.6, ADR-0038 lever 2 T6, rules R1-R5)
 The second fact source of U1, `compiler/verify/range.or`: a forward interval analysis of the whole function, independent of the ownership

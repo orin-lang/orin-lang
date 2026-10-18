@@ -43,6 +43,15 @@ function cfgConstants(): string[] {
     "#else",
     "#define ORIN_CFG_SITES 0",
     "#endif",
+    // A word (an object as its address, any integer as itself) and a size. On a 32-bit target (wasm32-orbit, ADR-0055) a pointer
+    // is 4 bytes and an Orin value 8: a word must not hop through `uintptr_t` (it would lose its high half), and a 64-bit size
+    // that does not fit `size_t` traps instead of being truncated. On a 64-bit target both are the plain casts.
+    "#define ORIN_WORD(x) __builtin_choose_expr(__builtin_classify_type(x) == 5, (uint64_t)(uintptr_t)(x), (uint64_t)(x))",
+    "#if __SIZEOF_SIZE_T__ >= 8",
+    "#define ORIN_SIZE(x) ((size_t)(x))",
+    "#else",
+    "#define ORIN_SIZE(x) ({ uint64_t s_ = (uint64_t)(x); if (s_ > (uint64_t)(size_t)-1) orin_trap(\"out of memory\"); (size_t)s_; })",
+    "#endif",
   ];
 }
 
@@ -168,7 +177,9 @@ function arithHelpers(): string[] {
   ];
 }
 
-// Struct and variant slots. Every access of an object of unknown provenance checks that it is a struct and that the slot index
+// Struct and variant slots. `orinc_struct_get_u` / `orinc_struct_set_u` / `orinc_mir_struct_replace_u` are the unchecked forms of
+// IGetFieldU / ISetFieldU (docs/mir.md v2.8, rule U6): helpers whose memory safety rests on a fact the verifier has shown.
+// Every access of an object of unknown provenance checks that it is a struct and that the slot index
 // is below its slot count (a lowering bug becomes a trap, not an out-of-bounds access); `orinc_struct_init` is the unchecked
 // initialising store into an object `orin_struct_new` just returned in the same code sequence with a constant slot count.
 function structHelpers(): string[] {
@@ -187,6 +198,8 @@ function structHelpers(): string[] {
     "    orinc_chk_slot(o, i);",
     "    return ((const OrinStruct *)o)->slots[i];",
     "}",
+    "static inline uint64_t orinc_struct_get_u(const OrinObj *o, uint32_t i) { return ((const OrinStruct *)o)->slots[i]; }",
+    "static inline void orinc_struct_set_u(OrinObj *o, uint32_t i, uint64_t slot) { ((OrinStruct *)o)->slots[i] = slot; }",
     "static inline uint64_t *orinc_struct_slot_ptr(OrinObj *o, uint32_t i) {",
     "    orinc_chk_slot(o, i);",
     "    return &((OrinStruct *)o)->slots[i];",
@@ -198,6 +211,12 @@ function structHelpers(): string[] {
     "    uint64_t v = *p;",
     "    *p = 0;",
     "    return v;",
+    "}",
+    "static inline void orinc_mir_struct_replace_u(OrinObj *o, uint32_t i, uint64_t slot) {",
+    "    OrinStruct *s = (OrinStruct *)o;",
+    "    uint64_t old = s->slots[i];",
+    "    s->slots[i] = slot;",
+    "    if ((s->refmask >> i) & 1) orinc_release(ORIN_REF(old));",
     "}",
     "static inline void orinc_mir_struct_replace(OrinObj *o, uint32_t i, uint64_t slot) {",
     "    orinc_chk_slot(o, i);",

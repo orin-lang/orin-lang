@@ -12,12 +12,13 @@ import {
 } from "../syntax";
 import {
   VT, VInt, VBool, VStr, VUnit, VArr, VOpt, VRes, VMap, VRec, VUni, VBad,
-  isIntKind, intLo, intHi, joinKinds, vtName, vtKey, isBad, badReason, vtEq, isIntTy, intKindOf, concrete, resolveTy, resolveTyP, fieldTyOf, fieldIndex, isMapKey
+  isIntKind, intLo, intHi, joinKinds, vtName, vtKey, isBad, badReason, vtEq, isIfaceTy, isIntTy, intKindOf, concrete, resolveTy, resolveTyP, fieldTyOf, fieldIndex, isMapKey
 } from "./vt";
-import { Gen, SortR, sortOf, opaqueSort } from "./gen";
+import { Gen, SortR, sortOf, opaqueSort, variantIndex } from "./gen";
 import { bareOf } from "./scope";
+import { trArrayMethodX, trStringMethodX, strPredTerm, litChrFacts, allLitChrFacts } from "./methods";
 import {
-  Var, Chk, TR, Fn, Cls, Prog, Cx, I64_MIN, I64_MAX, lineOf, clauseText, srcText, lit, inRange, inKind, guarded, guardChks, concat, concatChk,
+  cyclicMk, cyclicVariant, Var, Chk, TR, Fn, Cls, Prog, Cx, I64_MIN, I64_MAX, lineOf, clauseText, srcText, lit, inRange, inKind, guarded, guardChks, concat, concatChk,
   andAll, noChks, noExp, lookupVar, mk, sortS, tyOf, tyIn, symName, fresh, freshFree, wfOf, arrLen, arrData, arrMk, arrSel, inBounds,
   isSomeT, isOkT, recField, mapHas, mapSize, mapFact, tfOf, tfChk, clausesOfList, exprOf, isThisExpr, Fresh, valKey, typeKey
 } from "./ctx";
@@ -139,6 +140,7 @@ function trStr(g0: Gen, cx: Cx, s: string): Result<TR, string> {
   const id = s.length == 0 ? 0 : g.litConsts().length + 1;
   const name = "(mkStr " + s.length.toString() + " " + id.toString() + ")";
   g.registerLit(s, name);
+  g = litChrFacts(g, s, name);
   return mk(g, name, VStr, noChks());
 }
 
@@ -191,9 +193,6 @@ function trVariant(g0: Gen, vars: Var[], cx: Cx, uni: string, vname: string, arg
     return Err("unknown union `" + bareOf(uni) + "`");
   }
   const t = VUni(uni);
-  if (cx.p.tab.isCyclic("u:" + uni)) {
-    return Err("the variants of the recursive union `" + bareOf(uni) + "` are not modelled");
-  }
   const so = sortS(g, cx, t)?;
   g = so.g;
   for (const v of u.unwrap().variants) {
@@ -219,6 +218,11 @@ function trVariant(g0: Gen, vars: Var[], cx: Cx, uni: string, vname: string, arg
         i += 1;
       }
       const ctor = so.s + "." + vname;
+      if (terms.length > 0 && cx.p.tab.isCyclic("u:" + uni)) {
+        const vi = variantIndex(u.unwrap(), vname);
+        const cv = cyclicVariant(g, cx, t, so.s, vi.unwrapOr(0), vname, terms)?;
+        return mk(cv.g, cv.name, t, chks);
+      }
       return mk(g, terms.length == 0 ? ctor : "(" + ctor + " " + terms.join(" ") + ")", t, chks);
     }
   }
@@ -458,9 +462,6 @@ function trMember(g: Gen, vars: Var[], cx: Cx, base: Expr, name: string, e: Expr
         return Err("field `" + bareOf(rn) + "." + name + "` has an unsupported type (" + badReason(ft) + ")");
       }
       const so = sortS(b.g, cx, b.vt)?;
-      if (cx.p.tab.isCyclic("r:" + rn)) {
-        return Err("the fields of the recursive type `" + bareOf(rn) + "` are not modelled");
-      }
       const fterm = recField(so.s, name, b.t);
       const tf = tfOf(so.g, cx, ft, fterm)?;
       return mk(tf.g, fterm, ft, concatChk(b.chks, tf.chks));
@@ -554,9 +555,6 @@ function trRecordLit(g0: Gen, vars: Var[], cx: Cx, srcName: string, spread: Opti
     }
   }
   const t = VRec(name);
-  if (cx.p.tab.isCyclic("r:" + name)) {
-    return Err("record literal of the recursive type `" + srcName + "`");
-  }
   const so = sortS(g, cx, t)?;
   g = so.g;
   let chks: Chk[] = [];
@@ -600,6 +598,10 @@ function trRecordLit(g0: Gen, vars: Var[], cx: Cx, srcName: string, spread: Opti
       return Err("field `" + d.fields[i] + "` is missing in the record literal");
     }
     i += 1;
+  }
+  if (cx.p.tab.isCyclic("r:" + name)) {
+    const cm = cyclicMk(g, cx, t, so.s, d.fields, args)?;
+    return mk(cm.g, cm.name, t, chks);
   }
   return mk(g, "(mk" + so.s + (args.length > 0 ? " " + args.join(" ") : "") + ")", t, chks);
 }
@@ -923,7 +925,7 @@ function trArrayMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, el: VT, name: string
     g.assert("(=> (= " + arrLen(so.s, r.t) + " 0) (= (slen " + out.name + ") 0))");
     return mk(g, out.name, VStr, concatChk(r.chks, sep.chks));
   }
-  return Err("array method `" + name + "` is not supported");
+  return trArrayMethodX(g, vars, cx, r, el, name, args, e, tr);
 }
 
 function trStrOf(g0: Gen, cx: Cx, arg: string, chks: Chk[]): Result<TR, string> {
@@ -953,6 +955,7 @@ function trStringMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, name: string, args:
     if (!g.hasFun("chr")) {
       g.registerFun("chr");
       g.declare("(declare-fun chr (Int Int) Int)");
+      g = allLitChrFacts(g);
       // the byte at a position depends on contents the model does not know (a table literal, say): not trusted
       g.taint("chr");
     }
@@ -990,14 +993,10 @@ function trStringMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, name: string, args:
   if ((name == "startsWith" || name == "endsWith" || name == "includes") && args.length == 1) {
     const x = tr(g, vars, cx, args[0], VStr)?;
     g = x.g;
-    if (cx.inQ) {
-      return Err("`" + name + "` inside a quantifier body");
-    }
     g.noteStr("derive");
-    const f = freshFree(g, cx, VBool)?;
-    g = f.g;
-    g.assert("(=> " + f.name + " (>= " + len + " (slen " + x.t + ")))");
-    return mk(g, f.name, VBool, concatChk(r.chks, x.chks));
+    // a deterministic function of the two strings, with the axioms of methods.or
+    const sp = strPredTerm(g, name, r.t, x.t);
+    return mk(sp.g, sp.name, VBool, concatChk(r.chks, x.chks));
   }
   if (name == "trim" && args.length == 0) {
     if (cx.inQ) {
@@ -1009,7 +1008,7 @@ function trStringMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, name: string, args:
     g.assert("(<= (slen " + f.name + ") " + len + ")");
     return mk(g, f.name, VStr, r.chks);
   }
-  return Err("string method `" + name + "` is not supported");
+  return trStringMethodX(g, vars, cx, r, name, args, e, tr);
 }
 
 function trIntMethod(g0: Gen, cx: Cx, r: TR, k: string, name: string, args: Expr[]): Result<TR, string> {
@@ -1141,6 +1140,14 @@ function trMapMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, k: VT, v: VT, name: st
 
 // ----------------------------------------------------------------------------------- calls of user code
 
+// Is `t` a class of the program (not a record: only classes implement interfaces)?
+function isClassTy(cx: Cx, t: VT): bool {
+  return match (t) {
+    VRec(k) => cx.p.clsIx.has(k),
+    _ => false
+  };
+}
+
 // Translate the arguments of a call against the parameter types.
 type Args = { g: Gen; terms: string[]; chks: Chk[]; };
 
@@ -1151,6 +1158,17 @@ function trArgs(g0: Gen, vars: Var[], cx: Cx, f: Fn, ptys: VT[], args: Expr[]): 
   let i: usize = 0;
   while (i < args.length) {
     const a = tr(g, vars, cx, args[i], ptys[i])?;
+    if (isIfaceTy(ptys[i]) && isClassTy(cx, a.vt)) {
+      // The one implicit conversion of the language (ADR-0019): an object of a class converts to an interface type.
+      // The result is some object of the interface; what the class guarantees about the argument is not carried over
+      // (an arbitrary value of the sort over-approximates every conversion; the checker has proved `implements`).
+      const o = freshFree(a.g, cx, ptys[i])?;
+      g = o.g;
+      chks = concatChk(chks, a.chks);
+      terms.push(o.name);
+      i += 1;
+      continue;
+    }
     if (!vtEq(a.vt, ptys[i])) {
       return Err("call of `" + f.disp + "`: argument " + (i + 1).toString() + " has type `" + vtName(a.vt) + "`, expected `" + vtName(ptys[i]) + "`");
     }
@@ -1252,6 +1270,31 @@ function invTermsFor(g0: Gen, cx: Cx, unit: string, text: string, clauses: Contr
   return Invs { g: g, terms: out };
 }
 
+// The class invariants of `cls` as goals about the object `thisTerm` (the conjunction), "" when there is none. A clause outside the
+// fragment is left out, exactly as `invTerms` leaves it out of the hypotheses of a method.
+function invGoals(g0: Gen, cx: Cx, cls: Cls, thisTerm: string): Result<InvGoal, string> {
+  let g = g0;
+  let out: string[] = [];
+  const cc = Cx { p: cx.p, unit: cls.unit, f: cx.f, res: None, ens: false, body: false, olds: [], ret: VUnit, inQ: false, text: cls.text };
+  const vars: Var[] = [Var { name: "this", term: thisTerm, vt: VRec(cls.name) }];
+  for (const c of cls.invs) {
+    const ex = exprOf(c);
+    if (ex.isSome()) {
+      const r = trClause(g, vars, cc, ex.unwrap());
+      match (r) {
+        Ok(x) => {
+          g = x.g;
+          out.push(clGoal(x));
+        },
+        Err(_) => {}
+      }
+    }
+  }
+  return Ok(InvGoal { g: g, goal: out.length == 0 ? "" : andAll(out) });
+}
+
+type InvGoal = { g: Gen; goal: string; };
+
 // The result of a call: the value and, for a mutating method, the receiver after the call.
 export type CallR = { g: Gen; t: string; vt: VT; chks: Chk[]; newThis: string; };
 
@@ -1304,6 +1347,18 @@ export function callFnX(g0: Gen, vars: Var[], cx: Cx, f: Fn, recv: Option<TR>, a
         Err(m) => {
           return Err("the @Requires of `" + f.disp + "` is outside the fragment: " + m);
         }
+      }
+    }
+  }
+  // A private method whose proofs assume the class invariants on entry (`privateInvariants`, vc.or): every call proves
+  // them. The obligation is not reported and not assumed afterwards (a call at a state that breaks them goes on).
+  if (recv.isSome() && f.priv && f.kind == 1 && cx.body && !cx.inQ && !cx.ens && cx.p.sites.has(f.key)) {
+    const co = cx.p.clsIx.get(f.cls);
+    if (co.isSome()) {
+      const ig = invGoals(g, cx, cx.p.classes[co.unwrap()], recv.unwrap().t)?;
+      g = ig.g;
+      if (ig.goal != "") {
+        chks = concatChk(chks, [oblChk("invariant-site", f.key, line, e.span.start.toString(), ig.goal)]);
       }
     }
   }
@@ -1722,14 +1777,6 @@ export type MatchPat = { g: Gen; test: string; binds: Var[]; };
 export function matchPattern(g0: Gen, cx: Cx, s: TR, sn: string, p: Pattern): Result<MatchPat, string> {
   let g = g0;
   let binds: Var[] = [];
-  match (s.vt) {
-    VUni(un) => {
-      if (cx.p.tab.isCyclic("u:" + un)) {
-        return Err("`match` on the recursive union `" + bareOf(un) + "` is not modelled");
-      }
-    },
-    _ => {}
-  }
   return match (p.kind) {
     PWildcard => Ok(MatchPat { g: g, test: "true", binds: binds }),
     PBool(b) => Ok(MatchPat { g: g, test: b ? s.t : "(not " + s.t + ")", binds: binds }),
@@ -1781,6 +1828,9 @@ function variantTest(cx: Cx, s: TR, sn: string, name: string, arity: usize): Opt
       }
       for (const v of u.unwrap().variants) {
         if (v.name == name) {
+          if (cx.p.tab.isCyclic("u:" + un)) {
+            return Some("(= (" + sn + ".tag " + s.t + ") " + variantIndex(u.unwrap(), name).unwrapOr(0).toString() + ")");
+          }
           return Some("((_ is " + sn + "." + name + ") " + s.t + ")");
         }
       }

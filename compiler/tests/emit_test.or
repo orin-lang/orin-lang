@@ -10,9 +10,9 @@ import { assert, assertEqUsize, assertEqString } from "std:test";
 import { SourceFile } from "../diag";
 import {
   MType, Operand, SwitchCase, MLocal, MBlock, Instr, Terminator, MFunction, MProgram, MVTable,
-  plainBlock,
+  plainBlock, rtNames, rtFnAddrOk, l1Task, rtWraps, RT_CORE_PROBE_FN, RT_ARRAY_NEW, rtWrappersOn, withRtWrappers,
 } from "../mir";
-import { BinOp } from "../hir";
+import { BinOp, Builtin, BCore, BTask, fnAddrEntries, taskOpCount, platOpCount, platOpName, platOpParams, platOpResult } from "../hir";
 import { loadWithOverlay } from "../loader";
 import { check } from "../check";
 import { lower } from "../lower";
@@ -42,7 +42,7 @@ function fn(name: string, locals: MLocal[], blocks: MBlock[]): MFunction {
     name: name,
     paramCount: 0,
     paramOwned: [],
-    inout: false,
+    inout: false, uniqueIn: false, uniqueOut: false,
     locals: locals,
     ret: MVoid,
     blocks: blocks,
@@ -65,7 +65,7 @@ function sample(): MProgram {
     name: "c/d",
     paramCount: 1,
     paramOwned: [false],
-    inout: false,
+    inout: false, uniqueIn: false, uniqueOut: false,
     locals: [lr("env")],
     ret: MVoid,
     blocks: [bk([], TReturn(None))],
@@ -342,7 +342,7 @@ function fibLike(callsItself: bool): MProgram {
     name: "m.fib",
     paramCount: 1,
     paramOwned: [false],
-    inout: false,
+    inout: false, uniqueIn: false, uniqueOut: false,
     locals: [mi, t, r],
     ret: MInt,
     blocks: [
@@ -386,7 +386,7 @@ function forwarding(): MProgram {
     name: "main",
     paramCount: 0,
     paramOwned: [],
-    inout: false,
+    inout: false, uniqueIn: false, uniqueOut: false,
     locals: [lr("o"), MLocal { name: "s", ty: MInt }, MLocal { name: "d", ty: MInt }],
     ret: MVoid,
     blocks: [
@@ -475,6 +475,87 @@ function llvmForwardChecksTheOriginalIndexBeforeWritingIt(): void {
   );
 }
 
+// `IGetFieldU` / `ISetFieldU` (docs/mir.md v2.8, rule U6): the heap struct access without the kind and slot-count check.
+function uncheckedFields(): MProgram {
+  const f = MFunction {
+    name: "main",
+    paramCount: 0,
+    paramOwned: [],
+    inout: false, uniqueIn: false, uniqueOut: false,
+    locals: [lr("o"), MLocal { name: "s", ty: MInt }, MLocal { name: "d", ty: MInt }],
+    ret: MVoid,
+    blocks: [
+      bk(
+        [
+          IStructNew(0, 0, [OInt(1), OInt(2)]),
+          IGetField(1, OLocal(0), 1),
+          IGetFieldU(2, OLocal(0), 1),
+          ISetFieldU(0, 0, OLocal(2)),
+          IRelease(0),
+        ],
+        TReturn(None),
+      ),
+    ],
+  };
+  return MProgram { functions: [f], strings: [], main: 0, vtables: [], inlineFns: [] };
+}
+
+@Test
+function cUncheckedFieldsUseTheUncheckedHelpers(): void {
+  const c = emitC(uncheckedFields());
+  assert(c.includes("orinc_struct_get(l0, 1)"), "C: the first access stays checked");
+  assert(c.includes("orinc_struct_get_u(l0, 1)"), "C: the load is unchecked");
+  assert(c.includes("orinc_struct_set_u(l0, 0, "), "C: the store is unchecked");
+}
+
+@Test
+function llvmUncheckedFieldsHaveNoShapeGuard(): void {
+  const p = uncheckedFields();
+  const ll = emitLlvm(p);
+  assert(llvmRefsDeclared(ll, llvmSymbols(p)), "LLVM: every global is declared");
+  const checked = emitLlvm(MProgram {
+    functions: [MFunction {
+      name: "main",
+      paramCount: 0,
+      paramOwned: [],
+      inout: false, uniqueIn: false, uniqueOut: false,
+      locals: p.functions[0].locals,
+      ret: MVoid,
+      blocks: [bk(
+        [
+          IStructNew(0, 0, [OInt(1), OInt(2)]),
+          IGetField(1, OLocal(0), 1),
+          IGetField(2, OLocal(0), 1),
+          ISetField(0, 0, OLocal(2)),
+          IRelease(0),
+        ],
+        TReturn(None),
+      )],
+    }],
+    strings: [],
+    main: 0,
+    vtables: [],
+    inlineFns: [],
+  });
+  assert(ll.length < checked.length, "LLVM: the unchecked module is smaller (two guards fewer)");
+}
+
+@Test
+function shapeCheckEmitsOnlyTheGuard(): void {
+  const f = MFunction {
+    name: "main", paramCount: 0, paramOwned: [], inout: false, uniqueIn: false, uniqueOut: false,
+    locals: [lr("o"), MLocal { name: "d", ty: MInt }], ret: MVoid,
+    blocks: [bk([IStructNew(0, 0, [OInt(1), OInt(2)]), IShapeCheck(0, 1), IGetFieldU(1, OLocal(0), 1), IRelease(0)], TReturn(None))],
+  };
+  const p = MProgram { functions: [f], strings: [], main: 0, vtables: [], inlineFns: [] };
+  const c = emitC(p);
+  assert(c.includes("orinc_chk_slot(l0, 1);"), "C: the shape check");
+  assert(c.includes("orinc_struct_get_u(l0, 1)"), "C: the unchecked load");
+  const ll = emitLlvm(p);
+  assert(ll.includes("icmp ule i64"), "LLVM: the slot count guard");
+  assert(llvmRefsDeclared(ll, llvmSymbols(p)), "LLVM: every global is declared");
+}
+
 // `IArrayGetU` / `IArraySetU` (docs/mir.md v2.6, rule U1): the checked access without the kind and bounds checks; with
 // `--assert-facts` the original checks run first (`orin_assert_array`, exit 70 if they would fail).
 function unchecked(): MProgram {
@@ -482,7 +563,7 @@ function unchecked(): MProgram {
     name: "main",
     paramCount: 0,
     paramOwned: [],
-    inout: false,
+    inout: false, uniqueIn: false, uniqueOut: false,
     locals: [lr("a"), MLocal { name: "s", ty: MInt }, MLocal { name: "d", ty: MInt }],
     ret: MVoid,
     blocks: [
@@ -529,7 +610,7 @@ function llvmUncheckedAccessHasNoGuardAndTheFactsBuildChecksFirst(): void {
       name: "main",
       paramCount: 0,
       paramOwned: [],
-      inout: false,
+      inout: false, uniqueIn: false, uniqueOut: false,
       locals: p.functions[0].locals,
       ret: MVoid,
       blocks: [bk(
@@ -585,4 +666,97 @@ export function uncheckedMir(variant: usize): MProgram {
     [bk(body, TBranch(OLocal(3), 1, 2)), bk([], TReturn(None)), bk([], TTrap("unchecked access computed the wrong value"))],
   );
   return MProgram { functions: [f], strings: [], main: 0, vtables: [], inlineFns: [] };
+}
+
+// ---------------------------------------------------------------- the task interface (ADR-0052 Addendum B, R3e.0)
+
+@Test
+function theL1EntryTableIsConsistent(): void {
+  const names = rtNames();
+  let i: usize = 0;
+  while (i < names.length) {
+    assert(names[i].startsWith("$rt/"), "an entry is a function of $rt");
+    let j: usize = i + 1;
+    while (j < names.length) {
+      assert(names[i] != names[j], "entry names are unique");
+      j += 1;
+    }
+    i += 1;
+  }
+  assertEqUsize(names.length, 56, "30 R3d entries and 26 for the task interface");
+  assertEqString(names[RT_CORE_PROBE_FN], "$rt/coreprobe.probeEntry", "the probe entry");
+  for (const e of fnAddrEntries()) {
+    assert(rtFnAddrOk(e), "fnAddr accepts only entries whose wrapper is void(void *)");
+  }
+  assert(!rtFnAddrOk(RT_ARRAY_NEW), "the wrapper of orin_array_new takes two words");
+  assert(!rtFnAddrOk(1000), "a number beyond the table");
+  let k: usize = 0;
+  while (k < taskOpCount()) {
+    match (l1Task(k)) {
+      Some(e) => {
+        assert(e < names.length, "l1Task names a real entry");
+        assert(k < 31 || k > 36, "the wake sources stay direct L0 calls");
+      },
+      None => {},
+    }
+    k += 1;
+  }
+  assert(l1Task(0).isSome() && l1Task(27).isSome() && l1Task(24).isSome() && l1Task(31).isNone(), "monitor operations have entries");
+  assert(!rtWrappersOn(sample()), "a program has no test wrappers by default");
+  assert(rtWrappersOn(withRtWrappers(sample())), "--rt-wrappers marks the program");
+}
+
+@Test
+function thePlatTableMatchesTheHeader(): void {
+  assertEqUsize(platOpCount(), 20, "20 L0 functions");
+  assertEqString(platOpName(0), "thread_create", "threads first");
+  assertEqString(platOpName(4), "monitor_new", "then the ten monitor functions");
+  assertEqString(platOpName(19), "exit", "the process functions last");
+  assertEqString(platOpName(20), "", "an unknown index has no name");
+  assertEqString(platOpParams(11), "iip", "monitor_get(h, i, &out)");
+  assertEqString(platOpResult(11), "n", "monitor_get gives a C int");
+  assertEqString(platOpResult(17), "p", "getenv gives a pointer");
+  assertEqString(platOpResult(2), "v", "thread_exit gives nothing");
+}
+
+// A program whose `main` runs one core operation `op` over the literal operands `args`, result in a usize local.
+function coreProg(op: usize, args: Operand[]): MProgram {
+  const f = fn(
+    "main",
+    [MLocal { name: "r", ty: MUsize }],
+    [bk([IBuiltin(Some(0), BCore(op), args)], TReturn(None))],
+  );
+  return MProgram { functions: [f], strings: [], main: 0, vtables: [], inlineFns: [] };
+}
+
+@Test
+function platEmitsADirectCallOfTheL0FunctionInBothBackends(): void {
+  // monitor_get(h = 3, i = 1, out = 8): an int result sign-extended, a pointer argument
+  const get = coreProg(28, [OUsize(11), OUsize(3), OUsize(1), OUsize(8)]);
+  const c = emitC(get);
+  assert(c.includes("((uint64_t)(int64_t)orin_platform_monitor_get((int64_t)(((uint64_t)3ULL)), (int64_t)(((uint64_t)1ULL)), (void *)(uintptr_t)(((uint64_t)8ULL))))"), "C: the cast call");
+  const ll = emitLlvm(get);
+  assert(ll.includes("declare i32 @orin_platform_monitor_get(i64, i64, ptr)\n"), "LLVM: the declaration with C types");
+  assert(ll.includes("= call i32 @orin_platform_monitor_get(i64 3, i64 1, ptr "), "LLVM: the call");
+  assert(ll.includes("= sext i32 "), "LLVM: a C int result is sign-extended");
+  assert(!ll.includes("@orin_platform_monitor_get(i64, i64, ptr) "), "no attribute on the declaration (no readnone, no nounwind)");
+  // a table index that is not used is not declared
+  assert(!ll.includes("@orin_platform_monitor_lock"), "only the used functions are declared");
+  // a void function gives 0; thread_exit is noreturn
+  const ex = coreProg(28, [OUsize(2), OUsize(0), OUsize(0), OUsize(0)]);
+  assert(emitC(ex).includes("(orin_platform_thread_exit(), (uint64_t)0)"), "C: a void function gives 0");
+  assert(emitLlvm(ex).includes("declare void @orin_platform_thread_exit() noreturn\n"), "LLVM: noreturn, nothing else");
+}
+
+@Test
+function fnAddrAndSharedBaseEmitAddresses(): void {
+  const fa = coreProg(29, [OUsize(55)]);
+  assert(emitC(fa).includes("((uint64_t)(uintptr_t)&orin_probe_entry)"), "C: the address of the wrapper");
+  assert(emitLlvm(fa).includes("= ptrtoint ptr @orin_probe_entry to i64"), "LLVM: the address of the wrapper");
+  const sh = coreProg(30, []);
+  assert(emitC(sh).includes("((uint64_t)(uintptr_t)&orin_shared)"), "C: the shared block");
+  const ll = emitLlvm(sh);
+  assert(ll.includes("@orin_shared = external global [128 x i64]\n"), "LLVM: declared as 128 words");
+  assert(ll.includes("= ptrtoint ptr @orin_shared to i64"), "LLVM: its address");
+  assert(!emitLlvm(coreProg(20, [])).includes("@orin_shared"), "a program without sharedBase does not declare it");
 }

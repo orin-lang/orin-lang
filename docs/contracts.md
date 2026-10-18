@@ -36,7 +36,7 @@ functions) and `old(e)` (only in `@Ensures`, not nested); `a ==> b` (right assoc
 | Code | Meaning |
 |---|---|
 | E0414 | clause is not `bool` (`@Decreases`: not integer) |
-| E0415 | `old` outside `@Ensures` / nested, `==>` outside a contract, `?` in a contract, parameter called `result` hiding it |
+| E0415 | `old` outside `@Ensures` / nested, `==>` outside a contract, `?` in a contract, parameter called `result` (or a variable called `loopIndex` in a `for .. of` invariant) hiding it |
 | E0416 | impure contract expression (below) |
 | E0300 | `result` outside `@Ensures` (or in a `void` function), or any unknown name |
 
@@ -238,19 +238,26 @@ as `rules`. JSON: `{"results":[{"function","file","line","kind","clause","rules"
 |---|---|---|---|
 | `int`/`i64`, `i8 i16 i32 u8 u16 u32 u64 isize usize` | `Int` with the exact range of the type | arithmetic results and conversions are in range on returning paths (A-INT); `usize` subtraction below 0 traps | floats, `i128` |
 | `bool`, `+ - * / %`, comparisons, `&& \|\| !`, `==>`, `?:` | Bool / Int; `/` and `%` truncate toward zero as in Orin | divisor non-zero on returning paths (A-DIV) | `wrapping*`, `checked*`, `saturating*` |
-| arrays `T[]` | datatype (data `Array Int T`, length); `length`, `xs[i]`, `xs[i] = v`, `push`, `pop`, `get`, `slice`, `concat`, `includes` | index / slice range in bounds (obligation `bounds`) | `join`, `indexOf`, `sort`, `reduce`, `find` |
+| arrays `T[]` | datatype (data `Array Int T`, length); `length`, `xs[i]`, `xs[i] = v`, `push`, `pop`, `get`, `slice`, `concat`, `includes`, `indexOf`, `join`; `find` / `findIndex` exactly (the first match); `sort` and `reduce` partially (see "Method axioms") | index / slice range in bounds (obligation `bounds`) | `reduce` / `sort` results beyond the facts of "Method axioms" |
 | `every`, `some`, `map`, `filter` (pure lambda with an expression body) | quantifier over the indices; `map` / `filter` by their defining facts | well-definedness of the lambda body is part of a contract's goal | block-bodied lambdas; in code (not contracts) a lambda body with an index or call precondition |
 | `range(a, b).every(i => ..)` / `.some(..)`, `sum(xs)`, `sumBy(xs, f)` (`std:seq`) | bounded quantifier; recursive sum with the store lemma | | `sumBy` summands that need a block |
-| records, classes | datatype with one constructor; field read, write through nested places (`a.b.f = v`, `a[i].f = v`), `{ ...r, f: v }`; record `@Invariant`s of parameters and results are assumed (A3) | | generic records; the fields of recursive types (opaque) |
+| records, classes | datatype with one constructor; field read, write through nested places (`a.b.f = v`, `a[i].f = v`), `{ ...r, f: v }`; record `@Invariant`s of parameters and results are assumed (A3) | | generic records |
+| recursive records, classes, unions (a type that reaches itself) | uninterpreted sort with accessor functions (a union: a variant tag and payload accessors); a built value is a fresh constant with its fields as facts; no quantifier; see "Recursive types" | same as records / unions; a counterexample is never reported | generic recursive types; `==` on them |
 | `Option<T>`, `Result<T, E>`, user unions | datatypes; `isSome`, `isNone`, `isOk`, `isErr`, `unwrap`, `unwrapOr`, `unwrapErr`, `Some`, `None`, `Ok`, `Err`, variant constructors, `match` (expression and statement) | `unwrap` needs the right variant (obligation `unwrap`) | nested patterns, `?` where the operand is not always evaluated (see "Effects inside an expression"), `==` on these types |
 | `Map<K, V>` | presence array, value array, size; `has`, `get`, `set`, `delete`, `keys`, `values`, `size`, `new Map` | | `entries`; map equality |
-| `string` | datatype (length, id); `length`, `+`, `==`, literals, `charCodeAt`, `charAt`, `substring`, `trim`, `startsWith`, `endsWith`, `includes`, `toString`, template literals | index / range in bounds | contents (see "Strings") |
+| `string` | datatype (length, id); `length`, `+`, `==`, literals, `charCodeAt`, `charAt`, `substring`, `trim`, `startsWith`, `endsWith`, `includes`, `toString`, template literals; `split`, `indexOf` partially (see "Method axioms") | index / range in bounds; `split` needs a non-empty separator | contents (see "Strings") |
 | calls | modular: callee `@Requires` obligation, `@Ensures` assumed; pure function = uninterpreted function; recursion assumes the callee contract | A-CALL, A-PURE | calls of generic functions from outside their class, function values, interface calls |
 | methods and constructors | receiver as a datatype value; a mutating method returns the new receiver; `new C(..)`; static methods | class invariants (B8), frames (B9) | `new C<T>(..)` of a generic class |
 | generic functions and classes | checked once, abstractly: a type parameter `T` is an opaque value (nothing can be done with it but pass it around and store it), the class applied to its own parameters is the class | | `==` on a `T`; a call of a generic function from code that is not in the same class |
+| interface types (`interface Sink { .. }`) | an opaque sort per interface (`If_Sink`): a parameter, field, result or local of the type is some object that implements it; a class-typed argument converts to it at a call (ADR-0019) as a fresh value of the sort | | a method call on the value (an interface call has unknown effects), `==`, a conversion other than an argument of a call |
 | `if`, `match`, blocks, `return`, `let`, assignment, `+=` etc. | symbolic execution with merged states | | `break` / `continue` effects (the loop is havoc'd); an effect (`?`, a mutating call) in a `while` condition or in the right operand of `&&` / `||` / `==>`, in a branch of `?:` or in an arm of a `match` that is not a `return match` |
 | `while`, `for .. of` | loop `@Invariant`, inferred counter bound, or havoc; also unrolled 3 iterations exactly | A-LOOP | nested loop invariants inside a loop with `break` |
 | `console.log` / `console.error`, `exit` | no effect on the values; `exit` ends the path | | any other I/O |
+
+A `match` statement is exhaustive (the checker rejects the others), so the path on which no arm matches is impossible and nothing
+leaves it: a function whose arms all `return` has no path that falls off its end, whatever its result type. (Until 2026-10-18 that
+path was modelled as a fall-through with the path condition `false`, and the function was UNKNOWN with "return statements do not
+match the declared result type".) Regression test: `tests/contracts/verify_gaps.or`.
 
 ### Effects inside an expression (`?`, mutating calls)
 
@@ -271,6 +278,23 @@ Where the order of evaluation cannot be kept the function is UNKNOWN with a reas
 `&&` / `||` / `==>`, in a branch of `?:`, in an arm of a `match` that is not a `return match`, in a `while` condition, in the receiver of a mutating call,
 in the arguments of a mutating call on a receiver that is not a plain variable or field path, in the right-hand side of
 `x += ..` or of an assignment to an element (`xs[i] = ..`), or after a function value that is evaluated before it.
+
+### Method axioms (`compiler/vc/methods.or`)
+
+Methods the core translation does not model exactly get **axioms**: the result is a fresh constant constrained by facts that
+every real execution satisfies. A partial description (`sort`, `reduce`, `split`, `indexOf`) taints the constant: a model that
+depends on it is not a counterexample, so a claim the axioms do not prove is UNKNOWN, never REFUTED. Each fact follows from the
+runtime (`runtime/core/orin_runtime.c`) or the prelude (`library/collections/array.or`).
+
+| Method | Facts |
+|---|---|
+| `xs.sort(cmp)` | same length; every element of the result is an element of `xs` and vice versa. The order is not stated |
+| `xs.findIndex(p)` / `xs.find(p)` | exact: `Some(i)` with `i` in bounds, `p(xs[i])` and `p` false before `i` (`find`: the value is `xs[i]`); `None` when `p` is false everywhere. Facts about calls inside `p` are hypotheses, so a call whose contract does not hold weakens the result, never strengthens it |
+| `xs.reduce(f, init)` | an empty `xs` gives `init`; nothing else |
+| `s.split(sep)` | obligation `bounds`: `sep` is not empty (the runtime traps). At least one piece, at most `s.length + 1`; every piece is a well-formed string no longer than `s` (than `s.length - sep.length` when there are two or more); one piece is `s` (always the case when `s` is shorter than `sep`); with two or three pieces the lengths and the separators add up to `s.length` |
+| `s.startsWith(t)`, `s.endsWith(t)`, `s.includes(t)` | one uninterpreted function each of the two strings, so the same call has the same answer in the body and in a contract (also inside a quantifier body). For well-formed strings: true implies `s.length >= t.length`; an empty `t` or `t == s` gives true; true with equal lengths implies `s == t`; `startsWith` / `endsWith` imply `includes` |
+| string literals | the bytes of a literal of at most 16 bytes are facts about `charCodeAt` (a literal's id stands for its contents, and distinct literals have distinct ids), so `"E0412".charCodeAt(0) == 69` and a precondition such as `c.length == 5 && c.charCodeAt(0) == 69` are provable on a literal argument |
+| `s.indexOf(x)` | an empty `x` is found at 0; an `x` longer than `s` is not found; a position `p` has `p + x.length <= s.length` |
 
 ### Semantics (honest limits)
 
@@ -327,15 +351,72 @@ it is written in (its own declarations and its imports, the way the checker bind
 may declare the same function or type name. Calls of a generic function, of a name the verifier cannot resolve (a built-in, or a name
 bound more than once in one scope), or of a function whose signature is outside the fragment make the caller UNKNOWN.
 
+### Recursive types
+
+A record, class or union that reaches itself through its fields or payloads (`type Tree = { value: int; kids: Tree[] }`, a
+scope with an `Option<Scope>` parent, `type Expr = Lit(int) | Add(Expr, Expr)`) has no finite SMT datatype. Its sort is
+uninterpreted (`Rec_Tree`) and is described by what a datatype would say about the values that arise, minus
+well-foundedness, without any quantified axiom:
+
+- a record or class has an accessor function per field (`Rec_Tree.value`). A field read is the accessor. A value built in
+  the code (a record literal, a field write, the receiver of a constructor, `this` after a loop that writes it) is a fresh
+  constant whose accessors are stated as facts: the written field gets the new value, the others are carried over (value
+  semantics, as for any record). The frame facts of a mutating method are equations between accessors.
+- a union has a tag function (`Uni_Expr.tag`, the index of the variant) and payload accessors per variant (named as in a
+  datatype, `Uni_Expr.Add.0`). The test for a variant is `tag = k`, so a value is of at most one variant; every value that
+  is read or passed in has a tag in range (a well-formedness fact, like a length that is not negative). A variant built
+  with a payload is a fresh constant with its tag and payload as facts; a nullary variant is a constant with its tag.
+  `match` and variant construction work as for any union (nested patterns are still unsupported).
+- inside a quantifier body (a function argument of `map`, `every` ..) a built value is the application of an uninterpreted
+  function of its arguments, and its facts are stated inside the quantifier, per instance.
+
+What this does not say: that values are finite (no induction over the structure; a recursive function is proved by its own
+contract, A-CALL), and that two values with equal fields are equal (`==` on a record, class or union is unsupported anyway, so
+nothing depends on it). Because the queries contain no quantifier for these types, the solver finds a model of a false
+claim quickly instead of searching until the timeout. Every real execution is a model of these facts, so a VERIFIED result is as good as for other records. A
+model of the solver need not be a real value (it may be cyclic), so **a function that uses a recursive type never gets a
+counterexample**: a wrong claim is UNKNOWN ("the fields of the recursive type `X` are modelled by uninterpreted accessors (a
+model need not be a finite value)"), never VERIFIED and never REFUTED. For the same reason such a function skips the
+work that only looks for a counterexample: the bounded-search retry after `unknown`, the unrolled-loop pass and solving the
+return paths one by one. The class invariants of a recursive class are assumed
+and proved exactly where they are for other classes (A-INV, A-FRAME); the invariants of the type a field refers to are not
+assumed for the field's value unless the field is read from a parameter or result for which they are assumed already.
+Regression test: `tests/contracts/verify_rectypes.or`.
+
 ### Class invariants and frames (B8, B9)
 
 For every public method that changes `this` (the mutation analysis of the checker, `Program.mutating`) and every constructor, the
 verifier proves the class `@Invariant`s at every return, assuming them (and the `@Requires`) on entry: result kind `invariant`.
 A method that can break an invariant is REFUTED with the values of `this` and the arguments, `action: NEEDS_DECISION`, and the
 three options (fix the method, add a precondition, weaken the invariant). A private method has no invariant obligation (it may be
-called in the middle of an update) and the invariant is not assumed on entry. Class-typed parameters are assumed to satisfy their
+called in the middle of an update) and the invariant is not assumed on entry, unless every call of it proves it (next paragraph). Class-typed parameters are assumed to satisfy their
 invariants (**A-INV**: constructors establish them, public methods maintain them; a write to a public field from outside the
 class is not covered, and neither is it by the run-time check).
+
+**Invariants in private methods.** A private helper often needs the invariant (the bound of an index, say), but it may be called in the
+middle of an update, so assuming it on entry would be unsound. The verifier assumes it only for a helper whose calls all prove it:
+
+1. A private instance method of a class with `@Invariant`s whose contracts are not all proved is a *candidate* when its name occurs in
+   the class only as `.name(` besides its declaration. It is proved a second time with the invariants of `this` assumed on entry
+   (A-INV). If that proves something the first run did not, the rest is checked; otherwise nothing changes.
+2. At every call of the candidate in the class, the verifier proves the invariants of the receiver in the state at the call (a hidden
+   obligation of kind `invariant-site`: not reported, not assumed afterwards, so a call at a broken state does not stop the path). The
+   candidate is *eligible* only if every occurrence of its name in the class text is such a call that the verifier saw and proved. A
+   mention that is not a call it analysed (in a contract, in a field initialiser, a call in a function outside the fragment or in a
+   position that is not translated) makes it not eligible: the helper keeps the results of the first run.
+3. A call in a caller that itself assumes the invariants (an eligible helper) counts only while that caller stays eligible: the set of
+   eligible helpers is the greatest set closed under this. The chain of calls starts in a public method (which assumes the invariants
+   on entry) or a constructor (which has to prove them at the call), so by induction on the depth of the call stack every call
+   of an eligible helper is made in a state where the invariants hold. A helper that nothing calls is never run and is eligible.
+4. For an eligible helper, each result that was not VERIFIED is replaced by the result of the run with the invariants assumed (VERIFIED,
+   or a counterexample that now is a real one: the entry state satisfies the invariants). A result that was VERIFIED stays; the helper's
+   `@Ensures` is what callers assume as before.
+
+A helper called in the middle of an update (`this.pos = this.xs.length; this.at();`) fails step 2 and is not eligible, so a wrong
+claim cannot be proved through it. The cost is one more run of the candidates that fail, and, for those that gain a proof, of the
+functions of the class that mention them (only the call-site obligations are solved there). Regression test:
+`tests/contracts/verify_private_inv.or`. To make a helper depend on the invariant without this inference, state it as the helper's
+`@Requires`: the callers must then prove it, and the verifier takes it as a precondition.
 
 A method's **frame** is the set of fields its body writes (assignments to `this.f..`, mutating calls on `this.f`, the frames
 of the `this` methods it calls, to a fixed point); no annotation. After a call of a mutating method the receiver is a fresh
@@ -350,8 +431,19 @@ analysis cannot read (a call it cannot resolve) has the whole object as its fram
   gets `i0 <= i <= max(i0, N)` for free; it is proved like a user invariant but not reported by itself.
 - Otherwise what the loop assigns (variables, `this.f`, receivers of `push` / `pop` / `set` / `delete` / mutating methods)
   is havoc'd. When the clause depends on it the result is UNKNOWN: "loop without invariant: ... is unconstrained after the loop",
-  `action: STRENGTHEN_SPEC`. In `for (const x of xs)` the element is some element of `xs`. A body with `break` or `continue`
+  `action: STRENGTHEN_SPEC`. In `for (const x of xs)` the element is `xs[i]` for the position `i` of the iteration. A body with `break` or `continue`
   gets no invariant and no exit condition.
+- `for (const x of xs)` has no counter, so an `@Invariant` in front of it may use the pseudo-variable **`loopIndex`** (a `usize`,
+  read-only, in scope only in the clauses of a `for .. of`; a variable of that name hides it: E0415). It is the position in `xs`
+  of the iteration the invariant is about: `0` on entry, `i + 1` after the iteration at position `i`, `xs.length` after the loop.
+  The invariant holds at the start of the iteration at position `loopIndex`, so it speaks about the elements before it
+  (`range(0, loopIndex).every(j => xs[j] >= 0)`, `loopIndex > 0 ==> last == xs[loopIndex - 1]`). Inside the body the verifier
+  assumes `0 <= i < xs.length` and `x == xs[i]` for the position `i` of that iteration (`xs` is the value evaluated before the
+  loop). Like every loop invariant it is not a run-time check (rtcheck.or), and it is ignored with `break` / `continue`.
+  A counter the program keeps itself needs no `loopIndex`: with `let k = 0` earlier in the same block and `k += 1` as the last
+  statement of the body (nothing else writes `k`), the verifier adds the hidden invariant `k == loopIndex`, so an invariant may
+  speak about `k` (`range(0, k).every(j => xs[j] != v)`). This is what sources use that an older compiler (the bootstrap seed)
+  still has to compile: `loopIndex` is unresolved there.
 
 ### Quantifiers and sums (C11, C12)
 
