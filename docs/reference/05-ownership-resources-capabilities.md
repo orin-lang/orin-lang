@@ -26,7 +26,8 @@ time (internal error, exit 70) and cannot produce a program.
 **OWN-3.** Values cannot form reference cycles: values are immutable or copied on write and closures capture snapshots, so the object
 graph of a task is always a DAG, and reference counting reclaims everything. A program that exhausts memory traps (`out of memory`,
 exit 101).
-- Tests: `tests/run/core_oom_trap.or`, `tests/run/core_oom_realloc_trap.or`, `tests/run/union_recursive.or`.
+- Tests: `tests/run/core_oom_trap.or`, `tests/run/core_oom_realloc_trap.or`, `tests/run/union_recursive.or`,
+  `tests/next/run/value_cycles_impossible.or` (a pushed value is a copy), `tests/next/errors/e0300_closure_self_reference.or` (a closure cannot capture itself).
 
 ## 5.2 Resources
 
@@ -68,7 +69,7 @@ if the handle cannot be opened (the callback is not run) or if any operation on 
 operations return no `Result`). A handle can be passed down to ordinary functions, recursion, and function values that take it as a parameter.
 - Tests: `tests/next/run/fs_stream_basic.or`, `tests/next/run/fs_scope_errors.or`, `tests/next/run/fs_borrowed_handles.or`,
   `tests/next/run/fs_copy_two_files.or`, `tests/next/run/fs_many_files.or`, `tests/next/run/fs_exit_in_scope.or`, `tests/next/run/fs_trap_in_scope.or`,
-  `tests/next/run/fs_stdin_to_file.or`, `tests/next/run/cap_grant_chain_in_function.or`.
+  `tests/next/run/fs_stdin_to_file.or`, `tests/next/run/cap_grant_chain_in_function.or`, `tests/next/run/fs_early_return_in_scope.or` (`?` in the callback).
 
 **RES-5.** The raw primitives behind the resources (`std:fsraw`, `std:clock`, `std:core`, the task primitives) are internal modules that only
 library code can import; user code importing them gets E0301 (unknown module).
@@ -107,12 +108,14 @@ E0450), or captured by a closure or a task body (E0452, E0483).
 absolute paths and symbolic links leaving the directory are refused by the runtime), `useReadOnly(fs, ..)` removes writing,
 `useArgsOnly(proc, ..)` removes the right to spawn. A narrowing that does not contain its parent yields a grant that reaches nothing; a narrowing of a
 read-only grant stays read-only.
-- Tests: `tests/next/run/cap_fs_scope.or`, `tests/next/run/cap_narrow_never_widens.or`, `tests/next/run/cap_trap_args_only_shell.or`.
+- Tests: `tests/next/run/cap_fs_scope.or`, `tests/next/run/cap_narrow_never_widens.or`, `tests/next/run/cap_trap_args_only_shell.or`,
+  `tests/next/run/cap_read_only_grant.or`, `tests/next/errors/e0471_narrowed_grant_is_not_a_host.or` (no way back to a wider grant: only the `Host` makes one).
 
 **CAP-6.** `console.log`, `console.error` and `process.exit` need **no grant** (ambient authority): they are the language's diagnostic channel.
 Code without a grant can therefore still write to stdout and stderr and end the process; this is not a claim of the capability model.
 `std:io.writeStdout` and everything that reads input needs a `StdioGrant`.
-- Tests: `tests/next/run/cap_pure_no_grants.or`, `tests/run/console_error.or`, `tests/run/std_process_exit.or`.
+- Tests: `tests/next/run/cap_pure_no_grants.or`, `tests/run/console_error.or`, `tests/run/std_process_exit.or`,
+  `tests/next/run/cap_library_console_error`.
 
 **CAP-7.** The host policy is the full authority of the OS process minus the families named in the environment variable `ORIN_DENY`
 (comma-separated `fs process stdio clock net all`; any malformed value is rejected as a whole and the program traps at start). A denied family is still
@@ -120,11 +123,12 @@ handed out so the program type-checks; each operation reports the denial: an ope
 an operation that cannot report (`exists`, `args`, `readLine`, `readBytes`, `writeStdout`, `shell`, `nowMillis`) **traps** (`capability denied: ...`).
 - Tests: `tests/next/deny/fs_open.or`, `tests/next/deny/fs_exists.or`, `tests/next/deny/process_args.or`, `tests/next/deny/process_shell.or`,
   `tests/next/deny/stdio_read.or`, `tests/next/deny/clock_now.or`, `tests/next/deny/clock_monotonic.or`, `tests/next/deny/net_listen.or`,
-  `tests/next/deny/all_ok.or` (run by `tools/test_capabilities.sh` with the matching `ORIN_DENY`; they are not part of `conformance.sh`).
+  `tests/next/deny/all_ok.or` (run by `tools/test_capabilities.sh` with the matching `ORIN_DENY`; they are not part of `conformance.sh`). A malformed value
+  (`bogus`, `fs,`, `,fs`, `fs, process`, `FS`, `fss`, `fs;process`) is checked in section 3 of the same script: exit 101, `trap: invalid ORIN_DENY`, no user code runs.
 
 **CAP-8.** Grants are an enforced check in the runtime and the type system, not an operating-system sandbox. A `ProcessGrant` that can spawn is not
 a sandbox for the child process, native code is not covered, and the summary of a function (EFF-1) says what code may do, not what it is permitted to do.
-- Tests: none (a statement of scope; see docs/capabilities.md).
+- Tests: none; this rule states the scope of the model (see docs/capabilities.md) and has nothing to execute.
 
 ## 5.4 Effects
 
@@ -133,7 +137,7 @@ the call chain that explains each one: `Fs.*`, `Process.*`, `Stdio.*`, `Clock.No
 kinds for calls through function values of unknown origin. `orin effects` prints the result; the OSIG `MAY_PERFORM` edges, `orin diff`, hover and
 `inspect` use the same analysis. A function value that is a parameter makes its caller parametric (the effects of the callback), not unknown.
 - Tests: `tools/test_effects.py` (goldens `tests/osig/effects/app.effects.txt`, `tests/osig/effects/app.effects.json`), `compiler/tests/effects_test.or`,
-  `tests/osig/effects/app`.
+  `tests/osig/effects/app`. These run in `tools/test_tooling.sh`, not in `conformance.sh` (the conformance runner does not execute `orin effects`).
 
 **EFF-2.** A function is **pure** if it performs no effect and calls only pure functions (relative to its function arguments); traps, bounds checks and
 failed contracts are not effects. Purity is required in three places: a contract expression (`@Requires`, `@Ensures`, `@Invariant`, `@Decreases`, E0416;
@@ -149,15 +153,8 @@ allowance (transitively; a closure counts for the module that wrote it) is E0473
 E0474; a table for a module that does not exist is E0502; a malformed table is E0503. Unknown effects exceed every allowance that does not name `Unknown` or `*`.
 Absent configuration means no restriction.
 - Tests: `tools/test_effects.py` (policy cases), `compiler/tests/effects_test.or`, `tests/next/errors/e0502_unknown_module`,
-  `tests/next/errors/e0503_manifest_unknown_key`.
+  `tests/next/errors/e0503_manifest_unknown_key`, `tests/next/errors/e0473_effect_outside_allowance`, `tests/next/errors/e0474_unknown_effect_entry`.
 
 ## Gaps: rules without a test
 
-- OWN-3: no test shows that a long-running program with value cycles *cannot* exist (the statement follows from the design); only the OOM trap is tested.
-- RES-4: the guarantee that a handle is closed "on every path" is tested for return, `exit` and a trap inside the scope (`fs_exit_in_scope`, `fs_trap_in_scope`), not for a `?` early return in the callback.
-- CAP-5: `useReadOnly` has a runtime test only inside `cap_narrow_never_widens`; there is no negative test that widening is impossible at the type level (there is no widening function).
-- CAP-6: no test shows that a *library* function without a grant writes to stderr (only `main()` itself does); `process.exit` in a grantless `main` is `tests/run/std_process_exit.or`.
-- CAP-7: a malformed `ORIN_DENY` (a typo, a space, upper case) trapping at start has no test in `tests/next/deny/`.
-- CAP-8: statement of scope, no test applies.
-- EFF-1: the conformance runner does not execute `orin effects`; its evidence is `tools/test_effects.py` and `compiler/tests/effects_test.or`, run by `tools/test_tooling.sh`.
-- EFF-3: E0473 and E0474 have **no** test under `tests/errors` or `tests/next/errors`; they are covered only inside `tools/test_effects.py` (generated manifests).
+None.

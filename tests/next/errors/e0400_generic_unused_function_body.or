@@ -1,0 +1,9 @@
+// error: E0400
+// TYP-27: a generic function is checked at its definition even when nothing instantiates it.
+function unused<T>(x: T): int {
+  return "oops";
+}
+
+function main(): void {
+  console.log("x");
+}

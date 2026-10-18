@@ -1,0 +1,14 @@
+// CAP-5: `useReadOnly` removes writing: reads still work, a write is refused and leaves the file unchanged.
+import { Host, useFs } from "std:host";
+import { useReadOnly, writeFile, readFile } from "std:fs";
+
+function main(host: Host): void {
+  useFs(host, fs => {
+    writeFile(fs, "build/tests/cap_read_only_grant.txt", "x").unwrap();
+    useReadOnly(fs, ro => {
+      console.log("read: " + readFile(ro, "build/tests/cap_read_only_grant.txt").isOk().toString());
+      console.log("write: " + writeFile(ro, "build/tests/cap_read_only_grant.txt", "y").isOk().toString());
+    });
+    console.log("content: " + readFile(fs, "build/tests/cap_read_only_grant.txt").unwrap());
+  });
+}

@@ -1,0 +1,7 @@
+// LEX-11: built-in type and function names are ordinary names; a local value may reuse them.
+function main(): void {
+  const int = 5;
+  const string = "s";
+  const Option = int + 1;
+  console.log(`${int} ${string} ${Option}`);
+}

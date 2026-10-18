@@ -1,0 +1,28 @@
+// RES-4: a `?` early return from the callback of a scope function closes the handle like any other path:
+// the bytes written before the return reach the file and the file can be opened again.
+import { Host, useFs } from "std:host";
+import { FsGrant, File, readFile, withFile, Write } from "std:fs";
+
+function fails(): Result<int, string> {
+  return Err("early");
+}
+
+function main(host: Host): void {
+  useFs(host, fs => { run(fs); });
+}
+
+function run(fs: FsGrant): void {
+  const r = withFile(fs, "build/tests/fs_early_return_in_scope.txt", Write, (f: File): Result<int, string> => {
+    f.writeLine("before");
+    const n = fails()?;
+    f.writeLine("after");
+    return Ok(n);
+  });
+  console.log(`scope ok: ${r.isOk()}`);
+  const inner = r.unwrap();
+  console.log(`callback: ${inner.isErr()} ${inner.unwrapErr()}`);
+  const text = readFile(fs, "build/tests/fs_early_return_in_scope.txt").unwrap();
+  console.log(`file: ${text.length} ${text.trim()}`);
+  const again = withFile(fs, "build/tests/fs_early_return_in_scope.txt", Write, f => { f.writeLine("second"); return 1; });
+  console.log(`reopen: ${again.isOk()}`);
+}
