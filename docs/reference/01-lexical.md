@@ -128,10 +128,12 @@ operator applied to `1` (the checker accepts `-9223372036854775808` for `i64`).
 the exponent is `e` or `E`, an optional `+`/`-`, and digits: `1.5`, `1e9`, `2.5e-3`, `1.5E+10`. A `.` after
 digits begins a fraction only when a digit follows, so `1.toString()` is a member access on an integer. There is
 no `.5`, no `1.`, no hexadecimal float, no `_`; `.5` is E0100 ("a float literal needs a digit before the decimal
-point"). A literal whose magnitude exceeds about 1.8e308 is E0100. The token's text is canonicalised (`1e9` is `1.0e9`).
+point"). A literal that rounds to infinity (at or above 2^1024 - 2^970, about 1.7976931348623158e308) is E0100; a literal that rounds to the largest finite `float`, or a tiny one that rounds to zero, is accepted. The token's text is canonicalised (`1e9` is `1.0e9`).
 - Tests: `tests/next/run/float_literals_basic.or`, `tests/next/errors/e0100_float_leading_dot.or`,
   `tests/next/errors/e0100_float_hex.or`, `tests/next/errors/e0100_float_exponent_overflow.or`,
-  `tests/next/errors/e0100_float_integer_part_overflow.or`.
+  `tests/next/errors/e0100_float_integer_part_overflow.or`, `tests/next/errors/e0100_float_309_digits_overflow.or`,
+  `tests/next/errors/e0100_float_fraction_exponent_overflow.or`, `tests/next/errors/e0100_float_just_above_max.or`,
+  `tests/next/run/float_literal_range_edges.or`.
 
 ## 1.7 String literals
 
@@ -190,4 +192,4 @@ trimmed and joined). `}` and `>` are not allowed in OX text. An unterminated ele
 
 ## Gaps: rules without a test
 
-- LEX-14 (compiler bug: the range check for a literal without an exponent only rejects more than 309 significant integer digits, so a 309-digit integer part above 1.8e308, e.g. `999...9.5`, is accepted and evaluates to `Infinity`; the 310-digit form is pinned by `e0100_float_integer_part_overflow`).
+None.
