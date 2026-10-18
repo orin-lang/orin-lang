@@ -1,0 +1,21 @@
+// env: ORIN_TEST_ENV_SET=hello world
+// env: ORIN_TEST_ENV_EMPTY=
+// std:process env: Some(value) for a set variable (also an empty one), None for an unset one and for the empty name.
+import { Host, withProcess } from "std:host";
+import { env } from "std:process";
+
+function show(o: Option<string>): string {
+  return match (o) {
+    Some(v) => "Some(" + v + ")",
+    None => "None"
+  };
+}
+
+function main(host: Host): void {
+  withProcess(host, proc => {
+    console.log(show(env(proc, "ORIN_TEST_ENV_SET")));
+    console.log(show(env(proc, "ORIN_TEST_ENV_EMPTY")));
+    console.log(show(env(proc, "ORIN_TEST_ENV_UNSET_EVER")));
+    console.log(show(env(proc, "")));
+  });
+}

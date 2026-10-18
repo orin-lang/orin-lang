@@ -416,6 +416,7 @@ function takesHandle(b: Builtin): bool {
     BFsRemoveDir => true,
     BFsWriteFileAtomic => true,
     BProcessArgs => true,
+    BProcessEnv => true,
     BIoReadBytes => true,
     BIoReadLine => true,
     BIoWriteStdout => true,

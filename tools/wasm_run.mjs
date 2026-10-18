@@ -4,7 +4,7 @@
 // suite can run in CI without building Orbit. It is NOT a sandbox and NOT Orbit: Orbit is the runtime; this only serves
 // the two capabilities the target uses.
 //
-//   node tools/wasm_run.mjs <module.wasm> [--deny CAP]... [--app-arg X]... [--stdin] [--mount /guest=hostdir[:rw]]... [--cwd /guest/dir] [--fs-max-handles N]
+//   node tools/wasm_run.mjs <module.wasm> [--deny CAP]... [--app-arg X]... [--env NAME=VALUE]... [--stdin] [--mount /guest=hostdir[:rw]]... [--cwd /guest/dir] [--fs-max-handles N]
 //
 // Capabilities served: log/v1, clock/v1, process/v1 (arguments after argv[0] = the module name; stdin with --stdin) and fs/v1 (mounts
 // as in `orbit run --grant fs:/guest=./dir:rw`, the same statuses and path rules, synchronous Node file calls). NOT served: net/v1 (it
@@ -25,12 +25,16 @@ if (!file) {
   process.exit(2);
 }
 const denied = new Set();
-const appArgs = [], mounts = [];
+const appArgs = [], mounts = [], appEnv = new Map();
 let stdinGranted = false, cwd = '/', maxHandles = 64;
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === '--deny' && i + 1 < rest.length) denied.add(rest[++i]);
   else if (rest[i] === '--app-arg' && i + 1 < rest.length) appArgs.push(rest[++i]);
-  else if (rest[i] === '--stdin') stdinGranted = true;
+  else if (rest[i] === '--env' && i + 1 < rest.length) {
+    const m = /^([^=]+)=(.*)$/s.exec(rest[++i]);
+    if (!m) { process.stderr.write('wasm_run: --env expects NAME=VALUE\n'); process.exit(2); }
+    appEnv.set(m[1], m[2]);
+  } else if (rest[i] === '--stdin') stdinGranted = true;
   else if (rest[i] === '--cwd' && i + 1 < rest.length) cwd = rest[++i];
   else if (rest[i] === '--fs-max-handles' && i + 1 < rest.length) maxHandles = Number(rest[++i]);
   else if (rest[i] === '--mount' && i + 1 < rest.length) {
@@ -115,7 +119,14 @@ const big = (x) => BigInt(x);
 caps['process/v1'] = {
   arg_count: () => argv.length,
   arg: (i, ptr, cap) => (i < 0 || i >= argv.length ? big(INVALID) : putBytes(ptr, cap, Buffer.from(argv[i]))),
-  env_get: (np, nl, ptr, cap) => big(NOT_FOUND),
+  env_get(np, nl, ptr, cap) {
+    const p = Number(np), n = Number(nl);
+    if (!inRange(p, n)) return big(INVALID);
+    let name;
+    try { name = decoder.decode(mem().slice(p, p + n)); } catch { return big(INVALID); }
+    if (!appEnv.has(name)) return big(NOT_FOUND);
+    return putBytes(ptr, cap, Buffer.from(appEnv.get(name)));
+  },
   stdin_read(ptr, cap, timeoutMs) {
     if (!stdinGranted) return big(DENIED);
     const n = Math.min(Number(cap), IO_MAX), p = Number(ptr);

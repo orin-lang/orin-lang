@@ -140,6 +140,7 @@ function bname(op: Builtin): string {
     BFsRemoveDir => "orin_fs_remove_dir",
     BFsWriteFileAtomic => "orin_fs_write_file_atomic",
     BProcessArgs => "orin_process_args",
+    BProcessEnv => "orin_process_env",
     BProcessExit => "orin_process_exit",
     BIoReadBytes => "orinl_io_read_bytes",
     BIoReadLine => "orinl_io_read_line",

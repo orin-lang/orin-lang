@@ -12,7 +12,7 @@
 //
 //   Console.Write, Stdio.Write                       -> "log/v1"
 //   Clock.Now                                        -> "clock/v1"
-//   Process.Args, Stdio.Read                         -> "process/v1" (arguments, standard input)
+//   Process.Args, Process.Env, Stdio.Read            -> "process/v1" (arguments, environment, standard input)
 //   Fs.ReadFile, Fs.WriteFile, Fs.Stat, Fs.Open,
 //   Fs.Read, Fs.Write                                -> "fs/v1" (files under the mounts the host grants)
 //   Net.Bind, Net.Accept, Net.Connect,
@@ -61,7 +61,7 @@ function capabilityOf(op: string): CapMap {
   if (op == "Clock.Now") {
     return CapMap { known: true, cap: "clock/v1" };
   }
-  if (op == "Process.Args" || op == "Stdio.Read") {
+  if (op == "Process.Args" || op == "Process.Env" || op == "Stdio.Read") {
     return CapMap { known: true, cap: "process/v1" };
   }
   if (op.startsWith("Fs.") && op != "Fs.Narrow") {

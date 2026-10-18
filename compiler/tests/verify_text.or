@@ -204,6 +204,7 @@ function builtinOf(name: string): Builtin {
   if (name == "fs.removeDir") { return BFsRemoveDir; }
   if (name == "fs.writeFileAtomic") { return BFsWriteFileAtomic; }
   if (name == "process.args") { return BProcessArgs; }
+  if (name == "process.env") { return BProcessEnv; }
   if (name == "io.readBytes") { return BIoReadBytes; }
   if (name == "io.readLine") { return BIoReadLine; }
   if (name == "io.writeStdout") { return BIoWriteStdout; }

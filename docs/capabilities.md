@@ -24,7 +24,7 @@ An **effect** is a compiler-owned primitive operation (the closed list of ADR-00
 | `Fs.ReadFile`, `Fs.Stat`, `Fs.Read` (a `File` read) | INPUT | `FsGrant` | `readFile`, `exists`, `file.read*` |
 | `Fs.WriteFile`, `Fs.Write` (a `File` write / flush) | OUTPUT | `FsGrant` | `writeFile`, `file.write*` |
 | `Fs.Open`, `Fs.Narrow` | CONTROL | `FsGrant` | `withFile`, `withUnder` / `withReadOnly` |
-| `Process.Args` | INPUT | `ProcessGrant` | `args` |
+| `Process.Args`, `Process.Env` | INPUT | `ProcessGrant` | `args`, `env` |
 | `Process.Spawn`, `Process.Narrow` | CONTROL | `ProcessGrant` | `shell`, `withArgsOnly` |
 | `Process.Exit` | CONTROL | ambient | `exit` |
 | `Stdio.Read` / `Stdio.Write` | INPUT / OUTPUT | `StdioGrant` | `readLine`, `readBytes` / `writeStdout` |
@@ -278,7 +278,7 @@ the generated C, as the very last lines: a custom section `orbit.manifest` whose
 |---|---|
 | `Console.Write`, `Stdio.Write` | `log/v1` |
 | `Clock.Now` | `clock/v1` |
-| `Process.Args`, `Stdio.Read` | `process/v1` (arguments, stdin) |
+| `Process.Args`, `Process.Env`, `Stdio.Read` | `process/v1` (arguments, environment, stdin) |
 | `Fs.ReadFile`, `Fs.WriteFile`, `Fs.Stat`, `Fs.Open`, `Fs.Read`, `Fs.Write` | `fs/v1` |
 | `Net.Bind`, `Net.Accept`, `Net.Connect`, `Stream.Read`, `Stream.Write` | `net/v1` |
 | `Fs.Narrow`, `Net.Narrow`, `Process.Narrow` | none (narrowing a grant is a check inside the guest) |

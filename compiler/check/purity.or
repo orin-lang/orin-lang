@@ -54,6 +54,7 @@ function ioName(b: Builtin): string {
     BFsRemoveDir => "removeDir",
     BFsWriteFileAtomic => "writeFileAtomic",
     BProcessArgs => "args",
+    BProcessEnv => "env",
     BProcessExit => "exit",
     BIoReadBytes => "readBytes",
     BIoReadLine => "readLine",

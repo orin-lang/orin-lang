@@ -73,12 +73,12 @@ withArgsOnly(proc, p => ...)       // `args` but no `shell`; returns the body's 
 Reading and writing standard input and the arguments (a grant first, `import { StdioGrant, readLine, readBytes, writeStdout } from "std:io"`,
 `import { args, exit } from "std:process"`): `readLine(stdio): Option<string>` (next line without `\n`/`\r\n`, `None` at end of input),
 `readBytes(stdio, n: usize): Option<string>`, `writeStdout(stdio, s): void` (no newline; shares the buffer with `console.log`),
-`args(proc): string[]` (without the program name), `exit(code: int): void` (no grant). A closure cannot capture a grant **or the `Host`**
+`args(proc): string[]` (without the program name), `env(proc, name: string): Option<string>` (the environment variable `name`: `None` when unset, `Some("")` when set and empty; on `wasm32-orbit` / `wasm64-orbit` it is `orbit:process/v1` `env_get`, so the module then lists `process/v1`), `exit(code: int): void` (no grant). A closure cannot capture a grant **or the `Host`**
 (E0452), so nest by passing grants as arguments, not by calling `withFs(host, ..)` inside another callback: take everything at
 once with `withHost(host, (fs, proc, stdio, clock) => value)`. A closure that returns `Err(..)` from `withHost` needs its
 result type written: `(fs, proc, stdio, clock): Result<void, string> => ...`.
 
-Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `shell`), `StdioGrant` (`std:io`),
+Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `env`, `shell`), `StdioGrant` (`std:io`),
 `ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `withNet(host, ...)`). **Ambient, no grant:**
 `console.log`, `console.error` and `exit` (a library without grants can therefore still write to stdout / stderr: see
 ADR-0027 D5). **Host policy:** by default every grant is what the OS process has; `ORIN_DENY=fs,process,...` (families

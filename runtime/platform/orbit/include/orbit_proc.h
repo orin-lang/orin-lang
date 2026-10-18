@@ -1,14 +1,17 @@
-/* L0 family "process": arguments and standard input over orbit:process/v1 (host-abi.md section 4c). The generated C includes this
- * file when the program's manifest lists process/v1 (compiler/analysis/orbit.or), so a program that never reads its arguments or
- * stdin has no such import. The core (orin_platform_orbit.c) holds the refusing stubs this file replaces.
- * No getenv: nothing in std reads the environment, and importing env_get would make every program that starts a task need the
- * process capability (the runtime reads ORIN_THREADS; there is one thread here). */
+/* L0 family "process": arguments, environment and standard input over orbit:process/v1 (host-abi.md section 4c). The generated C
+ * includes this file when the program's manifest lists process/v1 (compiler/analysis/orbit.or: it reads its arguments, its
+ * environment or stdin), so a program that does none of this has no such import. The core (orin_platform_orbit.c) holds the
+ * refusing stubs this file replaces.
+ * getenv is served by env_get only in such a program: the runtime reads ORIN_THREADS through it (a host that does not know the
+ * variable answers NOT_FOUND, which is "unset"), and std:process `env` reads the variable the program asks for. A program that
+ * starts tasks but never uses the process capability keeps a getenv that returns NULL and no env_get import. */
 #ifndef ORBIT_PROC_H
 #define ORBIT_PROC_H
 #include "orbit_abi.h"
 
 ORBIT_IMPORT("orbit:process/v1", "arg_count") int32_t orbit_arg_count(void);
 ORBIT_IMPORT("orbit:process/v1", "arg") int64_t orbit_arg(int32_t i, int64_t p, int64_t cap);
+ORBIT_IMPORT("orbit:process/v1", "env_get") int64_t orbit_env_get(int64_t name, int64_t name_len, int64_t p, int64_t cap);
 ORBIT_IMPORT("orbit:process/v1", "stdin_read") int64_t orbit_stdin_read(int64_t p, int64_t cap, int64_t timeout_ms);
 
 static int g_argc = -1; /* -1: the host has not been asked yet */
@@ -39,6 +42,30 @@ int orin_platform_arg_count(void) {
     return g_argc;
 }
 const char *orin_platform_arg(int i) { return g_argv[i]; }
+
+/* The value of environment variable `name`, valid until the next call, or NULL (unset, denied, or too large). The host gives the
+ * length only with the value: grow the buffer on ERR_TOO_LARGE. */
+static char *g_env_val;
+static size_t g_env_cap;
+const char *orin_platform_getenv(const char *name) {
+    int64_t nl = 0;
+    while (name[nl]) nl++;
+    for (size_t cap = 256; cap <= (1u << 20); cap *= 2) {
+        if (g_env_cap < cap) {
+            if (g_env_val) orin_platform_free(g_env_val);
+            g_env_val = (char *)orin_platform_alloc(cap);
+            g_env_cap = g_env_val ? cap : 0;
+            if (!g_env_val) return NULL;
+        }
+        int64_t r = orbit_env_get(ORBIT_PTR(name), nl, ORBIT_PTR(g_env_val), (int64_t)g_env_cap - 1);
+        if (r >= 0) {
+            g_env_val[r] = 0;
+            return g_env_val;
+        }
+        if (r != -5) return NULL; /* ERR_TOO_LARGE: try a bigger buffer */
+    }
+    return NULL;
+}
 
 /* stdin: buffered, filled by stdin_read (waits without bound; 0 = end of input; a status, such as denied, also ends the input). */
 static char g_in[4096];

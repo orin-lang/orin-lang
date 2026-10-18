@@ -84,6 +84,7 @@ export function builtinName(b: Builtin): string {
     BFsRemoveDir => "fs.removeDir",
     BFsWriteFileAtomic => "fs.writeFileAtomic",
     BProcessArgs => "process.args",
+    BProcessEnv => "process.env",
     BProcessExit => "process.exit",
     BIoReadBytes => "io.readBytes",
     BIoReadLine => "io.readLine",

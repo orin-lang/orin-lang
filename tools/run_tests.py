@@ -50,6 +50,7 @@ COMPILE_TIMEOUT = 120
 HEADER_EXIT = re.compile(r"^//\s*exit:\s*(-?\d+)\s*$")
 HEADER_ERROR = re.compile(r"^//\s*error:\s*(E\d{4})\s*$")
 HEADER_FLAGS = re.compile(r"^//\s*flags:\s*(.*?)\s*$")
+HEADER_ENV = re.compile(r"^//\s*env:\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$")
 HEADER_WARNS = re.compile(r"^//\s*warns:\s*(.*?)\s*$")
 WARNING_CODE = re.compile(r"warning\[(W\d{4})\]")
 HEADER_STDERR = re.compile(r"^//\s*stderr:\s*(.*?)\s*$")
@@ -233,11 +234,15 @@ def run_test(args, label, test):
     hdrs = header_lines(entry)
     flags = []          # `// flags: --check-contracts` (any header line): extra compiler flags
     want_warns = None   # `// warns: W0450 W0452` (or `none`): the warning codes of the compile, as a sorted list
+    want_env = {}       # `// env: NAME=value` (any header line): an environment variable of the run
     want_stderr = []    # `// stderr: text` (any header line): stderr of the run (of the compile, for an error test) must contain text
     for h in hdrs:
         m = HEADER_FLAGS.match(h)
         if m:
             flags += m.group(1).split()
+        m = HEADER_ENV.match(h)
+        if m:
+            want_env[m.group(1)] = m.group(2)
         m = HEADER_STDERR.match(h)
         if m:
             want_stderr.append(m.group(1))
@@ -292,6 +297,7 @@ def run_test(args, label, test):
         return tag, False, "C compilation failed (exit %s); stderr head:\n%s" % (rc, head(err))
 
     env = dict(os.environ)
+    env.update(want_env)
     if args.sanitize:
         env["ASAN_OPTIONS"] = "detect_leaks=0:allocator_may_return_null=1"
     # Optional stdin: `name.in` next to `name.or`, or `input.in` next to `main.or`.
@@ -300,6 +306,8 @@ def run_test(args, label, test):
     if os.path.isfile(in_path):
         with open(in_path, "rb") as f:
             stdin_data = f.read()
+    if args.target in WASM_TARGETS and args.orbit and want_env:
+        return tag, None, "sets environment variables, which `orbit run` cannot pass (tools/wasm_run.mjs --env serves them)"
     if args.target in WASM_TARGETS and args.orbit and tag in ORBIT_SERIAL:
         return tag, None, ORBIT_SERIAL[tag]
     if args.target in WASM_TARGETS and args.orbit:
@@ -309,6 +317,8 @@ def run_test(args, label, test):
     else:
         run = [os.environ.get("NODE", "node"), os.path.join(ROOT, "tools", "wasm_run.mjs")] if args.target in WASM_TARGETS else []
         tail = ["--mount", "/work=%s:rw" % ROOT, "--cwd", "/work", "--fs-max-handles", "1024", "--stdin"] if run else []  # the grants of orbit_command, for the host of tools/
+        for k, v in want_env.items():
+            tail += ["--env", "%s=%s" % (k, v)] if run else []
         rc, out, err = run_cmd(run + [os.path.join(ROOT, exe)] + tail, RUN_TIMEOUT, env=env, stdin_data=stdin_data)
         m = re.search(r"unknown import (orbit:[a-z]+/v\d+)", err)
         if args.target in WASM_TARGETS and rc == 2 and m:

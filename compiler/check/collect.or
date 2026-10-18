@@ -266,7 +266,8 @@ function stdLookup(m: StdModule, name: string): Option<ValEnt> {
       : (name == "grantArgsOnly" ? Some(VStd(BGrantArgsOnly))
       : (name == "grantRevoke" ? Some(VStd(BGrantRevoke)) : anyVal(ioLookup(name), anyVal(netLookup(name), taskVal(name)))))))))))))))))))))),
     StdProcess => name == "args" ? Some(VStd(BProcessArgs))
-      : (name == "exit" ? Some(VStd(BProcessExit)) : None),
+      : (name == "env" ? Some(VStd(BProcessEnv))
+      : (name == "exit" ? Some(VStd(BProcessExit)) : None)),
     StdClock => name == "nowMillis" ? Some(VStd(BTimeNowMillis))
       : (name == "monotonicMillis" ? Some(VStd(BTimeMonotonicMillis)) : None),
     StdCore => coreVal(name)

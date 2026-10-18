@@ -1545,6 +1545,24 @@ OrinObj *orin_process_args(int64_t gh) {
     return arr;
 }
 
+OrinObj *orin_process_env(int64_t gh, OrinObj *name) {
+    (void)grant_use(gh, GK_PROCESS, "env");
+    uint64_t n = orin_str_len(name);
+    const char *d = orin_str_data(name);
+    for (uint64_t i = 0; i < n; i++)
+        if (d[i] == 0) return orin_none(); /* a name with a NUL byte names no variable */
+    char *key = (char *)orin_platform_alloc((size_t)n + 1);
+    if (!key) orin_trap("out of memory");
+    for (uint64_t i = 0; i < n; i++) key[i] = d[i];
+    key[n] = 0;
+    const char *v = orin_platform_getenv(key);
+    orin_platform_free(key);
+    if (!v) return orin_none();
+    size_t k = 0;
+    while (v[k]) k++;
+    return orin_variant1(0, 1, ORIN_SLOT(orin_str_new(v, k)));
+}
+
 void orin_process_exit(int64_t code) { orin_platform_exit((int)code); }
 
 /* ================================================================ tasks and transfer (ADR-0017 stage 0)

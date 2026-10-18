@@ -382,6 +382,7 @@ export function declares(): string {
     "declare void @orin_file_write_line(i64, ptr)",
     "declare void @orin_file_flush(i64)",
     "declare ptr @orin_process_args(i64)",
+    "declare ptr @orin_process_env(i64, ptr)",
     "declare void @orin_process_exit(i64)",
     "declare ptr @orinl_io_read_bytes(i64, i64)",
     "declare ptr @orinl_io_read_line(i64)",

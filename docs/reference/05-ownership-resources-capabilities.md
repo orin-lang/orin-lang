@@ -120,8 +120,8 @@ Code without a grant can therefore still write to stdout and stderr and end the 
 **CAP-7.** The host policy is the full authority of the OS process minus the families named in the environment variable `ORIN_DENY`
 (comma-separated `fs process stdio clock net all`; any malformed value is rejected as a whole and the program traps at start). A denied family is still
 handed out so the program type-checks; each operation reports the denial: an operation that returns a `Result` returns `Err("... denied by the host policy")`,
-an operation that cannot report (`exists`, `args`, `readLine`, `readBytes`, `writeStdout`, `shell`, `nowMillis`) **traps** (`capability denied: ...`).
-- Tests: `tests/next/deny/fs_open.or`, `tests/next/deny/fs_exists.or`, `tests/next/deny/process_args.or`, `tests/next/deny/process_shell.or`,
+an operation that cannot report (`exists`, `args`, `env`, `readLine`, `readBytes`, `writeStdout`, `shell`, `nowMillis`) **traps** (`capability denied: ...`).
+- Tests: `tests/next/deny/fs_open.or`, `tests/next/deny/fs_exists.or`, `tests/next/deny/process_args.or`, `tests/next/deny/process_env.or`, `tests/next/run/process_env.or`, `tests/next/deny/process_shell.or`,
   `tests/next/deny/stdio_read.or`, `tests/next/deny/clock_now.or`, `tests/next/deny/clock_monotonic.or`, `tests/next/deny/net_listen.or`,
   `tests/next/deny/all_ok.or` (run by `tools/test_capabilities.sh` with the matching `ORIN_DENY`; they are not part of `conformance.sh`). A malformed value
   (`bogus`, `fs,`, `,fs`, `fs, process`, `FS`, `fss`, `fs;process`) is checked in section 3 of the same script: exit 101, `trap: invalid ORIN_DENY`, no user code runs.

@@ -15,9 +15,9 @@
  *                     the families orbit_proc.h, orbit_fs.h and orbit_net.h (orbit:process/v1, fs/v1, net/v1). The compiler
  *                     #includes the family of each capability in the program's manifest at the end of the generated C; their
  *                     definitions replace the weak refusing stubs below (no arguments but "main", empty stdin, EPERM). Grants and
- *                     their narrowing are pure (orin_platform_pure.h) and shared with the native layer. There is no environment
- *                     (getenv is NULL: nothing in std reads it, and importing env_get would make every program that starts a task
- *                     need the process capability);
+ *                     their narrowing are pure (orin_platform_pure.h) and shared with the native layer. The environment
+ *                     is the family of orbit_proc.h too (std:process `env`; without process/v1, getenv is NULL and there is no env_get
+ *                     import, so a program that only starts tasks needs no process capability);
  *   wake sources      L0 only (flags, below). One thread runs everything, so nothing can set a token while a host call blocks: a
  *                     wait checks the bound token first and the host gets no wake handle;
  *   processes (shell) not available (-1), as are mkdir / remove / rename (no L0 entry point);
@@ -53,7 +53,7 @@ __attribute__((export_name("orin_exit_status"))) int32_t orin_exit_status(void) 
 void orin_platform_init(int argc, char **argv) { (void)argc, (void)argv; }
 ORBIT_WEAK int orin_platform_arg_count(void) { return 1; }
 ORBIT_WEAK const char *orin_platform_arg(int i) { return g_argv0[i]; }
-const char *orin_platform_getenv(const char *name) { /* no environment: see orbit_proc.h */
+ORBIT_WEAK const char *orin_platform_getenv(const char *name) { /* no environment unless the manifest lists process/v1: orbit_proc.h */
     (void)name;
     return NULL;
 }

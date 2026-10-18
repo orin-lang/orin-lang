@@ -592,6 +592,7 @@ OrinObj *orin_fs_remove_file(int64_t fs, OrinObj *path);        /* Result<void,s
 OrinObj *orin_fs_remove_dir(int64_t fs, OrinObj *path);         /* Result<void,string>; rmdir (empty directories only) */
 OrinObj *orin_fs_write_file_atomic(int64_t fs, OrinObj *path, OrinObj *data); /* Result<void,string>; temp file + fsync + rename */
 OrinObj *orin_process_args(int64_t proc); /* new string[] (without program name) */
+OrinObj *orin_process_env(int64_t proc, OrinObj *name); /* Option<string>: the environment variable `name` */
 
 /* ---------------------------------------------------------------- capability grants (ADR-0021 Stage A, ADR-0027)
  * Every privileged operation above and in orin_runtime_io.h takes a grant handle first (int64_t, tagged, generation-

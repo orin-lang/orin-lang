@@ -47,7 +47,7 @@ backends=c
 if command -v clang >/dev/null 2>&1; then backends="c llvm"; CC=clang; fi
 
 for b in $backends; do
-  for n in all_ok fs_open fs_exists process_args process_shell stdio_read clock_now clock_monotonic net_listen; do build $b $n; done
+  for n in all_ok fs_open fs_exists process_args process_env process_shell stdio_read clock_now clock_monotonic net_listen; do build $b $n; done
 
   # 1. control run: everything works (stdin is the file itself: readLine finds a line)
   expect $b all_ok "" 0 "fs true" ""
@@ -72,6 +72,7 @@ for b in $backends; do
   expect $b fs_exists clock 0 "exists: true" ""
   # process
   expect $b process_args process 101 "before" "trap: capability denied: process args"
+  expect $b process_env process 101 "before" "trap: capability denied: process env"
   expect $b process_shell process 101 "before" "trap: capability denied: process shell"
   if grep -q "SHELL RAN" build/capabilities/process_shell.$b.out; then fail "$b: a denied shell command ran"; fi
   expect $b process_shell fs 0 "0" ""
@@ -113,11 +114,12 @@ has fs_open Fs.ReadFile
 has fs_open Fs.WriteFile
 has fs_exists Fs.Stat
 has process_args Process.Args
+has process_env Process.Env
 has process_shell Process.Spawn
 has stdio_read Stdio.Read
 has clock_now Clock.Now
 has clock_monotonic Clock.Now
-for n in all_ok fs_open fs_exists process_args process_shell stdio_read clock_now clock_monotonic; do
+for n in all_ok fs_open fs_exists process_args process_env process_shell stdio_read clock_now clock_monotonic; do
   has $n Host.Acquire
   $ORIN2 effects tests/next/deny/$n.or --check-purity >/dev/null || fail "effects of $n disagree with the purity analysis"
 done

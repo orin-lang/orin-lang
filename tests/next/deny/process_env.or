@@ -1,0 +1,9 @@
+// ORIN_DENY=process: `env` traps
+import { Host, withProcess } from "std:host";
+import { env } from "std:process";
+function main(host: Host): void {
+  withProcess(host, proc => {
+    console.log("before");
+    console.log(env(proc, "PATH").isSome().toString());
+  });
+}
