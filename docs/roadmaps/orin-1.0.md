@@ -22,6 +22,7 @@ recommendation of every open decision. Henry can still overturn each one; a reve
 | D6 | A short named experimental list; everything else frozen under ADR-0048 |
 | D7 | Raise the L0 budget to 1,400 code lines by ADR, each addition with contracts and a CBMC harness (ADR-0054) |
 | D8 | **Decided 2026-10-18 by the owner:** 1.0 ships without R3f; R3f follows in 1.x. 1.0 gates on R3d/R3e being merged |
+| D8a | Decided 2026-10-18 (owner's goal: 1.0 as fast as possible): argv process start stays experimental at 1.0; M3b (scheduler Gate 2) moves to 1.x; the compiler proof gates 1.0 only on 0 REFUTED, a CI ratchet with no new UNKNOWN and the verifier gaps closed, while 0 UNKNOWN is a 1.x goal |
 | D9 | Park T6 #98 and T5 #91 until after 1.0 |
 | D10 | `v1.0.0-beta.1` at M4, `-rc.N` at M5, `--prerelease` tied to the tag suffix |
 | D11 | Beta freezes syntax and std names; semantic fixes allowed |
@@ -305,7 +306,7 @@ language PRs touch: `compiler/check/expr.or`, `compiler/main.or`, `compiler/load
 | M2 | Runtime R3 | "Runtime in Orin schreiben" (ADR-0052) | `runtime/core`, new `core` modules, `compiler/` for R3a only | R3a/b merged (#141) | R3a-R3e merged; R3f deferred to 1.x (D8); benchmark gate holds |
 | M2b | Annotations S3-S6 | "Annotations als Sprachfeature" (ADR-0046) | `compiler/loader`, `compiler/check/userannos.or`, `library/std/meta*`, `std:json` (S6) | S1-S3 merged | S4-S6 merged, `@Json` example only |
 | M3a | Concurrency floor (Gate 1) | new thread, ADR-0017 amendment | `library/std/task*.or`, `library/std/net.or`, `runtime/platform` (L0), `tests/concurrency`, `tests/net`, checker rules for C4 | C0 can start now; C1/C3 need D7 | C0-C5 merged; acceptance campaign green; API reviewed against ADR-0048 |
-| M3b | Scheduler (Gate 2) | same thread, scheduler ADR | `runtime/core` (task parts, after R3e), `runtime/platform`, `library/std/task*.or` | M3a done, R3e merged | S1-S4 merged with measurements, or deferred to 1.x with a note |
+| M3b | Scheduler (Gate 2) | same thread, scheduler ADR | `runtime/core` (task parts, after R3e), `runtime/platform`, `library/std/task*.or` | M3a done, R3e merged | **Deferred to 1.x** (decided 2026-10-18, fastest path to 1.0) |
 | M4 | Freeze and beta | owner | docs, release workflow, VS Code | M1, M2 (to R3e at least), M3a, language items in 3.1 | std I/O freeze taken; reference and stability page published; `1.0.0-beta.1` available through Homebrew and `install.sh`; agent-ergonomics run done |
 | M5 | RC and 1.0 | owner | none new | beta feedback closed; R3-R5 gates closed on the exact SHA | dry-run on every supported platform; `1.0.0-rc.N`, then `1.0.0` as a non-pre-release |
 
