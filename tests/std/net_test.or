@@ -1,7 +1,7 @@
 // std:net (ADR-0033): the pure helpers, and StreamReader / recv / send on a real loopback socket. Run by tools/test_std.sh
 // with contract checking (every @Invariant / @Requires / @Ensures of std:net is a run-time trap) and without.
 import { assert, assertEq, assertEqUsize, assertEqString, assertEqBool, fail } from "std:test";
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { milliseconds, Deadline, MonotonicInstant } from "std:time";
 import { Scope, scopeNetDo } from "std:task";
 import { Bytes, fromString, fromInts } from "std:bytes";
@@ -84,7 +84,7 @@ function errorClassification(): void {
 function delimiterSearchThroughReadUntil(host: Host): void {
   // The delimiter search is internal; its boundaries are observable through `readUntil` on bytes that are already buffered
   // (no byte arrives, so every answer that does not need the network is immediate).
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {}, (s: Stream) => {
         const crlf = fromString("\r\n");
@@ -142,7 +142,7 @@ function pair(ln: Listener, net: NetGrant, client: (c: Stream) => void, server: 
 
 @Test
 function readUntilAndExact(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         // a head that arrives as three separate sends, and a body behind it
@@ -165,7 +165,7 @@ function readUntilAndExact(host: Host): void {
 
 @Test
 function limitsAndDeadlines(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("0123456789"), milliseconds(1000));
@@ -189,7 +189,7 @@ function limitsAndDeadlines(host: Host): void {
 
 @Test
 function recvAndSend(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         const one = send(c, fromInts([1, 2, 3, 250, 251]), milliseconds(1000));
@@ -216,7 +216,7 @@ function recvAndSend(host: Host): void {
 
 @Test
 function sendViewsOfALargerArray(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         // views that start and end inside their storage: only their own bytes go out
@@ -236,7 +236,7 @@ function sendViewsOfALargerArray(host: Host): void {
 
 @Test
 function refusals(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const a = useListenerNet(net, "127.0.0.1", 0, 0, (ln, n) => { fail("backlog 0 must be refused"); });
     assert(a.isErr(), "backlog 0");
     const b = useListenerNet(net, "not an address", 0, 4, (ln, n) => { fail("not numeric"); });
@@ -248,7 +248,7 @@ function refusals(host: Host): void {
 
 @Test
 function readUntilNeverBuffersPastTheLimit(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("0123456789"), milliseconds(1000));
@@ -265,7 +265,7 @@ function readUntilNeverBuffersPastTheLimit(host: Host): void {
 
 @Test
 function readUntilDeadline(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("abc"), milliseconds(1000));
@@ -288,7 +288,7 @@ function at(ms: int): Deadline {
 
 @Test
 function absoluteDeadlines(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("abcd"), milliseconds(1000));
@@ -318,7 +318,7 @@ function absoluteDeadlines(host: Host): void {
 
 @Test
 function acceptAndConnectUntil(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     const r = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       const c = withConnectionBeside(n, "127.0.0.1", portOf(ln), milliseconds(2000), ln, (s: Stream, l2: Listener) => {
         const now = monotonicMillis(s);
@@ -350,7 +350,7 @@ function monotonicMillis0(net: NetGrant): int {
 
 @Test
 function cancelledScopeFailsNetCalls(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
       assert(sc.cancel(), "cancel changes the token once");
       const l = useListenerNet(g, "127.0.0.1", 0, 8, (ln, n) => {

@@ -1,8 +1,8 @@
 // error: E0400
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { nowMillis, deadlineAfter, milliseconds } from "std:time";
 function main(host: Host): void {
-  useClock(
+  withClock(
     host,
     clock => {
       const deadline = deadlineAfter(nowMillis(clock), milliseconds(1));

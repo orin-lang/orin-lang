@@ -1,9 +1,9 @@
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { ClockGrant } from "std:time";
 import { nowMillis, durationBetween, toMillis, formatIso } from "std:time";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => { run(clock); });
+  withHost(host, (fs, proc, stdio, clock) => { run(clock); });
 }
 function run(clock: ClockGrant): void {
   const a = nowMillis(clock);

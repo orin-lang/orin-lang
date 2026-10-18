@@ -1,9 +1,9 @@
 // error: E0471
 // a clock grant does not authorise file access
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { readFile } from "std:fs";
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     const r = readFile(clock, "x.txt");
   });
 }
