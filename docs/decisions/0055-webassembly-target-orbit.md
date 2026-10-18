@@ -50,11 +50,13 @@ What does the compiler emit, which memory width, which C library and which host 
    Why not wasi-libc: wasi-libc has no wasm64 build, and WASI preview 1 has ambient `environ_get`, `clock_time_get` and
    `random_get` that Orbit refuses to link (Orbit ADR-0003); its restricted WASI shim (`wasi_p1/v1`) is wasm32-only. With an
    own L0 the module's import list is exactly the capabilities the program reaches: wasm-ld drops dead imports, so a program
-   that never reads the clock does not import it.
+   that never reads the clock does not import it. (Process, file and network access came later and cannot rely on wasm-ld alone:
+   decision 9.)
 
 4. **Behaviour of the L0, fail closed.** stdout and stderr become log records (one per line; stdout = info, stderr = error,
-   partial lines on flush). Arguments are `["main"]`, the environment is empty, stdin is at end of input, `ORIN_DENY` does not
-   exist (the host grant is the policy). Files, processes and the network return `EPERM`. There is one thread, and tasks
+   an unterminated stdout line waits for its newline, rev. 2026-10-18). Without the process, file and network capabilities
+   (decision 9) the arguments are `["main"]`, the environment is empty, stdin is at end of input, files and the network return
+   `EPERM`; `ORIN_DENY` does not exist (the host grant is the policy). Processes (`shell`) are never available. There is one thread, and tasks
    run on it one at a time, to completion, **when someone would otherwise block** (rev. 2026-10-17, "tasks"):
    `orin_platform_thread_create` only queues the task; `thread_join` of a queued task runs it; `monitor_wait` and
    `monitor_wait_until` give the thread to the next queued task (the monitor is released meanwhile and locked again
@@ -84,15 +86,15 @@ What does the compiler emit, which memory width, which C library and which host 
    section `orbit.manifest` = `{"abi":1,"requires":[...],"producer":"orin"}` (an assembler directive at the end of the C
    file). `requires` is derived from the transitive effects of `main` (`compiler/analysis/orbit.or`, table in
    [capabilities.md](../capabilities.md)): `Console.Write`/`Stdio.Write` -> `log/v1`, `Clock.Now` -> `clock/v1`; `log/v1` is
-   always listed (a trap message goes to stderr). An effect the target does not provide (`Fs.*`, `Process.Spawn`, `Net.*`,
-   `Stream.*`) fails the build with **E0523**; `Task.*` and `Channel.*` need no capability (decision 4), so they are listed as available and the evidence path, so a program never compiles into a
+   always listed (a trap message goes to stderr); decision 9 adds `process/v1`, `fs/v1` and `net/v1`. An effect the target
+   does not provide (`Process.Spawn`, the shell) fails the build with **E0523**; `Task.*` and `Channel.*` need no capability (decision 4), so they are listed as available and the evidence path, so a program never compiles into a
    module that would only fail at run time. An unresolved call (`Unknown.*`, e.g. calling a function value) is not an error:
-   the guest can import only `log/v1` and `clock/v1`, so the manifest then lists both (a manifest must cover every import;
-   listing one more is the safe over-approximation). The manifest **describes**; the host's grant authorises (Orbit rejects
+   the manifest then lists `clock/v1` and every capability that a function of the package needs (a manifest must cover every
+   import; listing one more is the safe over-approximation, and the host then requires its grant). The manifest **describes**; the host's grant authorises (Orbit rejects
    a module whose imports are not all listed, and instantiates only with every listed capability granted).
 
 6. **Tests and CI.** `tools/run_tests.py --target wasm64-orbit` builds every conformance test as a module and runs it under
-   Node >= 24 with `tools/wasm_run.mjs`, a 100-line host that serves the same two capabilities with Orbit's load-time checks
+   Node >= 24 with `tools/wasm_run.mjs`, a small host that serves the capabilities of the target (log, clock and, since decision 9, process and fs) with Orbit's load-time checks
    (orbit-prefixed imports only, manifest covers imports). A test whose program needs an unavailable effect is SKIP, not a
    failure. `tools/test_wasm.sh` runs that, the float, builtins and allocator tests and the `orin_tls` check (decision 4); the
    CI job `wasm` runs it. State at acceptance: 1002 passed, 0 failed, 32 skipped (file system, network, tasks, stdin); with
@@ -100,7 +102,7 @@ What does the compiler emit, which memory width, which C library and which host 
    4 task tests that need interleaving or a trapping task, decision 4).
 
 7. **Budget.** `runtime/platform/orbit/` is not part of a native binary, so it does not count against the native L0 budget
-   (ADR-0054); it has its own ceiling of **1100 code lines** (counted like `tools/verify_platform.sh`). 805 at acceptance with
+   (ADR-0054); it has its own ceiling of **1400 code lines** (1100 until decision 9) (counted like `tools/verify_platform.sh`). 805 at acceptance with
    a ceiling of 900; raised to 1100 with the large-block allocator and the task scheduler (988 lines), because both are
    needed for real programs (memory near native, `std:task`) and each is covered by its own test.
    Evidence instead of CBMC for now: the shared pure primitives keep their harnesses; the rest is covered by the conformance
@@ -129,6 +131,42 @@ What does the compiler emit, which memory width, which C library and which host 
      `-m32` where a 32-bit C toolchain exists).
    Limits: a wasm32 memory is at most 4 GiB (module stack and data included); an allocation that does not fit fails with
    `out of memory`. State: 1043 passed, 0 failed, 23 skipped for each width (the same tests skip on both).
+
+9. **Process, files and network (2026-10-18): L0 families chosen by the manifest.** Programs using `std:process` `args`,
+   `std:io` stdin, `std:fs`, `std:path`, `std:net`, `std:http` and DNS run unchanged on Orbit: the L0 maps them onto
+   `orbit:process/v1`, `orbit:fs/v1` and `orbit:net/v1` (orbit `docs/orin-std-mapping.md` is the table of functions, signatures and
+   status codes; the host's status values become the errno values and `NET_*` codes of `orin_platform.h`, so the std error
+   messages are the native ones).
+   - *Why families, not just imports.* The runtime refers to the file and socket functions from code every program with a
+     grant reaches (`orin_cap_revoke` closes sockets, the exit path closes files), so wasm-ld cannot drop those imports and a
+     `hello` with `withHost` would need `fs/v1` and `net/v1` grants. The core `orin_platform_orbit.c` therefore defines weak
+     refusing stubs (the old behaviour: no arguments, empty stdin, `EPERM`), and each capability is a header of
+     `runtime/platform/orbit/include` (`orbit_proc.h`, `orbit_fs.h`, `orbit_net.h`) with the strong definitions and the imports.
+     The compiler `#include`s the family of every capability in the manifest right before it (`compiler/analysis/orbit.or`), so
+     the module imports exactly the capabilities it lists, the build tools need no change (the include directory is already on
+     their path) and the manifest and the L0 cannot disagree.
+   - *Effects.* `Process.Args` and `Stdio.Read` -> `process/v1`; `Fs.*` (but `Fs.Narrow`) -> `fs/v1`; `Net.*` and `Stream.*` (but
+     `Net.Narrow`) -> `net/v1`; narrowing a grant is a check in the guest and needs nothing. E0523 remains for `Process.Spawn`.
+   - *Shared scope rules.* The grant checks (`net_ok`, `net_scope`, `net_narrow`) moved into `orin_platform_netscope.h` and
+     `orin_platform_pure.h`, shared with the native layer, so a narrowed grant refuses before the host is asked exactly as
+     natively; the host grant is the outer bound and is checked again on every call. A socket record keeps the host handle in
+     `sc[0].lo/.hi`.
+   - *Environment.* No `getenv`: nothing in std reads the environment, and the runtime reads only `ORIN_THREADS` (one thread
+     here) and `ORIN_SITES_OUT`. Importing `env_get` would make `process/v1` a requirement of every program that starts a task.
+   - *Wake sources* stay L0 flags (no import). One thread runs everything, so a token is never set while a host call blocks;
+     a wait checks the bound token first and the host gets no wake handle. A scope cancelled before its task runs (always the
+     case here) stops the task's accept, connect, recv and send at once; a blocked accept ends by its timeout. The host's
+     `wake_*` would import `net/v1` into every program with tasks.
+   - *Streams* are buffered in the L0 (4 KiB per file) as natively; `dir_list` uses a 1 KiB name buffer; arguments are read
+     from the host on first use (the host gives an argument's length only with the value: the L0 grows its buffer).
+   - *Not available:* mkdir, remove, rename and sync (the L0 interface has no entry point for them yet), UDP, TLS, `shell`.
+   - *Tests.* `tools/wasm_run.mjs` serves `process/v1` and `fs/v1` (mounts, same statuses), so the conformance tests of files, stdin
+     and arguments run in CI under Node; network tests are SKIP there. `tools/test_orbit.py` and `tools/run_tests.py --orbit` run on
+     the real Orbit (skipped without a binary): 1163 conformance tests on Orbit per width, 2 SKIP that need a client and a server
+     task at the same time, 4 SKIP for the task limits of decision 4; and the programs of `tests/orbit` (arguments, stdin,
+     files, a TCP echo server and client, DNS, `examples/http_server.or` hit with curl, cancellation).
+   - *Budget.* The L0 grew by about 350 code lines; the ceiling of `runtime/platform/orbit` is now **1400** (decision 7).
+     The native L0 budget is 1176 of 1400 (+4: the include guards of the new header; the code moved between files of `runtime/platform`).
 
 ## Measurements (2026-10-17, one Linux x86_64 container, best of 3, wall time)
 
@@ -204,6 +242,8 @@ Node and 2.2x on Orbit without fuel. A 64-bit Orin value in a 32-bit memory cost
 - **Tasks**: done sequentially (decision 4). Left: tasks that need interleaving and tasks that trap need either stack switching
   (the WebAssembly stack-switching proposal; Orbit does not enable it) or the exception-handling proposal (a trapping task
   would unwind to its join); or a scheduler-backed task capability in Orbit.
-- **Capabilities**: `random/v1` once std has a randomness effect; `kv/v1` and files once Orin has effects for them.
+- **Capabilities**: `random/v1` once std has a randomness effect; `kv/v1` once Orin has an effect for it; `fs/v1` mkdir, remove,
+  rename and sync once the L0 interface has entry points for them; an environment once std reads it; `orbit:thread/v1` for
+  tasks that run at the same time (a server that answers while it accepts).
 - **LLVM backend** for this target (triple and data layout per target).
 - **Reactor services**: named exported handlers instead of one `orin_main`, `orbit_alloc` for host-to-guest payloads.
