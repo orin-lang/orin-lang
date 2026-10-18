@@ -4,8 +4,9 @@ import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Bytes, fromString, fromArray } from "std:bytes";
 import {
-  NetGrant, Listener, Stream, useListenerNet, useAccepted, useConnection, useConnectionBeside, useListen, useConnect, withConnect, portOf, recv, sendAll,
-  shutdownWrite, StreamReader, Fill, NetError, isClosed, isTimeout, isReset, isDenied, resolve, monotonicMillis, netErrorMessage
+  NetGrant, Listener, Stream, withListenerNet, withAccepted, withConnection, withConnectionBeside, withListen,
+  withConnect, portOf, recv, sendAll, shutdownWrite, StreamReader, Fill, NetError, isClosed, isTimeout, isReset,
+  isDenied, resolve, monotonicMillis, netErrorMessage
 } from "std:net";
 
 function say(label: string, ok: bool): void {
@@ -41,11 +42,11 @@ function isErr(r: Result<Fill, NetError>): bool {
 function serve(ln: Listener, net: NetGrant): void {
   const port = portOf(ln);
   say("port", port > 0);
-  const r = useConnectionBeside(net, "127.0.0.1", port, milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
+  const r = withConnectionBeside(net, "127.0.0.1", port, milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
     const sent = sendAll(c, fromString("hello world\r\nrest"), milliseconds(1000));
     say("sendAll", sent.isOk());
     // the server side: accept the queued connection
-    const a = useAccepted(ln2, milliseconds(1000), (s: Stream, peer) => {
+    const a = withAccepted(ln2, milliseconds(1000), (s: Stream, peer) => {
       say("peer", peer.host == "127.0.0.1" && peer.port > 0);
       // a recv never returns more than asked for
       const r1 = recv(s, 4, milliseconds(1000));
@@ -76,9 +77,9 @@ function serve(ln: Listener, net: NetGrant): void {
   });
   say("connection", r.isOk());
   // a limit is a limit
-  const r2 = useConnectionBeside(net, "127.0.0.1", port, milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
+  const r2 = withConnectionBeside(net, "127.0.0.1", port, milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
     sendAll(c, fromString("0123456789"), milliseconds(1000));
-    useAccepted(ln2, milliseconds(1000), (s: Stream, peer) => {
+    withAccepted(ln2, milliseconds(1000), (s: Stream, peer) => {
       let rd = new StreamReader(64);
       const f = rd.readUntil(s, fromString("\n"), 5, milliseconds(500));
       match (fillOf(f)) {
@@ -90,16 +91,16 @@ function serve(ln: Listener, net: NetGrant): void {
   });
   say("limit connection", r2.isOk());
   // accept with nobody connecting: a timeout error
-  const none = useAccepted(ln, milliseconds(30), (s: Stream, peer) => { console.log("unexpected"); });
+  const none = withAccepted(ln, milliseconds(30), (s: Stream, peer) => { console.log("unexpected"); });
   say("accept timeout", none.isErr() && isTimeout(none.unwrapErr()));
 }
 
 function main(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 16, (ln, n) => { serve(ln, n); });
+    const l = withListenerNet(net, "127.0.0.1", 0, 16, (ln, n) => { serve(ln, n); });
     say("listen", l.isOk());
     // a connect to a port nobody listens on is refused (the OS), and times out or fails, never hangs
-    const refused = useConnection(net, "127.0.0.1", 1, milliseconds(500), (c: Stream) => { console.log("unexpected"); });
+    const refused = withConnection(net, "127.0.0.1", 1, milliseconds(500), (c: Stream) => { console.log("unexpected"); });
     say("refused", refused.isErr());
     // resolve
     const rr = resolve(net, "localhost");
@@ -107,21 +108,21 @@ function main(host: Host): void {
   });
   // narrowing never widens
   withNet(host, net => {
-    useConnect(net, "*.example.com", 80, 443, c => {
-      const a = useConnection(c, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
+    withConnect(net, "*.example.com", 80, 443, c => {
+      const a = withConnection(c, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
       say("connect outside the granted pattern", a.isErr() && isDenied(a.unwrapErr()));
       const b = resolve(c, "localhost");
       say("resolve outside the granted pattern", b.isErr() && isDenied(b.unwrapErr()));
-      useConnect(c, "*", 0, 65535, c2 => {
-        const w = useConnection(c2, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
+      withConnect(c, "*", 0, 65535, c2 => {
+        const w = withConnection(c2, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
         say("widened pattern is refused", w.isErr() && isDenied(w.unwrapErr()));
       });
     });
-    useListen(net, "127.0.0.1", 0, l => {
-      const a = useConnection(l, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
+    withListen(net, "127.0.0.1", 0, l => {
+      const a = withConnection(l, "127.0.0.1", 80, milliseconds(200), (s: Stream) => { console.log("unexpected"); });
       say("a listen grant cannot connect", a.isErr() && isDenied(a.unwrapErr()));
-      useListen(l, "0.0.0.0", 0, l2 => {
-        const w = useListenerNet(l2, "0.0.0.0", 0, 4, (ln, n) => { console.log("unexpected"); });
+      withListen(l, "0.0.0.0", 0, l2 => {
+        const w = withListenerNet(l2, "0.0.0.0", 0, 4, (ln, n) => { console.log("unexpected"); });
         say("widened listen address is refused", w.isErr() && isDenied(w.unwrapErr()));
       });
     });

@@ -6,7 +6,7 @@ import { milliseconds } from "std:time";
 import { Bytes, bytesFromString } from "std:bytes";
 import { Scope, TaskHandle, scopeNetDo, spawn, spawnNet, channel, Receiver } from "std:task";
 import {
-  NetGrant, Listener, Stream, Accepted, useListenerNet, spawnAccepted, acceptDetached, serveAccepted, dropAccepted, withConnection,
+  NetGrant, Listener, Stream, Accepted, withListenerNet, spawnAccepted, acceptDetached, serveAccepted, dropAccepted, withConnection,
   portOf, recv, sendAll
 } from "std:net";
 
@@ -145,7 +145,7 @@ function run(sc: Scope, ln: Listener, net: NetGrant): void {
 function main(host: Host): void {
   withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
-      const r = useListenerNet(g, "127.0.0.1", 0, 64, (ln: Listener, n2: NetGrant) => {
+      const r = withListenerNet(g, "127.0.0.1", 0, 64, (ln: Listener, n2: NetGrant) => {
         run(sc, ln, n2);
       });
       say("listener", r.isOk());

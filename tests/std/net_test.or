@@ -6,11 +6,12 @@ import { milliseconds, Deadline, MonotonicInstant } from "std:time";
 import { Scope, scopeNetDo } from "std:task";
 import { Bytes, fromString, fromInts } from "std:bytes";
 import {
-  NetGrant, Listener, Stream, Peer, NetError, NetErrorKind, parsePeer, netErrorFromCode, netErrorMessage, isDenied, isTimeout, isReset,
-  useListenerNet, useConnectionBeside, useAccepted, portOf, recv, send, sendAll, shutdownWrite, monotonicMillis, StreamReader,
-  recvUntil, sendUntil, sendAllUntil, withListenerNet, withConnectionBeside, withAccepted, withAcceptedUntil, withConnectionUntil, acceptDetachedUntil, dropAccepted,
-  Fill, Filled, FillClosed, FillLimit, isClosed, isCancelled,
-  Denied, Closed, Timeout, Cancelled, Reset, InvalidArgument, InvalidPeer, Os
+  NetGrant, Listener, Stream, Peer, NetError, NetErrorKind, parsePeer, netErrorFromCode, netErrorMessage, isDenied,
+  isTimeout, isReset, withListenerNet, withConnectionBeside, withAccepted, withListener, portOf, recv, send, sendAll, shutdownWrite,
+  monotonicMillis, StreamReader, recvUntil, sendUntil, sendAllUntil, withAcceptedUntil, withConnectionUntil,
+  acceptDetachedUntil, dropAccepted, acceptDetached, useListen, useConnect, useListener, useListenerNet, useAccepted,
+  serveAcceptedDo, useConnection, useConnectionUntil, useConnectionBeside, Fill, Filled, FillClosed, FillLimit, isClosed, isCancelled, Denied, Closed,
+  Timeout, Cancelled, Reset, InvalidArgument, InvalidPeer, Os
 } from "std:net";
 
 function kindName(k: NetErrorKind): string {
@@ -85,7 +86,7 @@ function delimiterSearchThroughReadUntil(host: Host): void {
   // The delimiter search is internal; its boundaries are observable through `readUntil` on bytes that are already buffered
   // (no byte arrives, so every answer that does not need the network is immediate).
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {}, (s: Stream) => {
         const crlf = fromString("\r\n");
         const h = fromString("GET / HTTP/1.1\r\nHost: x\r\n\r\n");
@@ -132,9 +133,9 @@ function fillKind(r: Result<Fill, NetError>): string {
 // client side: connect to the listener in the same process and run `body` with the accepted stream (the connect completes
 // before accept: the kernel queues it)
 function pair(ln: Listener, net: NetGrant, client: (c: Stream) => void, server: (s: Stream) => void): void {
-  const r = useConnectionBeside(net, "127.0.0.1", portOf(ln), milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
+  const r = withConnectionBeside(net, "127.0.0.1", portOf(ln), milliseconds(2000), ln, (c: Stream, ln2: Listener) => {
     client(c);
-    const a = useAccepted(ln2, milliseconds(2000), (s: Stream, p: Peer) => { server(s); });
+    const a = withAccepted(ln2, milliseconds(2000), (s: Stream, p: Peer) => { server(s); });
     assert(a.isOk(), "accepted");
   });
   assert(r.isOk(), "connected");
@@ -143,7 +144,7 @@ function pair(ln: Listener, net: NetGrant, client: (c: Stream) => void, server: 
 @Test
 function readUntilAndExact(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         // a head that arrives as three separate sends, and a body behind it
         sendAll(c, fromString("GET / HT"), milliseconds(1000));
@@ -166,7 +167,7 @@ function readUntilAndExact(host: Host): void {
 @Test
 function limitsAndDeadlines(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("0123456789"), milliseconds(1000));
       }, (s: Stream) => {
@@ -190,7 +191,7 @@ function limitsAndDeadlines(host: Host): void {
 @Test
 function recvAndSend(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         const one = send(c, fromInts([1, 2, 3, 250, 251]), milliseconds(1000));
         assertEqUsize(one.unwrap(), 5, "send reports what it handed over");
@@ -217,7 +218,7 @@ function recvAndSend(host: Host): void {
 @Test
 function sendViewsOfALargerArray(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         // views that start and end inside their storage: only their own bytes go out
         const all = fromString("xxHELLOyyWORLDzz");
@@ -237,11 +238,11 @@ function sendViewsOfALargerArray(host: Host): void {
 @Test
 function refusals(host: Host): void {
   withNet(host, net => {
-    const a = useListenerNet(net, "127.0.0.1", 0, 0, (ln, n) => { fail("backlog 0 must be refused"); });
+    const a = withListenerNet(net, "127.0.0.1", 0, 0, (ln, n) => { fail("backlog 0 must be refused"); });
     assert(a.isErr(), "backlog 0");
-    const b = useListenerNet(net, "not an address", 0, 4, (ln, n) => { fail("not numeric"); });
+    const b = withListenerNet(net, "not an address", 0, 4, (ln, n) => { fail("not numeric"); });
     assert(b.isErr(), "a name is not an address");
-    const c = useListenerNet(net, "127.0.0.1", 99999, 4, (ln, n) => { fail("bad port"); });
+    const c = withListenerNet(net, "127.0.0.1", 99999, 4, (ln, n) => { fail("bad port"); });
     assert(c.isErr(), "port out of range");
   });
 }
@@ -249,7 +250,7 @@ function refusals(host: Host): void {
 @Test
 function readUntilNeverBuffersPastTheLimit(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("0123456789"), milliseconds(1000));
       }, (s: Stream) => {
@@ -266,7 +267,7 @@ function readUntilNeverBuffersPastTheLimit(host: Host): void {
 @Test
 function readUntilDeadline(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("abc"), milliseconds(1000));
       }, (s: Stream) => {
@@ -289,7 +290,7 @@ function at(ms: int): Deadline {
 @Test
 function absoluteDeadlines(host: Host): void {
   withNet(host, net => {
-    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+    const l = withListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
       pair(ln, n, (c: Stream) => {
         sendAll(c, fromString("abcd"), milliseconds(1000));
       }, (s: Stream) => {
@@ -353,17 +354,60 @@ function cancelledScopeFailsNetCalls(host: Host): void {
   withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
       assert(sc.cancel(), "cancel changes the token once");
-      const l = useListenerNet(g, "127.0.0.1", 0, 8, (ln, n) => {
+      const l = withListenerNet(g, "127.0.0.1", 0, 8, (ln, n) => {
         // every network call of a cancelled task fails with Cancelled, without waiting and without touching the socket
-        const c = useConnectionBeside(n, "127.0.0.1", portOf(ln), milliseconds(5000), ln, (s: Stream, l2: Listener) => {
+        const c = withConnectionBeside(n, "127.0.0.1", portOf(ln), milliseconds(5000), ln, (s: Stream, l2: Listener) => {
           fail("connect must not succeed in a cancelled scope");
         });
         assert(c.isErr() && c.unwrapErr().kind == Cancelled, "connect: Cancelled");
-        const a = useAccepted(ln, milliseconds(5000), (s: Stream, p: Peer) => { fail("accept must not succeed"); });
+        const a = withAccepted(ln, milliseconds(5000), (s: Stream, p: Peer) => { fail("accept must not succeed"); });
         assert(a.isErr() && a.unwrapErr().kind == Cancelled, "accept: Cancelled");
         assertEqString(netErrorMessage(a.unwrapErr()).length > 0 ? "text" : "empty", "text", "Cancelled has text");
       });
       assert(l.isOk(), "binding a listener is not a wait: it still works");
     });
+  });
+}
+
+// The ADR-0048 twins of the scope functions stay one release as @Deprecated wrappers (W0440) over the `with*` form with a
+// void body; each one still opens, runs the body and closes.
+@Test
+function deprecatedTwinsStillWork(host: Host): void {
+  withNet(host, net => {
+    useListen(net, "127.0.0.1", 0, l => {
+      assert(withListener(l, "127.0.0.1", 0, 8, (ln: Listener) => portOf(ln)).isOk(), "useListen: the narrowed grant listens");
+    });
+    useConnect(net, "localhost", 1, 65535, c => {
+      assert(isDenied(withListener(c, "127.0.0.1", 0, 8, (ln: Listener) => 0).unwrapErr()), "useConnect: cannot listen");
+    });
+    const one = useListener(net, "127.0.0.1", 0, 8, (ln: Listener) => { assert(portOf(ln) > 0, "bound"); });
+    assert(one.isOk(), "useListener");
+    const l = useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+      const port = portOf(ln);
+      const c = useConnectionBeside(n, "127.0.0.1", port, milliseconds(2000), ln, (s: Stream, l2: Listener) => {
+        sendAll(s, fromString("a"), milliseconds(1000));
+        const a = useAccepted(l2, milliseconds(2000), (srv: Stream, p: Peer) => {
+          assertEqString(kind(recv(srv, 1, milliseconds(1000))), "data 1", "useAccepted serves the stream");
+        });
+        assert(a.isOk(), "useAccepted");
+      });
+      assert(c.isOk(), "useConnectionBeside");
+      // a connection completes before accept (the kernel queues it), so the client can finish first
+      const now = withConnectionBeside(n, "127.0.0.1", port, milliseconds(2000), ln, (s: Stream, l2: Listener) => monotonicMillis(s));
+      dropAccepted(acceptDetached(ln, milliseconds(2000)).unwrap());
+      const second = useConnectionUntil(n, "127.0.0.1", port, at(now.unwrap() + 2000), (s2: Stream) => {
+        sendAll(s2, fromString("b"), milliseconds(1000));
+      });
+      assert(second.isOk(), "useConnectionUntil");
+      const d = acceptDetached(ln, milliseconds(2000));
+      assert(d.isOk(), "acceptDetached");
+      serveAcceptedDo(d.unwrap(), (srv: Stream, p: Peer) => {
+        assertEqString(kind(recv(srv, 1, milliseconds(1000))), "data 1", "serveAcceptedDo serves the stream");
+      });
+      const third = useConnection(n, "127.0.0.1", port, milliseconds(2000), (s3: Stream) => {});
+      assert(third.isOk(), "useConnection");
+      dropAccepted(acceptDetached(ln, milliseconds(2000)).unwrap());
+    });
+    assert(l.isOk(), "useListenerNet");
   });
 }

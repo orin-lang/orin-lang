@@ -7,7 +7,7 @@ import { milliseconds } from "std:time";
 import { Bytes, fromString } from "std:bytes";
 import { ResponseParser, ParseResult, NeedMore, Done, Failed, ToOther, defaultLimits } from "std:http";
 import {
-  NetGrant, Stream, useConnect, useConnection, sendAll, recv, isDenied, shutdownWrite, netErrorMessage
+  NetGrant, Stream, withConnect, withConnection, sendAll, recv, isDenied, shutdownWrite, netErrorMessage
 } from "std:net";
 
 function getHealth(s: Stream): string {
@@ -36,7 +36,7 @@ function getHealth(s: Stream): string {
 }
 
 function attempt(net: NetGrant, host: string, port: int): string {
-  const r = useConnection(net, host, port, milliseconds(1000), (s: Stream) => { console.log("CONNECTED " + host + ":" + port.toString()); });
+  const r = withConnection(net, host, port, milliseconds(1000), (s: Stream) => { console.log("CONNECTED " + host + ":" + port.toString()); });
   if (r.isOk()) {
     return "connected";
   }
@@ -47,12 +47,12 @@ function main(host: Host): void {
   const argv = withProcess(host, p => args(p));
   const port = match (parseInt(argv[0])) { Some(v) => v, None => 0 };
   withNet(host, net => {
-    useConnect(net, "127.0.0.1", port, port, c => {
-      const r = useConnection(c, "127.0.0.1", port, milliseconds(2000), (s: Stream) => { console.log("health: " + getHealth(s)); });
+    withConnect(net, "127.0.0.1", port, port, c => {
+      const r = withConnection(c, "127.0.0.1", port, milliseconds(2000), (s: Stream) => { console.log("health: " + getHealth(s)); });
       console.log("granted connect: " + (r.isOk() ? "ok" : "FAIL " + netErrorMessage(r.unwrapErr())));
       console.log("other port: " + attempt(c, "127.0.0.1", port + 1));
       console.log("other host: " + attempt(c, "localhost", port));
-      useConnect(c, "*", 0, 65535, wide => {
+      withConnect(c, "*", 0, 65535, wide => {
         console.log("widened: " + attempt(wide, "127.0.0.1", port + 1));
       });
     });

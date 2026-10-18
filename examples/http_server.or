@@ -20,7 +20,7 @@
 //
 // Shape. The main task owns the listener and does nothing but accept. Each accepted connection is MOVED out of the
 // accepting task (`acceptDetached`: the Stream leaves its grant table and becomes a one-shot token) and sent through a
-// bounded channel to a fixed pool of worker tasks; a worker adopts it (`serveAcceptedDo`), serves it and closes it.
+// bounded channel to a fixed pool of worker tasks; a worker adopts it (`serveAccepted`), serves it and closes it.
 // Bounds, all fixed at start: `workers` connections in service, `queue` waiting; when both are full the accepting task blocks
 // in `send`, so further clients wait in the kernel's backlog (128) and then are refused by the kernel. Memory use is bounded by
 // workers x (one request: head 16 KiB + body 64 KiB) plus the queue (tokens, no buffers).
@@ -45,7 +45,7 @@ import {
   BodyTooLarge, StartLineTooLong, HeaderLineTooLong, HeadersTooLarge, TooManyHeaders, UnsupportedVersion
 } from "std:http";
 import {
-  NetGrant, Listener, Stream, Peer, Accepted, Cancelled, useListener, acceptDetached, serveAcceptedDo, dropAccepted, portOf, recv,
+  NetGrant, Listener, Stream, Peer, Accepted, Cancelled, withListener, acceptDetached, serveAccepted, dropAccepted, portOf, recv,
   sendAll, shutdownWrite, monotonicMillis, isTimeout, netErrorMessage
 } from "std:net";
 
@@ -230,7 +230,7 @@ function workerLoop(rx: Receiver<Accepted>, cfg: Config): int {
     const next = rx.recv();
     match (next) {
       Some(a) => {
-        serveAcceptedDo(a, (s: Stream, peer: Peer) => {
+        serveAccepted(a, (s: Stream, peer: Peer) => {
           serveConnection(s, peer, cfg);
         });
         served += 1;
@@ -291,7 +291,7 @@ function runPool(s: Scope, acc: Scope, ln: Listener, cfgOf: (stop: CancelToken) 
 function runServer(net: NetGrant, port: int, maxConns: int, workers: int, queue: int, cfgOf: (stop: CancelToken) => Config): void {
   scopeNetDo(net, (s: Scope, g: NetGrant) => {
     scopeNetDo(g, (acc: Scope, g2: NetGrant) => {
-      const r = useListener(g2, "127.0.0.1", port, 128, (ln: Listener) => {
+      const r = withListener(g2, "127.0.0.1", port, 128, (ln: Listener) => {
         console.error("listening on 127.0.0.1:" + portOf(ln).toString());
         runPool(s, acc, ln, cfgOf, maxConns, workers, queue);
       });

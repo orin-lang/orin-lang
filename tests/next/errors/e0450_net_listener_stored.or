@@ -1,10 +1,10 @@
 // error: E0450
 // A Listener is a resource handle: it cannot be stored in a variable.
 import { Host, withNet } from "std:host";
-import { useListener, Listener } from "std:net";
+import { withListener, Listener } from "std:net";
 function main(host: Host): void {
   withNet(host, net => {
-    const r = useListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
+    const r = withListener(net, "127.0.0.1", 0, 4, (ln: Listener) => {
       const keep = ln;
     });
   });

@@ -1,9 +1,9 @@
 // std:net -- blocking TCP on the L0 network primitives (ADR-0033, ADR-0027, ADR-0025). UNSTABLE (ADR-0016).
 //
 // Authority. Every function that touches the network takes a handle as its first argument. The root `NetGrant` comes
-// from `main(host: Host)` through `useNet(host, net => ...)` (std:host). It is NARROWED, never widened:
-//   useListen(net, addr, port, l => ...)                       `l` may listen on `addr:port` only
-//   useConnect(net, hostPattern, portLo, portHi, c => ...)     `c` may connect / resolve only names matching the pattern
+// from `main(host: Host)` through `withNet(host, net => ...)` (std:host). It is NARROWED, never widened:
+//   withListen(net, addr, port, l => ...)                      `l` may listen on `addr:port` only
+//   withConnect(net, hostPattern, portLo, portHi, c => ...)    `c` may connect / resolve only names matching the pattern
 // A host pattern is "*" (any), "*.example.com" (names below example.com) or an exact name or address, compared with the
 // text the program supplies (ASCII case-insensitive; see ADR-0033 for the limits). A request outside the scope is refused
 // with `Err(NetError)` (isDenied) by L0 before any system call. `ORIN_DENY=net` denies the whole family the same way.
@@ -21,7 +21,7 @@
 // on the monotonic clock, ADR-0017 Addendum B section 5), which several calls can share so that a whole exchange has one
 // deadline however many small reads and writes it takes: `recvUntil`, `sendUntil`, `sendAllUntil`, `readExactUntil`,
 // `readDelimitedUntil` of a `StreamReader`, `withAcceptedUntil`, `acceptDetachedUntil`, `withConnectionUntil`,
-// `useConnectionUntil`. A deadline that has passed still lets an operation that is ready complete once (a zero wait), never more.
+// and their deadline forms. A deadline that has passed still lets an operation that is ready complete once (a zero wait), never more.
 // Deadlines of your own are computed with `monotonicMillis(stream)`.
 //
 // Cancellation (ADR-0017 Addendum D). A task that is cancelled (`Scope.cancel()` / `CancelToken.cancel()` of std:task, also from
@@ -206,10 +206,9 @@ export function withListen<T>(net: NetGrant, addr: string, port: int, body: (l: 
 }
 
 // useListen(net, addr, port, body): void -- `withListen` for a body that returns nothing.
+@Deprecated("use withListen(net, addr, port, body) with a void body (ADR-0048)")
 export function useListen(net: NetGrant, addr: string, port: int, body: (l: NetGrant) => void): void {
-  const g = grantListen(net, addr, port);
-  body(g);
-  grantRevoke(g);
+  withListen(net, addr, port, body);
 }
 
 // withConnect<T>(net, hostPattern, portLo, portHi, body): T -- runs body with a grant that can only connect to / resolve
@@ -223,10 +222,9 @@ export function withConnect<T>(net: NetGrant, hostPattern: string, portLo: int, 
 }
 
 // useConnect(net, hostPattern, portLo, portHi, body): void -- `withConnect` for a body that returns nothing.
+@Deprecated("use withConnect(net, hostPattern, portLo, portHi, body) with a void body (ADR-0048)")
 export function useConnect(net: NetGrant, hostPattern: string, portLo: int, portHi: int, body: (c: NetGrant) => void): void {
-  const g = grantConnect(net, hostPattern, portLo, portHi);
-  body(g);
-  grantRevoke(g);
+  withConnect(net, hostPattern, portLo, portHi, body);
 }
 
 // ------------------------------------------------------------------------------------------------ listeners
@@ -251,44 +249,22 @@ export function withListener<T>(net: NetGrant, addr: string, port: int, backlog:
 }
 
 // useListener(net, addr, port, backlog, body): Result<void, NetError> -- `withListener` for a body that returns nothing.
+@Deprecated("use withListener(net, addr, port, backlog, body) with a void body (ADR-0048)")
 export function useListener(net: NetGrant, addr: string, port: int, backlog: int, body: (ln: Listener) => void): Result<void, NetError> {
-  const g = grantListen(net, addr, port);
-  const ln = netListen(g, addr, port, backlog, 1);
-  const code = netStatus(ln);
-  if (code != 0) {
-    netClose(ln);
-    grantRevoke(g);
-    return Err(netErrorFromCode(code));
-  }
-  body(ln);
-  netClose(ln);
-  grantRevoke(g);
-  return Ok();
+  return withListener(net, addr, port, backlog, body);
 }
 
-// useListenerNet(net, addr, port, backlog, body): Result<void, NetError> -- `useListener` whose body also receives `net`
-// again as a parameter (a closure cannot capture a grant, so a body that must also connect, for example a loopback test,
-// gets it this way).
+// useListenerNet(net, addr, port, backlog, body): Result<void, NetError> -- `withListenerNet` for a body that returns nothing.
+@Deprecated("use withListenerNet(net, addr, port, backlog, body) with a void body (ADR-0048)")
 export function useListenerNet(
   net: NetGrant, addr: string, port: int, backlog: int, body: (ln: Listener, net: NetGrant) => void
 ): Result<void, NetError> {
-  const g = grantListen(net, addr, port);
-  const ln = netListen(g, addr, port, backlog, 1);
-  const code = netStatus(ln);
-  if (code != 0) {
-    netClose(ln);
-    grantRevoke(g);
-    return Err(netErrorFromCode(code));
-  }
-  body(ln, net);
-  netClose(ln);
-  grantRevoke(g);
-  return Ok();
+  return withListenerNet(net, addr, port, backlog, body);
 }
 
-// withListenerNet<T>(net, addr, port, backlog, body): Result<T, NetError> -- `useListenerNet` for a body that returns a value: body(listener,
-// net) with `net` passed through again (a closure cannot capture a grant), the listener closed afterwards. The way to get a value out
-// of a body that both listens and connects (a closure cannot modify a variable it captured).
+// withListenerNet<T>(net, addr, port, backlog, body): Result<T, NetError> -- `withListener` whose body also receives `net` again
+// as a parameter (a closure cannot capture a grant, so a body that must also connect, for example a loopback test, gets it this
+// way); the listener is closed afterwards. Returns the body's value (any T, `void` included).
 export function withListenerNet<T>(
   net: NetGrant, addr: string, port: int, backlog: int, body: (ln: Listener, net: NetGrant) => T
 ): Result<T, NetError> {
@@ -334,21 +310,9 @@ export function withAccepted<T>(ln: Listener, timeout: Duration, body: (s: Strea
 }
 
 // useAccepted(ln, timeout, body): Result<void, NetError> -- `withAccepted` for a body that returns nothing.
+@Deprecated("use withAccepted(ln, timeout, body) with a void body (ADR-0048)")
 export function useAccepted(ln: Listener, timeout: Duration, body: (s: Stream, peer: Peer) => void): Result<void, NetError> {
-  const s = netAccept(ln, clampMs(timeout.millis), 1);
-  const code = netStatus(s);
-  if (code != 0) {
-    netClose(s);
-    return Err(netErrorFromCode(code));
-  }
-  const peer = parsePeer(netPeer(s));
-  if (peer.isErr()) {
-    netClose(s);
-    return Err(peer.unwrapErr());
-  }
-  body(s, peer.unwrap());
-  netClose(s);
-  return Ok();
+  return withAccepted(ln, timeout, body);
 }
 
 // withAcceptedUntil<T>(ln, deadline, body): Result<T, NetError> -- `withAccepted` that waits until the absolute `deadline` (a single
@@ -426,10 +390,9 @@ export function serveAccepted<T>(a: Accepted, body: (s: Stream, peer: Peer) => T
 }
 
 // serveAcceptedDo(a, body): void -- `serveAccepted` for a body that returns nothing.
+@Deprecated("use serveAccepted(a, body) with a void body (ADR-0048)")
 export function serveAcceptedDo(a: Accepted, body: (s: Stream, peer: Peer) => void): void {
-  const s = grantAdoptStream(a._token);
-  body(s, a.peer);
-  netClose(s);
+  serveAccepted(a, body);
 }
 
 // dropAccepted(a): void -- closes a connection that will not be served (the pool is shutting down, the queue is full).
@@ -453,17 +416,14 @@ export function spawnAccepted<T>(
 
 // spawnAcceptedDo(sc, ln, timeout, body): Result<TaskHandle<bool>, NetError> -- `spawnAccepted` for a body that returns nothing;
 // join() then returns true.
+@Deprecated("use spawnAccepted(sc, ln, timeout, body), which accepts a void body (TaskHandle<void>) (ADR-0048)")
 export function spawnAcceptedDo(
   sc: Scope, ln: Listener, timeout: Duration, body: (s: Stream, peer: Peer) => void
 ): Result<TaskHandle<bool>, NetError> {
-  const a = acceptDetached(ln, timeout);
-  return match (a) {
-    Ok(acc) => Ok(spawn(sc, () => {
-      serveAcceptedDo(acc, body);
-      return true;
-    })),
-    Err(e) => Err(e)
-  };
+  return spawnAccepted(sc, ln, timeout, (s, peer) => {
+    body(s, peer);
+    return true;
+  });
 }
 
 // ------------------------------------------------------------------------------------------------ connections
@@ -484,16 +444,9 @@ export function withConnection<T>(net: NetGrant, host: string, port: int, timeou
 }
 
 // useConnection(net, host, port, timeout, body): Result<void, NetError> -- `withConnection` for a body that returns nothing.
+@Deprecated("use withConnection(net, host, port, timeout, body) with a void body (ADR-0048)")
 export function useConnection(net: NetGrant, host: string, port: int, timeout: Duration, body: (s: Stream) => void): Result<void, NetError> {
-  const s = netConnect(net, host, port, clampMs(timeout.millis), 1);
-  const code = netStatus(s);
-  if (code != 0) {
-    netClose(s);
-    return Err(netErrorFromCode(code));
-  }
-  body(s);
-  netClose(s);
-  return Ok();
+  return withConnection(net, host, port, timeout, body);
 }
 
 // withConnectionUntil<T>(net, host, port, deadline, body): Result<T, NetError> -- `withConnection` whose connect ends at the absolute
@@ -512,36 +465,23 @@ export function withConnectionUntil<T>(net: NetGrant, host: string, port: int, d
 }
 
 // useConnectionUntil(net, host, port, deadline, body): Result<void, NetError> -- `withConnectionUntil` for a body that returns nothing.
+@Deprecated("use withConnectionUntil(net, host, port, deadline, body) with a void body (ADR-0048)")
 export function useConnectionUntil(net: NetGrant, host: string, port: int, deadline: Deadline, body: (s: Stream) => void): Result<void, NetError> {
-  const s = netConnect(net, host, port, waitUntilMs(netNow(net), deadline.at.millis), 1);
-  const code = netStatus(s);
-  if (code != 0) {
-    netClose(s);
-    return Err(netErrorFromCode(code));
-  }
-  body(s);
-  netClose(s);
-  return Ok();
+  return withConnectionUntil(net, host, port, deadline, body);
 }
 
-// useConnectionBeside(net, host, port, timeout, ln, body): Result<void, NetError> -- `useConnection` whose body also
-// receives the listener `ln` again (a closure cannot capture a handle): a client and the server side of the same process,
-// for example a loopback test. The connection completes before `accept` (the kernel queues it, backlog permitting).
+// useConnectionBeside(net, host, port, timeout, ln, body): Result<void, NetError> -- `withConnectionBeside` for a body that
+// returns nothing.
+@Deprecated("use withConnectionBeside(net, host, port, timeout, ln, body) with a void body (ADR-0048)")
 export function useConnectionBeside(
   net: NetGrant, host: string, port: int, timeout: Duration, ln: Listener, body: (s: Stream, ln: Listener) => void
 ): Result<void, NetError> {
-  const s = netConnect(net, host, port, clampMs(timeout.millis), 1);
-  const code = netStatus(s);
-  if (code != 0) {
-    netClose(s);
-    return Err(netErrorFromCode(code));
-  }
-  body(s, ln);
-  netClose(s);
-  return Ok();
+  return withConnectionBeside(net, host, port, timeout, ln, body);
 }
 
-// withConnectionBeside<T>(net, host, port, timeout, ln, body): Result<T, NetError> -- `useConnectionBeside` for a body that returns a value.
+// withConnectionBeside<T>(net, host, port, timeout, ln, body): Result<T, NetError> -- `withConnection` whose body also receives
+// the listener `ln` again (a closure cannot capture a handle): a client and the server side of the same process, for example a
+// loopback test. The connection completes before `accept` (the kernel queues it, backlog permitting).
 export function withConnectionBeside<T>(
   net: NetGrant, host: string, port: int, timeout: Duration, ln: Listener, body: (s: Stream, ln: Listener) => T
 ): Result<T, NetError> {

@@ -3,12 +3,12 @@
 import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Scope, scopeNetDo, spawn } from "std:task";
-import { NetGrant, useConnection, Stream } from "std:net";
+import { NetGrant, withConnection, Stream } from "std:net";
 
 function main(host: Host): void {
   withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
-      const h = spawn(sc, () => useConnection(g, "127.0.0.1", 1, milliseconds(100), (s: Stream) => { }).isOk());
+      const h = spawn(sc, () => withConnection(g, "127.0.0.1", 1, milliseconds(100), (s: Stream) => { }).isOk());
     });
   });
 }

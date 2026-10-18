@@ -6,12 +6,12 @@ import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Bytes, bytesFromString } from "std:bytes";
 import { Scope, scopeNetDo, spawnNet } from "std:task";
-import { NetGrant, Listener, Stream, useListenerNet, acceptDetached, serveAccepted, withConnection, portOf, sendAll } from "std:net";
+import { NetGrant, Listener, Stream, withListenerNet, acceptDetached, serveAccepted, withConnection, portOf, sendAll } from "std:net";
 
 function main(host: Host): void {
   withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
-      useListenerNet(g, "127.0.0.1", 0, 4, (ln: Listener, n2: NetGrant) => {
+      withListenerNet(g, "127.0.0.1", 0, 4, (ln: Listener, n2: NetGrant) => {
         const port = portOf(ln);
         const c = spawnNet(sc, n2, (cg: NetGrant) => {
           withConnection(cg, "127.0.0.1", port, milliseconds(2000), (s: Stream) => {

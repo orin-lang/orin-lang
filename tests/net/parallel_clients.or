@@ -8,7 +8,7 @@ import { args } from "std:process";
 import { Bytes, bytesFromString } from "std:bytes";
 import { ResponseParser, NeedMore, Done, Failed, ToOther, defaultLimits } from "std:http";
 import { Scope, TaskHandle, scopeNetDo, spawnNet } from "std:task";
-import { NetGrant, Stream, Reset, useConnect, withConnection, sendAll, recv, netErrorMessage } from "std:net";
+import { NetGrant, Stream, Reset, withConnect, withConnection, sendAll, recv, netErrorMessage } from "std:net";
 
 function body(i: int, n: int): string {
   let s = "client " + i.toString() + ":";
@@ -81,7 +81,7 @@ function main(host: Host): void {
   const count = parseInt(argv[1]).unwrapOr(1);
   const size = parseInt(argv[2]).unwrapOr(100);
   withNet(host, net => {
-    useConnect(net, "127.0.0.1", port, port, c => {
+    withConnect(net, "127.0.0.1", port, port, c => {
       scopeNetDo(c, (sc: Scope, g: NetGrant) => {
         let hs: TaskHandle<string>[] = [];
         let i: int = 0;
