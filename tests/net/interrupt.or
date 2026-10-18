@@ -13,7 +13,7 @@
 //   trickle       one deadline across many small reads: a peer sending a byte every 25 ms cannot stretch readExactUntil
 //   senddeadline  sendAllUntil ends at its deadline although the peer reads nothing
 //   connectdeadline connect to a hanging address ends at the deadline of withConnectionUntil
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { Deadline, MonotonicInstant, milliseconds } from "std:time";
 import { Bytes, fromString } from "std:bytes";
 import { Scope, TaskHandle, CancelToken, Sender, channel, scopeNet, spawnNet, sleepUntil } from "std:task";
@@ -413,7 +413,7 @@ function report(line: string): int {
 }
 
 function main(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     let bad: int = 0;
     bad += report(cancelCase(net, "accept", 0));
     bad += report(cancelCase(net, "recv", 1));

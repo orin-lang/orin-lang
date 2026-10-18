@@ -1,6 +1,6 @@
 // error: E0487
 // Library-level rule: a Stream is moved into a task, never duplicated.
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { grantClone, NetGrant, Listener, netListen, netAccept, grantListen, grantRevoke, netClose } from "std:fsraw";
 
 function f(net: NetGrant): void {
@@ -14,5 +14,5 @@ function f(net: NetGrant): void {
 }
 
 function main(host: Host): void {
-  useNet(host, net => { f(net); });
+  withNet(host, net => { f(net); });
 }

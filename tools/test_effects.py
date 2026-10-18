@@ -4,7 +4,7 @@ sections of `orin diff`, and the `[effects]` policy of orin.toml, all with the s
 
 1. `orin effects tests/osig/effects/app` (text and JSON) equals its goldens; the summaries are what the package was written
    to show: direct and transitive effects, evidence, an interface (union over the implementations), recursion, a function
-   value of unknown origin (UNKNOWN), a closure literal and the callback of the std scope function `useHost`;
+   value of unknown origin (UNKNOWN), a closure literal and the callback of the std scope function `withHost`;
    explanation paths; determinism (other directory, copy of the package, no absolute path); filters; purity agreement;
 2. the OSIG carries the same summaries (`MAY_PERFORM`, schema osig/0.2): every primitive call site is in the summary and the
    summaries are closed under the CALLS edges, also for the demo package, the I/O program and the compiler itself;
@@ -129,7 +129,7 @@ def main():
           "entry point summary: %s" % sorted(entry))
     check(entry["Host.Acquire"]["evidence"] == "MUST" and entry["Fs.ReadFile"]["evidence"] == "MAY"
           and entry["Fs.WriteFile"]["evidence"] == "MAY",
-          "main: its own call is MUST, what the callback of useHost does is MAY")
+          "main: its own call is MUST, what the callback of withHost does is MAY")
     hop_names = [h["function"] for h in entry["Fs.ReadFile"]["path"]]
     check(hop_names == ["(root)::main", "store::loadConfig"], "explanation path of Fs.ReadFile: %s" % hop_names)
     last = entry["Fs.ReadFile"]["path"][-1]

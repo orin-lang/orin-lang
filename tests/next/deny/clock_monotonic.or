@@ -1,8 +1,8 @@
 // ORIN_DENY=clock must trap before reading the clock, including on the fallible API.
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { monotonicNow } from "std:time";
 function main(host: Host): void {
-  useClock(
+  withClock(
     host,
     clock => {
       console.log(monotonicNow(clock).isOk().toString());
