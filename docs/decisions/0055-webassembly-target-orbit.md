@@ -162,8 +162,8 @@ What does the compiler emit, which memory width, which C library and which host 
    - *Not available:* mkdir, remove, rename and sync (the L0 interface has no entry point for them yet), UDP, TLS, `shell`.
    - *Tests.* `tools/wasm_run.mjs` serves `process/v1` and `fs/v1` (mounts, same statuses), so the conformance tests of files, stdin
      and arguments run in CI under Node; network tests are SKIP there. `tools/test_orbit.py` and `tools/run_tests.py --orbit` run on
-     the real Orbit (skipped without a binary): 1163 conformance tests on Orbit per width, 2 SKIP that need a client and a server
-     task at the same time, 4 SKIP for the task limits of decision 4; and the programs of `tests/orbit` (arguments, stdin,
+     the real Orbit (skipped without a binary): 1167 conformance tests pass on Orbit (wasm64 and wasm32), 8 SKIP: 2 need a client and a server
+     task at the same time, 4 are the task limits of decision 4, 2 run the shell; and the programs of `tests/orbit` (arguments, stdin,
      files, a TCP echo server and client, DNS, `examples/http_server.or` hit with curl, cancellation).
    - *Budget.* The L0 grew by about 350 code lines; the ceiling of `runtime/platform/orbit` is now **1400** (decision 7).
      The native L0 budget is 1176 of 1400 (+4: the include guards of the new header; the code moved between files of `runtime/platform`).
