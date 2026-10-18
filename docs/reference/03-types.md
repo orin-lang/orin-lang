@@ -59,10 +59,20 @@ traps for `i64`. `/` truncates toward zero and `%` has the sign of the dividend.
 
 **TYP-6.** `wrappingAdd/Sub/Mul` (modular), `checkedAdd/Sub/Mul` (`Option<T>`, `None` on overflow) and `saturatingAdd/Sub/Mul` exist
 on every integer type; the argument has the receiver's type. There is no `wrappingNeg`, `*Div`, `abs`, `min`, `max` or `pow` for integers.
-There are no bitwise operators and no shifts.
+There are no bitwise operators and no shift operators (`& | ^ ~ << >>` are syntax errors); bit operations are methods.
 - Tests: `tests/next/run/int_wrapping_checked_saturating.or`, `tests/next/errors/e0400_wrapping_argument_type.or`,
   `tests/next/errors/e0404_wrapping_arity.or`, `tests/next/errors/e0405_wrapping_div_not_provided.or`,
   `tests/next/errors/e0405_int_sqrt.or`, `tests/parse_edge/err0200_binary_bitor.or`.
+
+**TYP-6a.** Bit operations are methods on every integer type and act on the two's complement pattern of the receiver's width
+(8, 16, 32 or 64 bits; the result has the receiver's type). `a.bitAnd(b)`, `a.bitOr(b)` and `a.bitXor(b)` take an argument of the
+receiver's type; `a.bitNot()` takes none. `a.shl(n)` and `a.shr(n)` take an `int` count and trap with `shift count out of range`
+unless `0 <= n < width`; `shl` discards the bits shifted out, `shr` is logical for unsigned types and arithmetic for signed types.
+`a.rotl(n)` and `a.rotr(n)` take an `int` count and rotate within the width; the count is taken modulo the width (a negative count
+rotates the other way). None of them traps otherwise, and none leaves the range of the type.
+- Tests: `tests/next/run/int_bit_ops.or`, `tests/next/run/int_bit_shl_count_too_large.or`,
+  `tests/next/run/int_bit_shr_count_negative.or`, `tests/next/errors/e0400_bit_argument_type.or`,
+  `tests/next/errors/e0400_bit_shift_count_type.or`, `tests/next/errors/e0404_bit_not_arity.or`.
 
 **TYP-7.** `toString()` prints decimal. `parseInt(s): Option<int>` and `parseI8 .. parseUsize` take `-? digits` only (no `+`, no
 spaces, never `-` for unsigned types) and return `None` on any other text or on overflow.

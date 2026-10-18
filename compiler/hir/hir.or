@@ -203,8 +203,10 @@ export type Builtin =
   // BIntId(v): v unchanged (conversion that cannot fail)
   // BIntOp(mode, a, b, kind): wrapping (modes 0..2 add sub mul) / saturating (3..5) arithmetic of integer kind `kind`
   // BIntChk(mode, a, b, kind): checked add / sub / mul (modes 0..2): Option of the result
+  // BIntBit(mode, a, b, kind): bit operations of integer kind `kind` on the 64-bit patterns (modes 0 and, 1 or, 2 xor, 3 not (b is 0),
+  //   4 shl, 5 shr, 6 rotl, 7 rotr; the count b is an int: shl / shr trap unless 0 <= b < width, rotations take b modulo the width)
   // BParseIntK(s, kind): Option of the integer of kind `kind` parsed from s
-  | BIntRange | BIntConv | BUIntConv | BIntId | BIntOp | BIntChk | BParseIntK;
+  | BIntRange | BIntConv | BUIntConv | BIntId | BIntOp | BIntChk | BIntBit | BParseIntK;
 
 export type MutBuiltin = MArrPush | MArrPop;
 
