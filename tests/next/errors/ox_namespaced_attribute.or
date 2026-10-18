@@ -1,0 +1,8 @@
+// error: E0100
+// OX-4: namespaced attribute names are not supported.
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  console.log(render(<a xlink:href="/x">x</a>));
+}

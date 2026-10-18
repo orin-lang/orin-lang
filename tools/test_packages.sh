@@ -24,6 +24,14 @@ want=$(printf 'user 7 bob (internal)\n332')
 [ "$got" = "$want" ] && ok "compile+run <package-dir>" || bad "compile+run <package-dir> (got: $got)"
 $ORIN2 check "$SHOP/src/main.or" && ok "check entry file inside the package" || bad "check entry file inside the package"
 
+# 1b. MOD-12 defaults: a manifest with only `name` has version 0.0.0 and the entry src/main.or
+MIN=tests/next/packages/minimal
+$ORIN2 check --deps "$MIN" > "$T/min.txt"
+head -1 "$T/min.txt" | grep -qx 'package minimal 0.0.0' && ok "default version 0.0.0" || bad "default version 0.0.0"
+$ORIN2 compile "$MIN" -o "$T/min.c"
+cc -O1 -w $(rt_inc) "$T/min.c" $(rt_src) -lm -o "$T/min-exe"
+[ "$("$T/min-exe")" = "minimal" ] && ok "default entry src/main.or" || bad "default entry src/main.or"
+
 # 2. dependency summary (text and JSON) against goldens
 $ORIN2 check --deps "$SHOP" > "$T/deps.txt"
 diff -u tests/next/packages/shop.deps.txt "$T/deps.txt" && ok "check --deps (text)" || bad "check --deps (text)"

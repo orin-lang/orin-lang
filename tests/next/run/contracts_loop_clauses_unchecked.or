@@ -1,0 +1,27 @@
+// flags: --check-contracts
+// CON-5/CON-10: loop @Invariant and @Decreases are checked statically by `orin verify --contracts` and are NOT checked at
+// run time: with --check-contracts a loop whose invariant is false and whose measure does not decrease runs to the end.
+function main(): void {
+  let i = 0;
+  @Invariant(i < 0)
+  @Decreases(i)
+  while (i < 3) {
+    i += 1;
+  }
+  console.log(i.toString());
+  let s = 0;
+  @Invariant(s == 100)
+  for (const x of [1, 2, 3]) {
+    s += x;
+  }
+  console.log(s.toString());
+  console.log(spin(3).toString());
+}
+
+@Decreases(n)
+function spin(n: int): int {
+  if (n >= 6) {
+    return n;
+  }
+  return spin(n + 1);
+}

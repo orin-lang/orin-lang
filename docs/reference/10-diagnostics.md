@@ -52,7 +52,7 @@ Codes whose tests column says "none" are listed again in the Gaps section.
 | E0445 | a `@Test` function is called or used as a value (tests are only run by `orin test` and erased from ordinary builds) | tests/next/errors/e0445_call_test_function.or, tests/next/errors/e0445_test_function_as_value.or |
 | E0446 | a field of an `@Annotation` record has a type an annotation cannot hold (allowed: `bool`, `int`, `usize`, `float`, `f32`, `string`, a union of payload-free tags, and arrays and `Option`s of those), or the record is generic | tests/next/errors/e0446_annotation_field_record_type.or, tests/next/errors/e0446_annotation_field_union_with_payload.or, tests/next/errors/e0446_annotation_generic.or |
 | E0447 | an `@Annotation` definition takes a reserved name (`Test`, `Deprecated`, `Inline`, `Sealed`, `Annotation`, `Processor`, `Requires`, `Ensures`, `Invariant`, `Decreases`, `Rule`), or an identifier starts with `__g` (reserved for generated code) (ADR-0046) | tests/next/errors/e0447_generated_prefix.or, tests/next/errors/e0447_reserved_annotation_name.or |
-| E0448 | invalid `@Processor(A)`: not an exported top-level function `(input: Input): Output` with both types from `std:meta`, generic, called `main`, `A` not an `@Annotation` record declared in the same module, a second processor for `A` ... | tests/processors/impure, tests/processors/bad_signature, tools/test_processors.py |
+| E0448 | invalid `@Processor(A)`: not an exported top-level function `(input: Input): Output` with both types from `std:meta`, generic, called `main`, `A` not an `@Annotation` record declared in the same module, a second processor for `A` ... | tests/next/errors/e0448_generic_processor, tests/next/errors/e0448_two_processors, tests/next/errors/e0448_impure_processor +6, tests/processors/bad_signature |
 | E0449 | a companion module (`./m.gen`) generates one name more than once and at least one of them is exported (ADR-0046 S4) | tests/next/errors/e0449_duplicate_export, tests/next/errors/e0449_exported_and_private |
 | E0450 | a resource handle (grant, `Host`, file) in a position that would store or copy it: variable other than a parameter, field, array, `Option`, `Result`, type argument, function type, closure result, comparison or alias | tests/next/errors/e0450_channel_of_grant.or, tests/next/errors/e0450_resource_closure_result.or, tests/next/errors/ts_dev_e0450_file_in_record.or +26 |
 | E0451 | a resource handle used in a statement or branch whose use cannot be tracked (expression statement, conditional argument): a handle must be consumed exactly once on every path | tests/next/errors/e0451_resource_conditional_argument.or, tests/next/errors/e0451_resource_statement.or |
@@ -95,7 +95,7 @@ Codes whose tests column says "none" are listed again in the Gaps section.
 | E0521 | cyclic companion: `./a.gen` imported while `a` is loading, or a module that runs a processor depends on a companion (ADR-0046 S4) | tests/next/errors/e0521_direct_cycle, tests/next/errors/e0521_transitive |
 | E0522 | a processor reported an error diagnostic (ADR-0046 S4) | tests/next/errors/e0522_processor_error |
 | E0523 | `orin compile --target=wasm64-orbit` or `--target=wasm32-orbit` (the message names the target): `main` may perform an effect the Orbit target does not provide (`Fs.*`, `Process.Spawn`, `Net.*`, `Stream.*`; `Task.*` and `Channel.*` are available since ADR-0055 rev. tasks); one error per effect, located at its evidence (analysis/orbit.or) | tools/test_effects.py |
-| W0440 | **warning** (never fails a build): use of a `@Deprecated` symbol; printed as `warning[W0440]`, JSON `"severity":"warning"`, LSP severity 2 with the Deprecated tag | tests/next/run/annotations_deprecated.or, tools/test_annotations.py |
+| W0440 | **warning** (never fails a build): use of a `@Deprecated` symbol; printed as `warning[W0440]`, JSON `"severity":"warning"`, LSP severity 2 with the Deprecated tag | tests/next/run/deprecated_warns.or, tests/next/run/annotations_deprecated.or, tools/test_annotations.py |
 | W0450 | **warning**: `@Invariant` of a class or record that mentions no `this` (constrains no state) | tests/next/run/contract_quality_invariant.or |
 | W0451 | **warning**: `@Ensures` that mentions neither `result` nor (non-static method) `this`; parameters are immutable, so it cannot fail | tests/next/run/contract_quality_ensures.or |
 | W0452 | **warning**: syntactically trivially true contract (`true`, `x == x`, `x <= x`, `x >= x`, `a.length >= 0`, `s.length >= 0`, `m.size >= 0`, literal comparisons) | tests/next/run/contract_quality_invariant.or, tests/next/run/contract_quality_trivial.or |
@@ -107,8 +107,8 @@ Codes whose tests column says "none" are listed again in the Gaps section.
 | W0480 | **warning**: a parallel float `reduce` may differ from the sequential fold in the last bits | tests/next/run/par_float_reduce.or |
 | W0481 | **warning**: a parallel integer `reduce` with signed `+` or with `*` can overflow in a chunk where the sequential fold does not | tests/next/run/par_ops.or |
 | W0490 | **warning**: processors not run: `orin check` has no C compiler and no cached output for a processor; the companion module stays empty (ADR-0046 S5) | tools/test_processors.py |
-| W0491 | **warning**: a processor reported a warning (ADR-0046 S4) | none |
-| W0492 | **warning**: the processor of an annotation from a dependency was not run because `[annotations] processors` of orin.toml does not list it (ADR-0046 S5) | tests/processors/dep_untrusted, tools/test_processors.py |
+| W0491 | **warning**: a processor reported a warning (ADR-0046 S4) | tests/next/run/processor_warning |
+| W0492 | **warning**: the processor of an annotation from a dependency was not run because `[annotations] processors` of orin.toml does not list it (ADR-0046 S5) | tests/next/errors/e0300_untrusted_dependency_processor (stderr), tests/processors/dep_untrusted, tools/test_processors.py |
 | W0493 | **warning**: a source file outside the std library imports an internal std module (`std:taskcore`, `std:metacore`, `std:metajson`, `std:x/internal`); its API may change without notice (ADR-0048 rule 7.3, ADR-0056) | tests/next/run/internal_import_warning.or |
 
 96 codes: 81 errors, 15 warnings. `python3 tools/check_reference.py` compares this table with the codes in `compiler/` (ADR-0056 C10).
@@ -117,9 +117,8 @@ Codes whose tests column says "none" are listed again in the Gaps section.
 
 Codes with no test in `tests/errors`, `tests/next/errors`, `tests/next/run` (`// warns:`) or the other suites cited above:
 
-- E0480: internal task primitive given a resource handle; not reachable from user code
-- W0491: a processor reported a warning (no test runs a processor that warns)
+- E0480: internal task primitive given a resource handle; no test is possible: `std:task` wraps every value in a record before it reaches the primitive and the primitives are importable only from library code (E0301), so user code cannot trigger it
 
-Codes pinned only by a tool script (not by the conformance runner): E0473, E0474, E0523 (`tools/test_effects.py`), E0448, W0490 and W0492
-(`tools/test_processors.py`), W0440 (text and JSON: `tools/test_annotations.py`), W0460-W0462 (`tests/contracts/quality_vc.or`,
+Codes pinned only by a tool script (not by the conformance runner): E0473, E0474, E0523 (`tools/test_effects.py`), W0490 (`orin check` without a C compiler)
+(`tools/test_processors.py`), the W0440 message text and JSON form (`tools/test_annotations.py`; the code itself is pinned by `tests/next/run/deprecated_warns.or`), W0460-W0462 (`tests/contracts/quality_vc.or`,
 `tools/test_verify_contracts.py`), E0504-E0509 (`tests/workspace/fail`, run by `tools/test_packages.sh`).

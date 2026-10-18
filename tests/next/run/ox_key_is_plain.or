@@ -1,0 +1,7 @@
+// OX-4: `key` has no special meaning in OX (there is no reconciliation): it is an ordinary attribute, written like any other.
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  console.log(render(<li key="a" data-key={"b"}>x</li>));
+}

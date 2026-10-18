@@ -1,0 +1,7 @@
+import { Input, Output, output } from "std:meta";
+
+@Annotation(type)
+export type Mark = { };
+
+@Processor(Mark)
+export type Wrong = { id: int; };

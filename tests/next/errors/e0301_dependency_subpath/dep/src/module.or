@@ -1,0 +1,5 @@
+import { twice } from "./inner/module";
+
+export function greet(n: int): int {
+  return twice(n) + 1;
+}

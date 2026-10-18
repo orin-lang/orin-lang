@@ -1,0 +1,6 @@
+// error: E0301
+import { x } from "$std";
+
+function main(): void {
+  console.log("x");
+}

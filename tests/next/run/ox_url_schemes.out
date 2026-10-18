@@ -1,0 +1,22 @@
+<a href="/a/b?x=1">x</a>
+<a href="rel/path">x</a>
+<a href="#frag">x</a>
+<a href="?q=1">x</a>
+<a href="x/y:z">x</a>
+<a href="http://x.org">x</a>
+<a href="HTTPS://x.org">x</a>
+<a href="MailTo:a@b.c">x</a>
+<a href="tel:+123">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<a href="about:invalid#orin-unsafe-url">x</a>
+<form action="about:invalid#orin-unsafe-url"><img src="about:invalid#orin-unsafe-url"><a title="javascript:alert(1)">x</a></form>

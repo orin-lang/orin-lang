@@ -1,0 +1,7 @@
+// error: E0301
+// A dependency is imported by its bare name only; a path below the name does not resolve.
+import { twice } from "greeter/inner/module";
+
+function main(): void {
+  console.log(twice(1).toString());
+}

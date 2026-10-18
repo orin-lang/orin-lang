@@ -1,0 +1,11 @@
+// OX-4: entities are decoded in text and in string attributes (and the output encodes them again); a single-quoted attribute
+// takes the same text, with no backslash escapes. Isolated from ox_basic.
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  console.log(render(<p>a &amp; b &lt; c &gt; d &quot;e&quot; &#65;&#x42; &copy; &nbsp;|</p>));
+  console.log(render(<p title="x &amp; y &lt;z&gt;" data-q='he said "hi" &amp; left'>t</p>));
+  console.log(render(<p title='single' alt="dq \n">t</p>));
+  console.log(render(<p>&unknown; stays</p>));
+}
