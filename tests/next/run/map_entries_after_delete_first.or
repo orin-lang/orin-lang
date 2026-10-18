@@ -1,0 +1,15 @@
+// TYP-21: iteration order is insertion order; deleting the first key and re-inserting it moves it to the end,
+// and overwriting keeps the position.
+function main(): void {
+  let m = new Map<string, int>();
+  m.set("a", 1);
+  m.set("b", 2);
+  m.set("c", 3);
+  m.delete("a");
+  m.set("a", 4);
+  m.set("b", 20);
+  for (const e of m.entries()) {
+    console.log(`${e.key}=${e.value}`);
+  }
+  console.log(m.keys().join(","));
+}

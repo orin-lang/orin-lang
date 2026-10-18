@@ -1,0 +1,33 @@
+// GRM-6: `public`, `private` and `static` are modifiers only when an identifier follows; they can still name a field or method.
+class Names {
+  static: int;
+  public: int;
+  private: int;
+
+  constructor() {
+    this.static = 1;
+    this.public = 2;
+    this.private = 3;
+  }
+
+  static(): int {
+    return this.static + this.public + this.private;
+  }
+
+  public(): int {
+    return 10;
+  }
+
+  private(): int {
+    return 20;
+  }
+
+  public static twice(): int {
+    return 2;
+  }
+}
+
+function main(): void {
+  const s = new Names();
+  console.log(`${s.static} ${s.public} ${s.private} ${s.static()} ${s.public()} ${s.private()} ${Names.twice()}`);
+}

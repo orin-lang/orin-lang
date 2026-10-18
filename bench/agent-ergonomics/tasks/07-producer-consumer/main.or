@@ -1,0 +1,38 @@
+// Producer/consumer with std:task: two producers feed a bounded channel, one consumer sums the items.
+import { scope, spawn, channel, Sender } from "std:task";
+
+function produce(tx: Sender<int>, first: int, count: int): int {
+  let i = 0;
+  while (i < count) {
+    tx.send(first + i);
+    i += 1;
+  }
+  return count;
+}
+
+function main(): void {
+  const ch = channel<int>(3);
+  const result = scope(s => {
+    const consumer = spawn(s, () => {
+      let sum = 0;
+      let items = 0;
+      while (true) {
+        const m = ch.rx.recv();
+        if (m.isNone()) {
+          break;
+        }
+        sum += m.unwrap();
+        items += 1;
+      }
+      return sum * 1000 + items;
+    });
+    const p1 = spawn(s, () => produce(ch.tx, 1, 10));
+    const p2 = spawn(s, () => produce(ch.tx, 100, 5));
+    const sent = p1.join() + p2.join();
+    ch.tx.close();
+    console.log("sent " + sent.toString());
+    return consumer.join();
+  });
+  console.log("sum " + (result / 1000).toString());
+  console.log("items " + (result % 1000).toString());
+}

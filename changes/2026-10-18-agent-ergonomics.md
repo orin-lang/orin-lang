@@ -1,0 +1,1 @@
+- **Agent-ergonomics benchmark (ADR-0056 C13).** Ten small programs written from the published docs only (`bench/agent-ergonomics/`, `run.sh`), results and ranked findings in `docs/agent-ergonomics.md` (20 attempts, 10 failed; top finding `int`/`usize` friction), plus tutorial and `std.md` fixes for the gaps it found.

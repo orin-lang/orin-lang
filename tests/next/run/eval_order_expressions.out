@@ -1,0 +1,38 @@
+binary
+eval 1
+eval 2
+eval 3
+call
+eval 1
+eval 2
+eval 3
+array
+eval 1
+eval 2
+eval 3
+record
+eval 1
+eval 2
+eval 3
+conditional
+eval 0
+eval 8
+logical
+eval 1
+eval 3
+left-assoc
+eval 9
+eval 4
+eval 2
+comparison
+eval 1
+eval 2
+template
+eval 1
+eval 2
+receiver
+eval 0
+eval receiver
+eval 1
+eval 2
+1-2 3 7 123 3 231 8 true 3 true

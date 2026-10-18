@@ -1,0 +1,7 @@
+// TYP-13: trim removes ASCII white space, vertical tab and form feed included; split keeps empty edge pieces.
+function main(): void {
+  console.log("[" + " \t\n\r\x0B\x0C x \x0B\x0C ".trim() + "]");
+  console.log("\x0Bx".trim().length.toString());
+  console.log("a,b,".split(",").length.toString());
+  console.log(",a".split(",").length.toString());
+}

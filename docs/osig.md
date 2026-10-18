@@ -186,7 +186,7 @@ Paths must be inside the server root.
 - **Generics:** calls inside a generic function or a generic-class method are attributed to the generic declaration, once.
   A generic class is one `Class` node (`sig` shows `class Stack<T>`); its instantiations are not symbols (ADR-0026).
 - **Primitive I/O (ADR-0027):** every call site of a std I/O primitive (`readFile`, `File.write`, `shell`, `nowMillis`,
-  `console.log`, ...) and of the std scope functions (`withFile`, `useUnder`, `useFs`, ...) becomes a `PERFORMS_IO`
+  `console.log`, ...) and of the std scope functions (`withFile`, `withUnder`, `useFs`, ...) becomes a `PERFORMS_IO`
   edge from the enclosing function to a compiler-owned `Effect` node (`~io:Fs.ReadFile`, `sig` = `INPUT; grant:
   FsGrant`); the edge's `via` is the direction `INPUT` / `OUTPUT` / `CONTROL`, evidence `MUST` for a direct call
   (`MAY` inside a closure). `console.*` and `exit` are `ambient` (they need no grant). These are call sites, not effect

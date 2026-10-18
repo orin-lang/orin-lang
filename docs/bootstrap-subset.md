@@ -20,11 +20,14 @@ differently.
 - Keywords: `const let function return if else while for of break continue type import
   export from match true false`. Reserved (error if used): `var` (dedicated error E0201),
   `class interface enum new this null undefined async await`.
-- Integer literals: decimal `123`, hex `0x7F`; `_` is not allowed. Value must fit in i64.
-  No float literals in Orin-B.
+- Integer literals: decimal `123` (leading zeros are decimal: `007` is 7), hex `0x7F` or `0X7F`; `_`, binary, octal and suffixes
+  are not allowed. A literal has no sign. Up to 2^63-1 it is an ordinary literal; 2^63 to 2^64-1 is valid only where `u64` or `usize` is expected (E0430);
+  larger is E0100. Float literals (`1.5`, `1e9`) exist beyond Orin-B (ADR-0022, `docs/reference/01-lexical.md`).
 - String literals: double quotes only. Escapes: `\n \t \r \0 \\ \" \'` and `\xHH`.
   Strings are byte strings (UTF-8 bytes passed through unchanged).
-- Punctuation: `( ) { } [ ] , ; : . ... ? => = += -= *= /= %= + - * / % == != < <= > >= && || ! |`.
+- Punctuation: `( ) { } [ ] , ; : . ... ? => = += -= *= /= %= + - * / % == != < <= > >= && || ! | & ==> @`
+  (`|` only in union declarations, `&` only between type-parameter bounds, `==>` and `@` in annotations and contracts;
+  the full list is LEX-17 in `docs/reference/01-lexical.md`).
 
 ## 2. Declarations (top level only)
 
@@ -230,7 +233,7 @@ Format: `path:line:col: error[CODE]: message` on stderr, exit status 1. Codes:
 | E0405 | unknown field, method or variant |
 | E0406 | invalid use of `?` |
 | E0407 | cannot infer type |
-| E0408 | feature not supported in Orin-B |
+| E0408 | a construct the language does not support (the checker's message names it; list in `docs/reference/10-diagnostics.md`) |
 | E0409 | `break`/`continue` outside a loop |
 | E0410 | invalid operand types for operator |
 | E0411 | missing/duplicate/unknown record literal field |

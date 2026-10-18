@@ -64,11 +64,19 @@ to every std I/O function as the first argument:
 ```
 withHost(host, (fs, proc, stdio, clock) => ...)   // all four root grants of the host policy; returns the body's value (T may be void)
 withFs(host, fs => ...)  withProcess(host, proc => ...)  withStdio(host, stdio => ...)  withClock(host, clock => ...)
-useUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/ (also withUnder<T>); never widens
-useReadOnly(fs, ro => ...)         // cannot create / write / truncate
+withUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/; never widens
+withReadOnly(fs, ro => ...)         // cannot create / write / truncate
 withArgsOnly(proc, p => ...)       // `args` but no `shell`; returns the body's value (T may be void)
 // useHost, useFs, useProcess, useStdio, useClock, useNet and useArgsOnly are deprecated wrappers (ADR-0048 section 6)
 ```
+
+Reading and writing standard input and the arguments (a grant first, `import { StdioGrant, readLine, readBytes, writeStdout } from "std:io"`,
+`import { args, exit } from "std:process"`): `readLine(stdio): Option<string>` (next line without `\n`/`\r\n`, `None` at end of input),
+`readBytes(stdio, n: usize): Option<string>`, `writeStdout(stdio, s): void` (no newline; shares the buffer with `console.log`),
+`args(proc): string[]` (without the program name), `exit(code: int): void` (no grant). A closure cannot capture a grant **or the `Host`**
+(E0452), so nest by passing grants as arguments, not by calling `withFs(host, ..)` inside another callback: take everything at
+once with `withHost(host, (fs, proc, stdio, clock) => value)`. A closure that returns `Err(..)` from `withHost` needs its
+result type written: `(fs, proc, stdio, clock): Result<void, string> => ...`.
 
 Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `shell`), `StdioGrant` (`std:io`),
 `ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `withNet(host, ...)`). **Ambient, no grant:**
@@ -99,12 +107,11 @@ the callback and closes the file on every path:
 ```
 type FileMode = Read | Write | Append
 withFile<T>(fs, path, mode, body: (file: File) => T): Result<T, FsError>
-useFile(fs, path, mode, body: (file: File) => void): Result<void, FsError>      // body returns nothing
 withFiles<T>(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => T): Result<T, FsError>
-useFiles(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => void): Result<void, FsError>
 withFileFs<T>(fs, path, mode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>   // the body gets the grant again (nesting)
-withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      useUnder(fs, dir, body)        // narrowing
-withReadOnly<T>(fs, body: (ro: FsGrant) => T): T         useReadOnly(fs, body)
+withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      // narrowing
+withReadOnly<T>(fs, body: (ro: FsGrant) => T): T
+// T may be void. useFile / useFiles / useUnder / useReadOnly are deprecated wrappers (ADR-0048): use withX with a void body.
 
 File.readLine(): Option<string>      // without "\n" / "\r\n"; None at end of file
 File.read(n: usize): Option<string>  // up to n bytes; None only at end of file (n > 0); read(0) = Some("")
@@ -127,7 +134,7 @@ const n = withFile(fs, "log.txt", Read, f => {
   while (f.readLine().isSome()) { lines += 1; }
   return lines;
 });
-useFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
+withFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
 ```
 
 ## std:path (POSIX, lexical)
@@ -721,7 +728,7 @@ function main(host: Host): void {
 | `withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
 | `withAccepted(ln, timeout: Duration, body: (Stream, Peer) => ..)` | accept (TCP_NODELAY), run body, close the stream; `Err(Timeout)` (`isTimeout`) |
 | `withConnection(net, host, port, timeout: Duration, body: (Stream) => ..)` | connect, run body, close |
-| `withListenerNet`, `withConnectionBeside` | variants whose body also receives the `NetGrant` / the `Listener` again (a closure cannot capture a handle): client and server in one process |
+| `withListenerNet(net, addr, port, backlog, body: (Listener, NetGrant) => ..)` / `withConnectionBeside(net, host, port, timeout, ln, body: (Stream, Listener) => ..)` | one process as server and client (a closure cannot capture a handle): connect first (the backlog holds it), then `withAccepted(ln2, ..)` inside the client body; port 0 picks a free port, `portOf(ln)` reads it |
 | `recv(s, maxBytes, timeout: Duration): Result<Bytes, NetError>` | one wait, 1..min(maxBytes, 64 KiB) bytes, one copy into a fresh `u8[]` (never one string per byte); the end of the stream is `Err(Closed)` (`isClosed`), a wait that ran out `Err(Timeout)`, `maxBytes` 0 `Err(InvalidArgument)` |
 | `send(s, data, timeout: Duration)` / `sendAll(s, data, timeout: Duration)` | one attempt (partial write reported) / all bytes, deadline for the whole call |
 | `shutdownWrite(s)` | half-close (FIN); a graceful close is this, a bounded drain with `recv`, then the scope ends |

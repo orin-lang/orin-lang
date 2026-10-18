@@ -1,0 +1,22 @@
+// warns: W0440 W0440 W0440
+// W0440 (ANN-7): a use of a deprecated declaration from another declaration warns with its message; a deprecated
+// declaration using other deprecated symbols does not, and the program runs normally.
+@Deprecated("use newAdd")
+function oldAdd(a: int, b: int): int {
+  return a + b;
+}
+
+@Deprecated("use New")
+type Old = { x: int; };
+
+@Deprecated("go away")
+function legacy(): int {
+  return oldAdd(1, 2);
+}
+
+function main(): void {
+  console.log(oldAdd(1, 2).toString());
+  const o = Old { x: 2 };
+  console.log(o.x.toString());
+  console.log(legacy().toString());
+}

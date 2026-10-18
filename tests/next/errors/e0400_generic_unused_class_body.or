@@ -1,0 +1,17 @@
+// error: E0400
+// TYP-27: a generic class is checked at its definition even when nothing instantiates it.
+class Unused<T> {
+  v: T;
+
+  constructor(v: T) {
+    this.v = v;
+  }
+
+  bad(): int {
+    return "oops";
+  }
+}
+
+function main(): void {
+  console.log("x");
+}

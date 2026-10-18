@@ -1,0 +1,15 @@
+// error: E0304
+// TYP-33: there are no overloads: a second method of the same name is a duplicate.
+class C {
+  f(a: int): int {
+    return a;
+  }
+
+  f(a: string): int {
+    return 1;
+  }
+}
+
+function main(): void {
+  console.log("x");
+}

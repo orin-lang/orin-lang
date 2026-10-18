@@ -1,0 +1,4 @@
+ann 150
+withdraw 500: false
+withdraw 20: true
+ann 30, bob 100

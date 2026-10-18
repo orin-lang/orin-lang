@@ -2,12 +2,12 @@
 // a handle is only valid as an argument: not as a statement
 import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
-import { withFile, useFile, Read, Write, File } from "std:fs";
+import { withFile, Read, Write, File } from "std:fs";
 function main(host: Host): void {
   withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
-  const r = useFile(fs, "build/tests/x.txt", Read, f => {
+  const r = withFile(fs, "build/tests/x.txt", Read, f => {
     f;
   });
 }
