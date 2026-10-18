@@ -58,6 +58,10 @@ function operandTy(f: MFunction, o: Operand): MType {
   };
 }
 
+@Ensures(match (o) {
+  OLocal(m) => result == (m == l),
+  _ => !result,
+})
 function isLocalOp(o: Operand, l: usize): bool {
   return match (o) {
     OLocal(m) => m == l,
@@ -68,9 +72,9 @@ function isLocalOp(o: Operand, l: usize): bool {
 // ---------------------------------------------------------------- the callee side
 
 // One `return` of a pair function: the record is built by instruction `at` of block `block`.
-type RetSite = { block: usize; at: usize; a: usize; v: Operand; };
+export type RetSite = { block: usize; at: usize; a: usize; v: Operand; };
 
-type PairShape = { ok: bool; ty: MType; sites: RetSite[]; };
+export type PairShape = { ok: bool; ty: MType; sites: RetSite[]; };
 
 function noShape(): PairShape {
   return PairShape { ok: false, ty: MVoid, sites: [] };
