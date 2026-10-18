@@ -23,7 +23,7 @@ An **effect** is a compiler-owned primitive operation (the closed list of ADR-00
 |---|---|---|---|
 | `Fs.ReadFile`, `Fs.Stat`, `Fs.Read` (a `File` read) | INPUT | `FsGrant` | `readFile`, `exists`, `file.read*` |
 | `Fs.WriteFile`, `Fs.Write` (a `File` write / flush) | OUTPUT | `FsGrant` | `writeFile`, `file.write*` |
-| `Fs.Open`, `Fs.Narrow` | CONTROL | `FsGrant` | `withFile` / `useFile`, `withUnder` / `withReadOnly` |
+| `Fs.Open`, `Fs.Narrow` | CONTROL | `FsGrant` | `withFile`, `withUnder` / `withReadOnly` |
 | `Process.Args` | INPUT | `ProcessGrant` | `args` |
 | `Process.Spawn`, `Process.Narrow` | CONTROL | `ProcessGrant` | `shell`, `withArgsOnly` |
 | `Process.Exit` | CONTROL | ambient | `exit` |

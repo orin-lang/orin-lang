@@ -2,7 +2,7 @@
 // a callback cannot return the handle it receives (it would escape the scope)
 import { Host, useFs } from "std:host";
 import { FsGrant } from "std:fs";
-import { withFile, useFile, Read, Write, File } from "std:fs";
+import { withFile, Read, Write, File } from "std:fs";
 function main(host: Host): void {
   useFs(host, fs => { run(fs); });
 }

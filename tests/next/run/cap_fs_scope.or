@@ -2,7 +2,7 @@
 // a symbolic link to a directory / a file outside, and a dangling link are refused by the runtime; the platform layer
 // does the path work. Not covered (documented): races between check and open, hard links, mounts.
 import { Host, useHost } from "std:host";
-import { FsGrant, FsError, fsErrorMessage, readFile, writeFile, exists, withFile, useUnder, Read } from "std:fs";
+import { FsGrant, FsError, fsErrorMessage, readFile, writeFile, exists, withFile, withUnder, Read } from "std:fs";
 import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
 
@@ -47,7 +47,7 @@ function main(host: Host): void {
 
 function run(fs: FsGrant, proc: ProcessGrant): void {
   setup(proc);
-  useUnder(fs, ROOT + "/in", sub => { probe(sub); });
+  withUnder(fs, ROOT + "/in", sub => { probe(sub); });
   // the secret was never written through the escapes
   console.log("escape file created: " + exists(fs, ROOT + "/out/new.txt").unwrap().toString() + " " + exists(fs, ROOT + "/out/nothing").unwrap().toString());
 }

@@ -91,8 +91,8 @@ available.
 (arguments, `shell`), standard input/output and clock. Every I/O function takes the matching grant as its first
 argument: `args(proc)`, `readFile(fs, path)`, `writeFile(fs, path, text)`. Passing grants down as parameters
 (`run(fs, argv)`) keeps the code that needs authority visible in its signatures. A grant lives only inside the callback and
-cannot be stored or captured by a closure. You can narrow one before passing it on: `useUnder(fs, "data", sub => ...)`
-only allows paths inside `data/`, and `useReadOnly(fs, ro => ...)` cannot write. The environment variable
+cannot be stored or captured by a closure. You can narrow one before passing it on: `withUnder(fs, "data", sub => ...)`
+only allows paths inside `data/`, and `withReadOnly(fs, ro => ...)` cannot write. The environment variable
 `ORIN_DENY=fs` (also `process`, `stdio`, `clock`, `net`) turns a family off for a run: here `readFile` then returns an
 `Err` that says `denied by the host policy`.
 

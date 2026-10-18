@@ -3,13 +3,13 @@
 // (tools/test_tooling.sh checks the bytes that reached the disk).
 import { Host, useFs } from "std:host";
 import { FsGrant } from "std:fs";
-import { useFile, Write } from "std:fs";
+import { withFile, Write } from "std:fs";
 
 function main(host: Host): void {
   useFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
-  const r = useFile(fs, "build/tests/fs_trap_in_scope.txt", Write, f => {
+  const r = withFile(fs, "build/tests/fs_trap_in_scope.txt", Write, f => {
     f.write("written before the trap");
     console.log("in scope");
     const none: Option<int> = None;

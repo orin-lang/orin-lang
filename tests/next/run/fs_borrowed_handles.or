@@ -1,7 +1,7 @@
 // A File is passed to functions (borrowed): helpers, recursion, function values taking a File.
 import { Host, useFs } from "std:host";
 import { FsGrant } from "std:fs";
-import { withFile, useFile, Read, Write, File } from "std:fs";
+import { withFile, Read, Write, File } from "std:fs";
 
 const PATH: string = "build/tests/fs_borrowed_handles.txt";
 
@@ -61,7 +61,7 @@ function main(host: Host): void {
   useFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
-  useFile(fs, PATH, Write, f => { writeNumbers(f, 10); }).unwrap();
+  withFile(fs, PATH, Write, f => { writeNumbers(f, 10); }).unwrap();
   console.log("sum " + withFile(fs, PATH, Read, f => sum(f)).unwrap().toString());
   console.log("count " + withFile(fs, PATH, Read, f => countLines(f, 0)).unwrap().toString());
   const ls = withFile(fs, PATH, Read, f => lines(f)).unwrap();

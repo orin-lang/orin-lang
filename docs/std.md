@@ -64,8 +64,8 @@ to every std I/O function as the first argument:
 ```
 useHost(host, (fs, proc, stdio, clock) => ...)   // all four root grants of the host policy (withHost returns a value)
 useFs(host, fs => ...)  useProcess(host, proc => ...)  useStdio(host, stdio => ...)  useClock(host, clock => ...)
-useUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/ (also withUnder<T>); never widens
-useReadOnly(fs, ro => ...)         // cannot create / write / truncate
+withUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/ ; never widens
+withReadOnly(fs, ro => ...)         // cannot create / write / truncate
 useArgsOnly(proc, p => ...)        // `args` but no `shell`
 ```
 
@@ -98,12 +98,11 @@ the callback and closes the file on every path:
 ```
 type FileMode = Read | Write | Append
 withFile<T>(fs, path, mode, body: (file: File) => T): Result<T, FsError>
-useFile(fs, path, mode, body: (file: File) => void): Result<void, FsError>      // body returns nothing
 withFiles<T>(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => T): Result<T, FsError>
-useFiles(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => void): Result<void, FsError>
 withFileFs<T>(fs, path, mode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>   // the body gets the grant again (nesting)
-withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      useUnder(fs, dir, body)        // narrowing
-withReadOnly<T>(fs, body: (ro: FsGrant) => T): T         useReadOnly(fs, body)
+withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      // narrowing
+withReadOnly<T>(fs, body: (ro: FsGrant) => T): T
+// T may be void. useFile / useFiles / useUnder / useReadOnly are deprecated wrappers (ADR-0048): use withX with a void body.
 
 File.readLine(): Option<string>      // without "\n" / "\r\n"; None at end of file
 File.read(n: usize): Option<string>  // up to n bytes; None only at end of file (n > 0); read(0) = Some("")
@@ -126,7 +125,7 @@ const n = withFile(fs, "log.txt", Read, f => {
   while (f.readLine().isSome()) { lines += 1; }
   return lines;
 });
-useFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
+withFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
 ```
 
 ## std:path (POSIX, lexical)

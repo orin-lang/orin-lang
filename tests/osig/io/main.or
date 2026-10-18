@@ -1,6 +1,6 @@
 // OSIG primitive I/O edges (ADR-0027): PERFORMS_IO from the enclosing function to a compiler-owned Effect node.
 import { Host, useHost, useNet } from "std:host";
-import { FsGrant, readFile, writeFile, withFile, useUnder, Read } from "std:fs";
+import { FsGrant, readFile, writeFile, withFile, withUnder, Read } from "std:fs";
 import { ProcessGrant, args } from "std:process";
 import { StdioGrant, readLine, shell } from "std:io";
 import { ClockGrant, nowMillis, milliseconds } from "std:time";
@@ -33,7 +33,7 @@ function run(proc: ProcessGrant, stdio: StdioGrant): void {
 }
 
 function scoped(fs: FsGrant): void {
-  useUnder(fs, "data", sub => {
+  withUnder(fs, "data", sub => {
     console.log(load(sub, "data/x"));
   });
 }

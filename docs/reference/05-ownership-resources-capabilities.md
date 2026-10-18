@@ -103,8 +103,8 @@ E0450), or captured by a closure or a task body (E0452, E0483).
   `tests/next/errors/e0450_channel_of_grant.or`, `tests/next/errors/e0452_grant_captured.or`, `tests/next/errors/e0483_task_captures_grant.or`,
   `tests/next/errors/e0400_grant_forged_literal.or`.
 
-**CAP-5.** A grant can be **narrowed** and never widened: `useUnder(fs, dir, ..)` restricts a file grant to a directory (path escapes such as `..`,
-absolute paths and symbolic links leaving the directory are refused by the runtime), `useReadOnly(fs, ..)` removes writing,
+**CAP-5.** A grant can be **narrowed** and never widened: `withUnder(fs, dir, ..)` restricts a file grant to a directory (path escapes such as `..`,
+absolute paths and symbolic links leaving the directory are refused by the runtime), `withReadOnly(fs, ..)` removes writing,
 `useArgsOnly(proc, ..)` removes the right to spawn. A narrowing that does not contain its parent yields a grant that reaches nothing; a narrowing of a
 read-only grant stays read-only.
 - Tests: `tests/next/run/cap_fs_scope.or`, `tests/next/run/cap_narrow_never_widens.or`, `tests/next/run/cap_trap_args_only_shell.or`.
@@ -155,7 +155,7 @@ Absent configuration means no restriction.
 
 - OWN-3: no test shows that a long-running program with value cycles *cannot* exist (the statement follows from the design); only the OOM trap is tested.
 - RES-4: the guarantee that a handle is closed "on every path" is tested for return, `exit` and a trap inside the scope (`fs_exit_in_scope`, `fs_trap_in_scope`), not for a `?` early return in the callback.
-- CAP-5: `useReadOnly` has a runtime test only inside `cap_narrow_never_widens`; there is no negative test that widening is impossible at the type level (there is no widening function).
+- CAP-5: `withReadOnly` has a runtime test only inside `cap_narrow_never_widens`; there is no negative test that widening is impossible at the type level (there is no widening function).
 - CAP-6: no test shows that a *library* function without a grant writes to stderr (only `main()` itself does); `process.exit` in a grantless `main` is `tests/run/std_process_exit.or`.
 - CAP-7: a malformed `ORIN_DENY` (a typo, a space, upper case) trapping at start has no test in `tests/next/deny/`.
 - CAP-8: statement of scope, no test applies.
