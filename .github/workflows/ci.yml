@@ -469,6 +469,31 @@ jobs:
           CFLAGS="-O0 -w" ./tools/bootstrap.sh --seed-only
           python3 tools/diff_verifier_lean.py --orinc build/bootstrap/orin0
 
+  # Freeze item C16 trial: the whole toolchain on linux-aarch64 (GitHub's arm64 Ubuntu runner). Own bootstrap (the x86_64 artifact
+  # cannot be reused): seed -> orin2 -> stage3, stage2.c == stage3.c, then the C and LLVM conformance suites, the concurrency
+  # stage 0 tests and std:net. Same tools as the linux-x86_64 jobs: cc, clang (checked below), python3, setarch.
+  linux-arm64:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (clang for the LLVM backend; installed only when the image lacks it)
+        run: |
+          command -v clang >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq clang; }
+          uname -m && cc --version && clang --version && python3 --version
+      - name: Bootstrap on linux-aarch64 (seed -> orin0 -> orin1 -> orin2 -> stage3, stage2.c == stage3.c, conformance)
+        run: ./tools/bootstrap.sh
+      - name: Conformance, C backend (all suites)
+        run: tools/conformance.sh --orinc build/bootstrap/orin2 --suite all
+      - name: Conformance, LLVM backend (all suites)
+        run: tools/conformance.sh --orinc build/bootstrap/orin2 --suite all --backend llvm
+      - name: "Concurrency stage 0 (ADR-0017): runtime task tests and stress tests, plain, ThreadSanitizer, AddressSanitizer + UBSan"
+        run: tools/test_concurrency.sh
+      - name: std:net on the loopback (HTTP server example, slowloris timeout, scope refusals, ORIN_DENY=net)
+        run: sh tools/test_net.sh
+
   macos:
     needs: changes
     if: needs.changes.outputs.macos == 'true'
