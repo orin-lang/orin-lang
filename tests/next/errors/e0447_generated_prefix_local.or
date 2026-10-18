@@ -1,0 +1,6 @@
+// error: E0447
+// LEX-6: the reserved prefix is rejected at any identifier position (here a local name).
+function main(): void {
+  const __gx = 1;
+  console.log(__gx.toString());
+}

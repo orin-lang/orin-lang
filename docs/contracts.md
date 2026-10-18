@@ -112,6 +112,9 @@ invariants):
   `isNormalized`, a self-call, or an invariant that calls a public method of its class terminate. The functions
   called that way run their own bodies as ordinary code (their inner calls are checked as usual);
 - a violation prints the report below on stderr and exits with status 101 (same convention as other traps).
+- **loop `@Invariant` and `@Decreases` are not checked at run time**, by design: they are type-checked on every build and checked
+  statically by `orin verify --contracts` (section "Loops"); with `--check-contracts` a false loop invariant or a measure that does not
+  decrease changes nothing (`tests/next/run/contracts_loop_clauses_unchecked.or`).
 
 ### Violation reports (ADR-0031 A1, A2; ADR-0029)
 
@@ -462,7 +465,7 @@ analysis cannot read (a call it cannot resolve) has the whole object as its fram
 
 ### Loops
 
-- A user `@Invariant(e)` before `while` / `for` (syntax of ADR-0012; not checked at run time yet) is proved on entry and for one
+- A user `@Invariant(e)` before `while` / `for` (syntax of ADR-0012; never checked at run time, only statically) is proved on entry and for one
   iteration (`loop-invariant` results), then assumed after the loop together with the negated condition.
 - A counting loop `while (i < N)` (or `<=`) whose body only does `i += 1` once per iteration, with `N` not changed by the body,
   gets `i0 <= i <= max(i0, N)` for free; it is proved like a user invariant but not reported by itself.

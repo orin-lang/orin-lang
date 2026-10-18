@@ -18,13 +18,15 @@ error E0100 ("unexpected non-ASCII character"). Inside a string or comment, byte
   `tests/parse_edge/err0100_bad_char_formfeed.or`, `tests/parse_edge/err0100_bad_char_vtab.or`,
   `tests/parse_edge/err0100_bad_char_nul.or`.
 
-**LEX-3.** A character that starts no token (`#`, `$`, `~`, `^`, `\`, a single quote, a lone `@`, `&` not
-doubled outside a type-parameter list, ...) is E0100 ("unexpected character"). The lexer stops at the first lexical
+**LEX-3.** A character that starts no token (`#`, `$`, `~`, `^`, `\`, a single quote, a lone `@`, ...) is E0100 ("unexpected character"). The lexer stops at the first lexical
 error; it reports exactly one.
 - Tests: `tests/errors/e0100_bad_char.or`, `tests/parse_edge/err0100_bad_char_hash.or`,
   `tests/parse_edge/err0100_bad_char_dollar.or`, `tests/parse_edge/err0100_bad_char_tilde.or`,
   `tests/parse_edge/err0100_bad_char_caret.or`, `tests/parse_edge/err0100_bad_char_quote.or`,
   `tests/parse_edge/err0100_bad_char_at.or`, `tests/parse_edge/err0100_bad_char_backslash.or`.
+
+(`&` and `|` are tokens, so a stray one is not E0100 but the syntax error E0200: `tests/next/errors/e0200_lone_ampersand.or`,
+`tests/next/errors/e0200_bitor_expression.or`; see LEX-17.)
 
 ## 1.2 Comments
 
@@ -46,7 +48,8 @@ non-ASCII letter in a name is E0100.
 
 **LEX-6.** An identifier that starts with `__g` is reserved for generated code (annotation processors,
 ADR-0046): using one in source is E0447.
-- Tests: `tests/next/errors/e0447_generated_prefix.or`.
+- Tests: `tests/next/errors/e0447_generated_prefix.or`, `tests/next/errors/e0447_generated_prefix_local.or`,
+  `tests/next/errors/e0447_generated_prefix_param.or`.
 
 ## 1.4 Keywords and reserved words
 
@@ -97,7 +100,7 @@ used as names.
 built-in annotations and contract clauses (`Test`, `Inline`, `Rule`, ...) are not keywords. They live in the prelude scope
 (chapter 6); a local value declaration may reuse them (`const int = 5;` is accepted), a type parameter may not reuse a built-in
 type name (E0408), and the annotation names stay ordinary names outside `@Annotation` definitions.
-- Tests: `tests/next/run/reserved_names_as_types.or`, `tests/next/errors/e0408_type_param_shadows_builtin.or`,
+- Tests: `tests/next/run/reserved_names_as_types.or`, `tests/next/run/lex_builtin_names_as_locals.or`, `tests/next/errors/e0408_type_param_shadows_builtin.or`,
   `tests/run/std_prelude_edges.or`, `tests/next/errors/e0447_reserved_annotation_name.or`.
 
 ## 1.5 Integer literals
@@ -127,7 +130,8 @@ digits begins a fraction only when a digit follows, so `1.toString()` is a membe
 no `.5`, no `1.`, no hexadecimal float, no `_`; `.5` is E0100 ("a float literal needs a digit before the decimal
 point"). A literal whose magnitude exceeds about 1.8e308 is E0100. The token's text is canonicalised (`1e9` is `1.0e9`).
 - Tests: `tests/next/run/float_literals_basic.or`, `tests/next/errors/e0100_float_leading_dot.or`,
-  `tests/next/errors/e0100_float_hex.or`, `tests/next/errors/e0100_float_exponent_overflow.or`.
+  `tests/next/errors/e0100_float_hex.or`, `tests/next/errors/e0100_float_exponent_overflow.or`,
+  `tests/next/errors/e0100_float_integer_part_overflow.or`.
 
 ## 1.7 String literals
 
@@ -139,7 +143,7 @@ Strings are byte strings: `"é".length` is 2.
 - Tests: `tests/run/string_escapes.or`, `tests/parse_edge/ok_strings.or`, `tests/errors/e0100_bad_escape.or`,
   `tests/errors/e0100_unterminated_string.or`, `tests/parse_edge/err0100_bad_string_newline.or`,
   `tests/parse_edge/err0100_bad_string_escape_u.or`, `tests/parse_edge/err0100_bad_string_escape_x_half.or`,
-  `tests/parse_edge/err0100_bad_string_escape_x_nonhex.or`, `tests/next/run/std_utf8_basic.or`.
+  `tests/parse_edge/err0100_bad_string_escape_x_nonhex.or`, `tests/next/run/std_utf8_basic.or`, `tests/next/run/string_non_ascii_bytes.or`.
 
 ## 1.8 Template literals
 
@@ -170,7 +174,8 @@ operators, shifts, `??`, `?.`, `**`, `++` or `--` in the language, and each is a
 - Tests: `tests/parse_edge/ok_ops_adjacent.or`, `tests/parse_edge/err0100_bad_dotdot.or`,
   `tests/parse_edge/err0200_binary_bitor.or`, `tests/parse_edge/err0200_binary_shift.or`,
   `tests/parse_edge/err0200_binary_coalesce.or`, `tests/parse_edge/err0200_incr.or`,
-  `tests/parse_edge/err0200_assign_pow.or`, `tests/next/run/multi_bounds_ord_hash.or`.
+  `tests/parse_edge/err0200_assign_pow.or`, `tests/next/run/multi_bounds_ord_hash.or`,
+  `tests/next/errors/e0200_lone_ampersand.or`, `tests/next/errors/e0200_bitor_expression.or`.
 
 ## 1.10 Lexical modes of OX
 
@@ -185,8 +190,4 @@ trimmed and joined). `}` and `>` are not allowed in OX text. An unterminated ele
 
 ## Gaps: rules without a test
 
-- LEX-11: no test shadows a built-in value or type name with a local declaration (`const int = 5;` is accepted by the compiler; checked by hand only).
-- LEX-6 is tested for the user-visible prefix only (`e0447_generated_prefix`); the position (any identifier position) is not.
-- LEX-3: no test for a lone `&` outside a bound, nor for a `|` in expression position (covered indirectly by `err0200_binary_bitor`).
-- LEX-14: the 1.8e308 magnitude limit is tested only for the exponent form (`e0100_float_exponent_overflow`), not the 309-digit integer-part form.
-- LEX-15: no test fixes that a non-ASCII byte inside a string is preserved bytewise except `std_utf8_basic` (library level).
+- LEX-14 (compiler bug: the range check for a literal without an exponent only rejects more than 309 significant integer digits, so a 309-digit integer part above 1.8e308, e.g. `999...9.5`, is accepted and evaluates to `Infinity`; the 310-digit form is pinned by `e0100_float_integer_part_overflow`).

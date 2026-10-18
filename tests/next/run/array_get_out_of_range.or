@@ -1,0 +1,8 @@
+// TYP-15: `get(i)` never traps: it is None for any index past the end, the usize maximum included.
+function main(): void {
+  const a: usize = 18446744073709551615;
+  const xs = [1, 2, 3];
+  console.log(xs.get(a).isSome().toString());
+  console.log(xs.get(3).isNone().toString());
+  console.log(xs.get(2).unwrap().toString());
+}

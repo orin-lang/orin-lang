@@ -1,0 +1,7 @@
+// error: E0440
+@Sealed
+type Shape = Dot | Line(int);
+
+function main(): void {
+  console.log("x");
+}

@@ -1,0 +1,28 @@
+import { Components } from "std:ox";
+
+export type Node = NText(string) | NGroup(Node[]) | NBox(Node[]);
+
+export function ox(): Components<Node> {
+  return Components<Node> { fragment: group, text: plain };
+}
+
+export function plain(value: string): Node {
+  return NText(value);
+}
+
+export function group(items: Node[]): Node {
+  return NGroup(items);
+}
+
+// An intrinsic element `<box>..</box>`: the default slot is a Node[].
+export function box(children: Node[]): Node {
+  return NBox(children);
+}
+
+export function show(n: Node): string {
+  return match (n) {
+    NText(s) => "text(" + s + ")",
+    NGroup(xs) => "group[" + xs.map(show).join(",") + "]",
+    NBox(xs) => "box[" + xs.map(show).join(",") + "]",
+  };
+}

@@ -1,0 +1,4 @@
+// A library function without any grant.
+export function warn(message: string): void {
+  console.error("warning: " + message);
+}

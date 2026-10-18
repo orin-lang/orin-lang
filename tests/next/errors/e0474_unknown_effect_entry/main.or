@@ -1,0 +1,5 @@
+// error: E0474
+// EFF-3: an entry that names no known effect is rejected.
+function main(): void {
+  console.log("ok");
+}

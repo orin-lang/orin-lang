@@ -44,7 +44,7 @@ Mutation classes (id: injected bug -> required reaction)
   bce-no-fact         make a checked access unchecked that has no earlier access of (a, i) in its block -> ERROR without a dominating check
   bce-across-push     `arraypush a` between the checked access and the unchecked one         -> ERROR without a dominating check
   bce-after-redef     redefine the array local there (`t = dup a; a = move t`)               -> ERROR without a dominating check
-  bce-after-redef-index redefine the index local there                                       -> ERROR without a dominating check
+  bce-after-redef-index redefine the index local there (to i64 max)                          -> ERROR without a dominating check
   bce-other-index     access an index that no earlier access of the block names              -> ERROR without a dominating check
   bce-across-block    split the block between the checked access and the unchecked one       -> ERROR without a dominating check
   bce-makeunique-ok   `makeunique a` there (positive control)                                -> ACCEPTED (rejection is a finding)
@@ -770,7 +770,9 @@ def apply_bounds(m, f):
         k2 = re.search(r"\[(\d+)u\] instead", m.desc).group(1) + "u"
         ins[ii] = line.replace("[%s]" % key, "[%s]" % k2, 1)
     elif m.cls == "bce-after-redef-index":
-        ins.insert(ii, "%s = copy 0u" % key)
+        # a value no array can be long enough for: with `0u` an access of a literal array of known length would be
+        # justified by the interval fact instead, and the mutant would survive for a reason the class does not test
+        ins.insert(ii, "%s = copy 9223372036854775807u" % key)
     elif m.cls == "bce-makeunique-ok":
         ins.insert(ii, "makeunique l%d" % a)
     elif m.cls == "bce-other-index-ok":
