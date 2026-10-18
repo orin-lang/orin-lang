@@ -89,7 +89,8 @@ captures a snapshot of the variables it uses (they are moved or copied into the 
 resource such as a file or grant. A task that traps does not take the process down at once; `join` turns it into a trap of
 the joiner (`task panicked: ...`), and a panic that nobody joins is reported when the scope ends, so none is lost.
 
-**Channels.** `channel<int>(4)` makes a bounded queue with a sender `ch.tx` and a receiver `ch.rx`, both usable from any
+**Channels.** `channel<int>(4)` makes a bounded queue (the types `Sender<T>`, `Receiver<T>`, `TaskHandle<T>` and `Scope` are imported from
+`std:task` when a function signature names them) with a sender `ch.tx` and a receiver `ch.rx`, both usable from any
 task. `send` blocks while the queue is full and returns an `Err` (kind `Closed`) if the channel was closed; `recv` blocks while it is
 empty and returns `None` once the sender has called `close()` and everything has been taken. That is how the receiver
 above knows to stop.

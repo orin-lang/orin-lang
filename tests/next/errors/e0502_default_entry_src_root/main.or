@@ -1,0 +1,7 @@
+// error: E0502
+// Without `entry` the src root is `src`; `util2` is not a module under it.
+import { f } from "./src/util/module";
+
+function main(): void {
+  console.log(f().toString());
+}

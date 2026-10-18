@@ -1,0 +1,7 @@
+// error: E0430
+// TYP-3: a literal adopts the type of the other operand of a binary operator, so 300 must fit u8.
+function main(): void {
+  const a: u8 = 200;
+  const b = a + 300;
+  console.log(b.toString());
+}

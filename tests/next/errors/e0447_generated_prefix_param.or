@@ -1,0 +1,9 @@
+// error: E0447
+// LEX-6: the reserved prefix is rejected at any identifier position (here a parameter name).
+function f(__gp: int): int {
+  return __gp;
+}
+
+function main(): void {
+  console.log(f(1).toString());
+}

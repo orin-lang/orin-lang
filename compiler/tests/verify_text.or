@@ -199,6 +199,10 @@ function builtinOf(name: string): Builtin {
   if (name == "fs.writeFile") { return BFsWriteFile; }
   if (name == "fs.exists") { return BFsExists; }
   if (name == "fs.listDir") { return BFsListDir; }
+  if (name == "fs.rename") { return BFsRename; }
+  if (name == "fs.removeFile") { return BFsRemoveFile; }
+  if (name == "fs.removeDir") { return BFsRemoveDir; }
+  if (name == "fs.writeFileAtomic") { return BFsWriteFileAtomic; }
   if (name == "process.args") { return BProcessArgs; }
   if (name == "io.readBytes") { return BIoReadBytes; }
   if (name == "io.readLine") { return BIoReadLine; }

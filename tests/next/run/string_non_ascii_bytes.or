@@ -1,0 +1,10 @@
+// LEX-15: non-ASCII bytes inside a string literal pass through unchanged; strings are byte strings.
+function main(): void {
+  const s = "é€x";
+  console.log(s.length.toString());
+  console.log(s);
+  console.log(s.charCodeAt(0).toString());
+  console.log(s.charCodeAt(1).toString());
+  console.log(s.substring(0, 2));
+  console.log("\xC3\xA9" == "é" ? "same" : "diff");
+}

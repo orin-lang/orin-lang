@@ -70,6 +70,14 @@ withArgsOnly(proc, p => ...)       // `args` but no `shell`; returns the body's 
 // useHost, useFs, useProcess, useStdio, useClock, useNet and useArgsOnly are deprecated wrappers (ADR-0048 section 6)
 ```
 
+Reading and writing standard input and the arguments (a grant first, `import { StdioGrant, readLine, readBytes, writeStdout } from "std:io"`,
+`import { args, exit } from "std:process"`): `readLine(stdio): Option<string>` (next line without `\n`/`\r\n`, `None` at end of input),
+`readBytes(stdio, n: usize): Option<string>`, `writeStdout(stdio, s): void` (no newline; shares the buffer with `console.log`),
+`args(proc): string[]` (without the program name), `exit(code: int): void` (no grant). A closure cannot capture a grant **or the `Host`**
+(E0452), so nest by passing grants as arguments, not by calling `withFs(host, ..)` inside another callback: take everything at
+once with `withHost(host, (fs, proc, stdio, clock) => value)`. A closure that returns `Err(..)` from `withHost` needs its
+result type written: `(fs, proc, stdio, clock): Result<void, string> => ...`.
+
 Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `shell`), `StdioGrant` (`std:io`),
 `ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `withNet(host, ...)`). **Ambient, no grant:**
 `console.log`, `console.error` and `exit` (a library without grants can therefore still write to stdout / stderr: see
@@ -717,6 +725,7 @@ function main(host: Host): void {
 | `withNet(host, body)` (`useNet` deprecated) (`std:host`) | the root `NetGrant` (may listen and connect anywhere the host policy allows) |
 | `useListen / withListen(net, addr, port, body)` | narrowed grant: listen on exactly `addr:port` (an address literal; port 0 = any) |
 | `useConnect / withConnect(net, hostPattern, portLo, portHi, body)` | narrowed grant: connect to / resolve names matching `"*"`, `"*.sfx"` or an exact text, on those ports |
+| `useListenerNet(net, addr, port, backlog, body: (Listener, NetGrant) => ..)` / `useConnectionBeside(net, host, port, timeout, ln, body: (Stream, Listener) => ..)` | one process as server and client: connect first (the backlog holds it), then `useAccepted(ln2, ..)` inside the client body; port 0 picks a free port, `portOf(ln)` reads it |
 | `useListener / withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
 | `useAccepted / withAccepted(ln, timeout: Duration, body: (Stream, Peer) => ..)` | accept (TCP_NODELAY), run body, close the stream; `Err(Timeout)` (`isTimeout`) |
 | `useConnection / withConnection(net, host, port, timeout: Duration, body: (Stream) => ..)` | connect, run body, close |

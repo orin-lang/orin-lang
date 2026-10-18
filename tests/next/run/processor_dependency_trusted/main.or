@@ -1,0 +1,7 @@
+// ANN-14: a processor of a dependency listed in [annotations] processors runs; the companion has its output.
+import { Thing } from "./models";
+import { describeThing } from "./models.gen";
+
+function main(): void {
+  console.log(describeThing());
+}

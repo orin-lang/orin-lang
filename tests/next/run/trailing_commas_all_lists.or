@@ -1,0 +1,18 @@
+// GRM-4: a trailing comma is accepted in parameter lists, argument lists, array elements, record-literal fields,
+// variant payloads and match arms.
+type P = { x: int; y: int; };
+type U = A(int,) | B;
+
+function add(a: int, b: int,): int {
+  return a + b;
+}
+
+function main(): void {
+  const r = add(1, 2,);
+  const arr = [1, 2, 3,];
+  const p = P { x: 1, y: 2, };
+  const f = (a: int, b: int,) => a + b;
+  const u: U = A(3,);
+  const m = match (u) { A(v,) => v, B => 0, };
+  console.log(`${r} ${arr.length} ${p.x} ${f(1, 2,)} ${m}`);
+}

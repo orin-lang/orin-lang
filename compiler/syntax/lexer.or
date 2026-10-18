@@ -112,6 +112,30 @@ export function isReserved(s: string): bool {
       || s == "await";
 }
 
+// Significant digits of 2^1024 - 2^970, the midpoint between the largest finite double and 2^1024: a decimal
+// literal with exponent 308 rounds to infinity exactly when its significant digits are at least these.
+const FLOAT_OVERFLOW_DIGITS: string = "179769313486231580793728971405303415079934132710037826936173778980444968292764750946649017977587207096330286416692887910946555547851940402630657488671505820681908902000708383676273854845817711531764475730270069855571366959622842914819860834936475292719074168444365510704342711559699508093042880177904174497792";
+
+// Whether the digit string d[p..] (first digit non-zero) read as 0.ddd is below 0.bbb, both scaled alike.
+@Requires(p <= d.length)
+function digitsBelow(d: string, p: usize, b: string): bool {
+  let i = p;
+  let k: usize = 0;
+  @Invariant(p <= i && i <= d.length && k <= b.length)
+  while (i < d.length && k < b.length) {
+    const x = d.charCodeAt(i);
+    const y = b.charCodeAt(k);
+    if (x != y) {
+      return x < y;
+    }
+    i += 1;
+    k += 1;
+  }
+  // Equal prefix. When d ran out first it is below (the rest of b is non-zero: b ends in `2`); otherwise d is
+  // equal (a zero rest) or greater, so not below.
+  return k < b.length;
+}
+
 // Value of the digits src[a..b) in `base`, or -1 if it exceeds i64 max (no overflow trap).
 @Requires(a <= b && b <= src.length)
 @Ensures(result >= -1)
@@ -1020,34 +1044,37 @@ export class Lexer {
       this.fail(diag("E0100", span(file, start, i + 1), "invalid character in number literal"));
       return;
     }
-    // Range: decimal magnitude of the value must not exceed 308 (no float arithmetic here, so estimate
-    // from the number of significant integer digits and the exponent).
-    let intDigits: usize = 0;
-    let seenNonZero = false;
-    let k = start;
-    @Invariant(start <= k && k <= intEnd && intEnd <= i && i <= n)
-    while (k < intEnd) {
-      if (src.charCodeAt(k) != 48) {
-        seenNonZero = true;
-      }
-      if (seenNonZero) {
-        intDigits += 1;
-      }
-      k += 1;
+    // Range: the value must round to a finite `float`. No float arithmetic here, so compare the significant
+    // digits: the decimal exponent of the first non-zero digit must be below 308, or exactly 308 with the
+    // digits below FLOAT_OVERFLOW_DIGITS (the first value that rounds to infinity).
+    if (hasExp && expEnd - expStart > 4) {
+      this.fail(diag("E0100", span(file, start, i), "float literal exponent out of range"));
+      return;
     }
-    if (hasExp) {
-      if (expEnd - expStart > 4) {
-        this.fail(diag("E0100", span(file, start, i), "float literal exponent out of range"));
-        return;
+    let digits = src.substring(start, intEnd);
+    if (hasFrac) {
+      digits += src.substring(fracStart, fracEnd);
+    }
+    const intLen = (intEnd - start).toInt();
+    let p: usize = 0;
+    @Invariant(p <= digits.length)
+    while (p < digits.length && digits.charCodeAt(p) == 48) {
+      p += 1;
+    }
+    if (p < digits.length) {
+      let e10 = intLen - 1 - p.toInt();
+      if (hasExp) {
+        const ev = digitsValue(src, expStart, expEnd, 10);
+        if (expSign == "-") {
+          e10 -= ev;
+        } else {
+          e10 += ev;
+        }
       }
-      const ev = digitsValue(src, expStart, expEnd, 10);
-      if (seenNonZero && expSign != "-" && intDigits.toInt() - 1 + ev > 308) {
+      if (e10 > 308 || (e10 == 308 && !digitsBelow(digits, p, FLOAT_OVERFLOW_DIGITS))) {
         this.fail(diag("E0100", span(file, start, i), "float literal out of range for `float`"));
         return;
       }
-    } else if (intDigits > 309) {
-      this.fail(diag("E0100", span(file, start, i), "float literal out of range for `float`"));
-      return;
     }
     let text = src.substring(start, intEnd) + ".";
     if (hasFrac) {

@@ -1,0 +1,75 @@
+// ANN-1: every listed target of @Invariant, @Decreases and @Rule is accepted (and @Deprecated on class, type, interface).
+@Rule("PL-1")
+@Invariant(this.n >= 0)
+class Box {
+  n: int;
+
+  @Rule("PL-2")
+  @Requires(start >= 0)
+  constructor(start: int) {
+    this.n = start;
+  }
+
+  @Rule("PL-3")
+  @Decreases(this.n)
+  bump(): int {
+    this.n += 1;
+    return this.n;
+  }
+}
+
+@Rule("PL-4")
+@Invariant(this.lo <= this.hi)
+type Range = { lo: int; hi: int; };
+
+@Rule("PL-5")
+type Shape = Dot | Line(int);
+
+@Rule("PL-6")
+@Decreases(n)
+function countdown(n: int): int {
+  if (n <= 0) {
+    return 0;
+  }
+  return countdown(n - 1);
+}
+
+@Deprecated("unused")
+class OldBox {
+  n: int;
+  constructor() { this.n = 0; }
+}
+
+@Deprecated("unused")
+type OldRange = { lo: int; hi: int; };
+
+@Deprecated("unused")
+type OldShape = Dot2 | Line2(int);
+
+@Deprecated("unused")
+interface OldSized {
+  size(): int;
+}
+
+function main(): void {
+  let b = new Box(1);
+  console.log(b.bump().toString());
+  const r = Range { lo: 1, hi: 2 };
+  console.log((r.lo + r.hi).toString());
+  let s = 0;
+  @Invariant(s >= 0)
+  @Decreases(3 - s)
+  while (s < 3) {
+    s += 1;
+  }
+  console.log(s.toString());
+  let t = 0;
+  @Invariant(t >= 0)
+  for (const x of [1, 2, 3]) {
+    t += x;
+  }
+  console.log(t.toString());
+  console.log(countdown(3).toString());
+  const sh: Shape = Line(4);
+  console.log(match (sh) { Dot => "dot", Line(n) => "line " + n.toString() });
+}

@@ -29,7 +29,8 @@ literal (2^63 to 2^64-1) is valid only as `u64` or `usize`.
   `tests/next/errors/e0430_int_literal_negative_i8_underflow.or`, `tests/next/errors/e0430_const_literal_range.or`,
   `tests/next/errors/e0430_pattern_literal_range.or`, `tests/next/errors/e0430_negative_big_literal.or`,
   `tests/next/errors/e0400_negative_literal_unsigned.or`, `tests/next/errors/e0400_negative_literal_u64.or`,
-  `tests/next/errors/e0400_int_literal_as_float.or`, `tests/run/int_usize_literals.or`.
+  `tests/next/errors/e0400_int_literal_as_float.or`, `tests/run/int_usize_literals.or`,
+  `tests/next/run/literal_adopts_other_operand_type.or`, `tests/next/errors/e0430_literal_adopts_other_operand_type.or`.
 
 **TYP-4.** There are no implicit numeric conversions. Mixing two integer types (or an integer and a float, or `float` and `f32`) in an
 operator, argument, assignment, return or array element is E0400 ("convert explicitly"). Conversions are methods on every integer
@@ -53,7 +54,8 @@ traps for `i64`. `/` truncates toward zero and `%` has the sign of the dividend.
   `tests/next/run/int_trap_i32_add_overflow.or`, `tests/next/run/int_trap_i8_negate_min.or`,
   `tests/next/run/int_trap_i32_div_min_by_minus_one.or`, `tests/next/run/int_trap_u32_division_by_zero.or`,
   `tests/next/run/int_trap_i16_remainder_by_zero.or`, `tests/next/run/int_trap_u8_sub_underflow.or`,
-  `tests/next/run/int_trap_u64_add_overflow.or`, `tests/next/run/int_trap_compound_assign_narrow.or`.
+  `tests/next/run/int_trap_u64_add_overflow.or`, `tests/next/run/int_trap_compound_assign_narrow.or`,
+  `tests/next/run/usize_underflow_trap_text.or`, `tests/next/run/usize_overflow_trap_text.or`, `tests/next/run/int_trap_i64_min_rem_minus_one.or`.
 
 **TYP-6.** `wrappingAdd/Sub/Mul` (modular), `checkedAdd/Sub/Mul` (`Option<T>`, `None` on overflow) and `saturatingAdd/Sub/Mul` exist
 on every integer type; the argument has the receiver's type. There is no `wrappingNeg`, `*Div`, `abs`, `min`, `max` or `pow` for integers.
@@ -78,7 +80,7 @@ unsigned type is E0410; `!` and `&&`/`||` on integers are E0410.
 and unary `-` follow IEEE and never trap (`1.0 / 0.0` is `Infinity`, `0.0 / 0.0` is `NaN`); each `f32` operation is rounded to
 binary32. `%` is E0410. `==`/`!=` and `< <= > >=` follow IEEE (`NaN != NaN`, `0.0 == -0.0`).
 - Tests: `tests/next/run/float_arithmetic_ops.or`, `tests/next/run/float_nan_infinity.or`, `tests/next/run/float_neg_zero_and_signs.or`,
-  `tests/next/run/f32_basic.or`, `tests/next/run/f32_accumulate.or`, `tests/next/errors/e0410_float_rem.or`,
+  `tests/next/run/f32_basic.or`, `tests/next/run/f32_accumulate.or`, `tests/next/run/f32_each_operation_rounds.or`, `tests/next/errors/e0410_float_rem.or`,
   `tests/next/errors/e0410_float_rem_assign.or`, `tests/next/errors/e0410_float_not.or`,
   `tests/next/errors/e0400_float_literal_as_int.or`, `tests/next/errors/e0400_float_argument_int.or`.
 
@@ -114,7 +116,7 @@ concatenates two strings, `==`/`!=`/`<`/`<=`/`>`/`>=` compare byte-wise, indexin
 - Tests: `tests/run/string_basic.or`, `tests/run/string_search.or`, `tests/run/string_split.or`, `tests/run/string_trim.or`,
   `tests/run/string_charcode.or`, `tests/run/string_charat_trap.or`, `tests/run/string_charcode_trap.or`,
   `tests/run/string_substring_trap.or`, `tests/run/string_split_empty_trap.or`, `tests/run/array_join.or`,
-  `tests/errors/e0410_string_minus.or`, `tests/next/run/bytes_string_bulk.or`.
+  `tests/errors/e0410_string_minus.or`, `tests/next/run/bytes_string_bulk.or`, `tests/next/run/string_trim_ascii_whitespace.or`.
 
 ## 3.4 Aggregates and value semantics
 
@@ -123,7 +125,8 @@ changing `a` leaves `b` unchanged. (The implementation copies lazily, copy-on-wr
 parameter is an immutable value. A closure captures a snapshot (TYP-24). An interface value holds a snapshot of the class value.
 - Tests: `tests/run/value_semantics_record.or`, `tests/run/value_semantics_function.or`, `tests/run/array_value_semantics.or`,
   `tests/next/run/class_copy_independence.or`, `tests/next/run/map_value_semantics.or`, `tests/next/run/iface_value_snapshot.or`,
-  `tests/next/run/generic_mutation.or`, `tests/next/run/float_value_semantics.or`.
+  `tests/next/run/generic_mutation.or`, `tests/next/run/float_value_semantics.or`, `tests/errors/e0401_push_param.or`,
+  `tests/next/errors/e0401_param_field_assign.or`, `tests/next/errors/e0401_param_index_assign.or`.
 
 **TYP-15.** Arrays: `T[]`, literal `[a, b]` (all elements the expected element type). `xs[i]` needs a `usize` index and traps when
 out of bounds; `length` is `usize`; `push(v)` and `pop(): Option<T>` mutate and need a mutable place (E0401); `get(i): Option<T>`,
@@ -134,7 +137,8 @@ out of bounds; `length` is `usize`; `push(v)` and `pop(): Option<T>` mutate and 
   `tests/run/array_slice_trap_end.or`, `tests/run/array_for_of_snapshot.or`, `tests/run/array_nested.or`,
   `tests/next/run/array_map_filter_chain.or`, `tests/next/run/array_reduce_foreach.or`, `tests/next/run/array_sort_stable.or`,
   `tests/next/run/array_find_some_every.or`, `tests/next/run/array_index_of_includes.or`, `tests/errors/e0407_empty_array.or`,
-  `tests/errors/e0401_push_const.or`, `tests/errors/e0401_push_param.or`, `tests/next/errors/e0400_array_not_covariant.or`.
+  `tests/errors/e0401_push_const.or`, `tests/errors/e0401_push_param.or`, `tests/next/errors/e0400_array_not_covariant.or`,
+  `tests/next/run/array_get_out_of_range.or`, `tests/run/array_slice_trap_order.or`.
 
 **TYP-16.** A record type `type P = { x: int; y: string; };` is **nominal**: two record types with the same fields are different
 types. A literal `P { x: 1, y: "a" }` lists every field exactly once (E0411 for a missing, duplicate or unknown field) unless it
@@ -167,14 +171,18 @@ same `E`; on an `Option`, outside such a function, or with a different error typ
 **TYP-20.** `void` is the type of a function with no result type, and `T` in `Result<T, E>`. It is also accepted as a type argument of
 a generic function, method or class (ADR-0040): a closure with no result instantiates `T = void` (`run(() => { ... })`, `s.spawn(f)`),
 and inside such an instance `Option<void>`, `void[]` and class fields of type `T` are allowed; `void` has no run-time representation
-there. Written directly as a value, a variable, a parameter type, an array element or the payload of `Some` outside a generic instance
-it is E0400.
+there. `void` as the type of a variable, a parameter, a record field or a `Map` value is E0400, and so is a `void` value that is bound
+to a variable (`const x = f();`), used as an array element (`[f()]`) or as the payload of `Some` (`Some(f())`). The written types `Option<void>`
+and `void[]` are accepted by the checker; they can hold no `void` value.
 **TYP-20a.** A method of a class may declare its own type parameters, with bounds (`m<U extends Eq>(x: U): U`); they are inferred or
 given explicitly (`obj.m<int>(x)`), and the method is monomorphised per instance. A method of an **interface** may not be generic: a
 virtual call cannot pick a monomorphised instance, and declaring one is E0460 (the only remaining use of E0460).
 - Tests (TYP-20a): `tests/next/run/generic_methods.or`, `tests/next/run/generic_methods_contracts.or`,
   `tests/next/run/void_type_args_basic.or`, `tests/next/run/void_type_args_class.or`, `tests/next/errors/e0460_interface_generic_method.or`.
-- Tests: `tests/run/void_early_return.or`, `tests/run/match_option_result.or` (`Ok()` with `Result<void, E>`).
+- Tests: `tests/run/void_early_return.or`, `tests/run/match_option_result.or` (`Ok()` with `Result<void, E>`),
+  `tests/next/errors/e0400_void_variable_type.or`, `tests/next/errors/e0400_void_parameter_type.or`, `tests/next/errors/e0400_void_map_value.or`,
+  `tests/next/errors/e0400_void_record_field.or`, `tests/next/errors/e0400_void_bind_value.or`, `tests/next/errors/e0400_void_array_element.or`,
+  `tests/next/errors/e0400_void_some_payload.or`.
 
 ## 3.5 Map
 
@@ -192,7 +200,8 @@ cannot appear in a condition (E0408).
   `tests/next/errors/e0400_new_map_one_type_arg.or`, `tests/next/errors/e0407_new_map_uninferable.or`,
   `tests/next/errors/e0401_map_set_on_const.or`, `tests/next/errors/e0401_map_size_assign.or`,
   `tests/next/errors/e0410_map_equality.or`, `tests/next/errors/e0408_map_delete_in_condition.or`,
-  `tests/next/errors/e0475_map_key_record_with_float.or`, `tests/next/errors/e0405_map_unknown_method.or`.
+  `tests/next/errors/e0475_map_key_record_with_float.or`, `tests/next/errors/e0405_map_unknown_method.or`,
+  `tests/next/run/map_entries_after_delete_first.or`.
 
 ## 3.6 Function types and closures
 
@@ -253,7 +262,8 @@ An instantiation chain that does not terminate (polymorphic recursion) is E0413.
   `tests/next/errors/e0410_lt_on_type_param.or`, `tests/next/errors/e0405_method_on_type_param.or`,
   `tests/next/errors/e0405_field_on_type_param.or`, `tests/next/errors/e0402_match_on_type_param.or`,
   `tests/next/errors/e0400_generic_body_type_mismatch.or`, `tests/next/errors/e0413_polymorphic_recursion.or`,
-  `tests/next/errors/e0413_infinite_type_instantiation.or`.
+  `tests/next/errors/e0413_infinite_type_instantiation.or`, `tests/next/errors/e0400_generic_unused_function_body.or`,
+  `tests/next/errors/e0400_generic_unused_class_body.or`.
 
 **TYP-28.** A type parameter of a generic function, class or method may have **one or several bounds**, `T extends I` or `T extends A & B`,
 where each bound is an interface (TYP-29) or `Eq`/`Ord`/`Hash` (TYP-35). The opaque `T` then has the methods of every bound, and converts
@@ -337,8 +347,8 @@ methods is part of the module's public API.
   `tests/next/errors/e0401_class_for_var_receiver.or`, `tests/next/errors/e0401_class_temporary_receiver.or`,
   `tests/next/errors/e0408_class_mut_call_in_condition.or`, `tests/next/errors/ts_dev_e0401_const_mutating_call.or`.
 
-**TYP-33.** A class has no inheritance (`extends` is E0408), no `protected`, getters/setters, overloads, abstract members, static fields
-(E0408); a class method may be generic (ADR-0040), an interface method may not (E0460). A **generic class** `class Box<T extends I> { .. }` is
+**TYP-33.** A class has no inheritance (`extends` is E0408), no static fields (E0408), no `protected`, getters/setters or abstract members (a syntax
+error, E0200), and no overloads (a second method of the same name is E0304); a class method may be generic (ADR-0040), an interface method may not (E0460). A **generic class** `class Box<T extends I> { .. }` is
 instantiated per type-argument list (`Box<int>` and `Box<string>` are distinct types, E0400 on mixing); its type parameters are not in
 scope in static methods (E0461), may carry bounds (`T extends A & B`), and every instantiation is checked (E0417); a class needs its type arguments
 (`Box` alone is E0400) and exactly as many as it has parameters.
@@ -348,7 +358,9 @@ scope in static methods (E0461), may carry bounds (`T extends A & B`), and every
   `tests/next/run/genclass_implements.or`, `tests/next/run/genclass_storage.or`, `tests/next/run/genclass_module`,
   `tests/next/errors/e0400_genclass_instances_are_distinct_types.or`, `tests/next/errors/e0400_genclass_without_type_arguments.or`,
   `tests/next/errors/e0400_genclass_too_many_type_arguments.or`, `tests/next/errors/e0400_genclass_nongeneric_type_arguments.or`,
-  `tests/next/errors/e0300_genclass_param_out_of_scope.or`.
+  `tests/next/errors/e0300_genclass_param_out_of_scope.or`, `tests/next/errors/e0408_static_field.or`, `tests/next/errors/e0200_class_protected.or`,
+  `tests/next/errors/e0200_class_getter.or`, `tests/next/errors/e0200_class_setter.or`, `tests/next/errors/e0200_class_abstract.or`,
+  `tests/next/errors/e0304_class_method_overload.or`.
 
 ## 3.10 Equality, ordering and hashing
 
@@ -372,7 +384,7 @@ no instance: `==`/`<` on them is E0410, a bound or key is E0475.
 non-static, non-mutating) and then satisfies the bound; `==` and `<` call them. `implements Eq`/`Ord`/`Hash` without the method requests
 the structural instance of the fields (E0475 if a field has none). An explicit `equals` next to `implements Hash` without `hash` (or `Ord` without
 `compare`), or an explicit method with a wrong signature, is E0476. A class without the method has no `==` (E0410). Records and unions
-have no methods, so tier 2 is limited to classes. Tier 3 (law proofs for explicit instances) is not implemented.
+have no methods, so tier 2 is limited to classes. Tier 3 (law proofs for explicit instances, and `@Property` tests) is not implemented (ADR-0034 "What remains").
 - Tests: `tests/next/run/eqord_class_tier2.or`, `tests/next/run/eqord_contracts.or`, `tests/next/errors/e0476_equals_wrong_signature.or`,
   `tests/next/errors/e0476_equals_private.or`, `tests/next/errors/e0476_equals_mutates_receiver.or`,
   `tests/next/errors/e0476_implements_hash_with_explicit_equals.or`, `tests/next/errors/e0475_eq_bound_class_without_equals.or`,
@@ -388,14 +400,4 @@ nominal. A name is resolved in the declaring module, then through imports, then 
 
 ## Gaps: rules without a test
 
-- TYP-3: that a literal adopts the type of the *other operand* of a binary operator has no dedicated test (`int_types_basic` uses it incidentally).
-- TYP-5: `usize underflow` / `usize overflow` messages are asserted only through `// stderr:` on the u64 tests; the exact trap text for `MIN % -1` on `i64` has no test.
-- TYP-9: `f32` rounding of every operation is shown by `f32_accumulate` only statistically.
-- TYP-13: `split` with leading and trailing separators (JavaScript semantics) is covered by `string_split`, but `trim` of `\v \f` has no test.
-- TYP-14: that a function parameter is immutable has a test only for `push` (`e0401_push_param`), not for field or index assignment.
-- TYP-15: `slice` order trap and `get(i)` out of range for the `usize` boundary: `array_slice_trap_order` exists, `get` has no trap test (it returns `None`).
-- TYP-20: no test fixes the E0400 for `void` outside a result type (a variable, `Option<void>`, an array element); only the behaviour was probed with `orin2`.
-- TYP-21: the "mutating call in a condition" rule for `Map` is tested (`e0408_map_delete_in_condition`); there is no test that `entries()` order equals insertion order after `delete` of the first key.
-- TYP-27: no test that an unused generic body with a type error is still reported (`e0400_generic_body_type_mismatch` covers the used case only).
-- TYP-33: static fields (E0408) and `protected`/getters have no negative test.
-- TYP-36: tier 3 (law proofs) and `@Property` tests are not implemented (ADR-0034 "What remains").
+None.
