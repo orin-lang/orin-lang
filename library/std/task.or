@@ -26,7 +26,7 @@
 //   `task panicked: <message>`. A panic is never lost silently. `spawn` is a method of the scope; `T` may be void.
 // * `channel<T>(capacity)` makes a bounded channel; `ch.tx.send(v)` blocks while it is full, `ch.rx.recv()` blocks while it
 //   is empty and returns `None` once the channel is closed and drained. `tx.close()` ends the stream, `rx.close()`
-//   cancels it (a blocked or later `send` returns false). Each end can be copied and used by any number of tasks. Close both
+//   cancels it (a blocked or later `send` returns `Err(Closed)`). Each end can be copied and used by any number of tasks. Close both
 //   ends to release the channel: after that any use of it traps.
 // * Resource handles are not values: a task body cannot capture one (E0483). A grant is delegated with `spawnFs`,
 //   `spawnProcess`, `spawnStdio` or `spawnClock`: the spawner derives a fresh grant with the same authority and MOVES it
@@ -34,7 +34,7 @@
 //   parameter, like the body of a scope function of std:host. `spawnNet(s, net, body)` does the same for a NetGrant
 //   (with `scopeNet` to carry the grant into the scope); an accepted connection is moved into a task by std:net
 //   (`spawnAccepted`, or `acceptDetached` + a channel + `serveAccepted` for a bounded pool of workers; ADR-0017 Addendum C).
-// * `parallelMap(xs, f, parts)` maps `f` over `xs` in `parts` tasks and returns the results in order.
+// * `parallelMap(xs, f, parts)` is DEPRECATED: use `xs.parallel().map(f)` (data-parallel) or `forkJoin` (task-parallel).
 //
 // * Timed and wakeable waits (ADR-0017 Addendum B, C1). Every timed call has an ABSOLUTE form on a `Deadline` of std:time (an
 //   instant on the monotonic clock, so retries and nested waits cannot stretch it) and a relative form that takes the
@@ -59,13 +59,16 @@
 // (all tasks blocked is a hang) and no work stealing: a task is a thread, so thousands are fine, hundreds of thousands are not.
 // A panic in the BODY of a scope (not in a task) is not unwound: tasks still running keep running until the process ends.
 
-import { Ledger, Ranges, ringCanPush, ringSlot, ringNextHead, ringIsDone, deadlineAfterMillis } from "std:taskcore";
+import {
+  Ledger, Ranges, ringCanPush, ringSlot, ringNextHead, ringIsDone, deadlineAfterMillis,
+} from "std:task/internal";
 import { Deadline, Duration, MonotonicInstant, monotonicNow } from "std:time";
 import {
-  FsGrant, ProcessGrant, StdioGrant, ClockGrant, NetGrant, grantAdoptNet, grantRevoke, grantClone, grantMove, grantAdoptFs, grantAdoptProcess,
-  grantAdoptStdio, grantAdoptClock, monNew, monFree, monLock, monUnlock, monWait, monNotifyAll, monGet, monSet, monGrow,
-  transitPut, transitTake, transitDrop, taskSpawn, taskJoin, taskMessage, taskTrap, transferCount, monNotifyOne, parThreads, lendPut, monWaitUntil, taskWatch,
-  wakeOpen, wakeClose, wakeSignal, wakeBind, wakeBound, wakeCheck
+  FsGrant, ProcessGrant, StdioGrant, ClockGrant, NetGrant, grantAdoptNet, grantRevoke, grantClone,
+  grantMove, grantAdoptFs, grantAdoptProcess, grantAdoptStdio, grantAdoptClock, monNew, monFree,
+  monLock, monUnlock, monWait, monNotifyAll, monGet, monSet, monGrow, transitPut, transitTake,
+  transitDrop, taskSpawn, taskJoin, taskMessage, taskTrap, monNotifyOne, parThreads, lendPut,
+  monWaitUntil, taskWatch, wakeOpen, wakeClose, wakeSignal, wakeBind, wakeBound, wakeCheck,
 } from "std:fsraw";
 
 // ------------------------------------------------------------------------------------------------------ transfer
@@ -89,34 +92,24 @@ function takeBox<T>(tok: usize): T {
   return b.v;
 }
 
-export { Ring, Ledger, Ranges } from "std:taskcore";
-
-// movedCount(): how many values this task has sent by MOVE (no copy) since it started, and copiedCount(): by deep copy.
-// Only values that contain a reference (strings, arrays, records, ...) are counted; scalars cost nothing either way.
-export function movedCount(): usize {
-  return transferCount(0);
-}
-
-export function copiedCount(): usize {
-  return transferCount(1);
-}
-
 // ------------------------------------------------------------------------------------------------------ errors
 
-// Why a timed call returned no value (ADR-0048 section 3.1). Timeout = the deadline passed (outcome `Deadline` of std:taskcore),
+// TaskErrorKind -- why a call of std:task returned no value (ADR-0048 section 3.1). Timeout = the deadline passed (outcome `Deadline` of std:task/internal),
 // Closed = the channel is closed and drained (outcome `Closed`), ClockUnavailable = the monotonic clock failed, InvalidDuration =
-// a negative timeout.
+// a negative timeout. `Sender.send` reports only `Closed`.
 export type TaskErrorKind = Timeout | Closed | ClockUnavailable | InvalidDuration;
+
+// TaskError -- the one error type of the module: `{ kind }`. Render it with `taskErrorMessage`.
 export type TaskError = { kind: TaskErrorKind; };
 
-// taskErrorMessage(e): a stable, nonempty explanation.
+// taskErrorMessage(e: TaskError): string -- a stable, nonempty explanation of `e`. Never fails; O(1).
 @Ensures(result.length > 0)
 export function taskErrorMessage(e: TaskError): string {
   return match (e.kind) {
     Timeout => "the deadline passed",
     Closed => "the channel is closed",
     ClockUnavailable => "monotonic clock unavailable",
-    InvalidDuration => "a timeout must not be negative"
+    InvalidDuration => "a timeout must not be negative",
   };
 }
 
@@ -133,7 +126,9 @@ function deadlineIn(clock: ClockGrant, timeout: Duration): Result<Deadline, Task
   if (now.isErr()) {
     return Err(fail(ClockUnavailable));
   }
-  return Ok(Deadline { at: MonotonicInstant { millis: deadlineAfterMillis(now.unwrap().millis, timeout.millis) } });
+  return Ok(Deadline {
+    at: MonotonicInstant { millis: deadlineAfterMillis(now.unwrap().millis, timeout.millis) },
+  });
 }
 
 // ------------------------------------------------------------------------------------------------------ channels
@@ -144,7 +139,7 @@ function deadlineIn(clock: ClockGrant, timeout: Duration): Result<Deadline, Task
 const CH_HDR: usize = 6;
 
 // The channel functions work on the monitor's words as plain locals (cap, head, len, flags) with the arithmetic of
-// std:taskcore's `Ring` (`ringCanPush`, `ringSlot`, ...): a `Ring` object per send / receive was 40% of the allocations
+// std:task/internal's `Ring` (`ringCanPush`, `ringSlot`, ...): a `Ring` object per send / receive was 40% of the allocations
 // of a channel benchmark. The words are loaded, changed and stored back inside one critical section, as before.
 function chTx(flags: usize): bool {
   return flags % 2 == 1;
@@ -192,20 +187,24 @@ function storeRing(m: usize, head: usize, len: usize, flags: usize): void {
   monSet(m, 3, flags);
 }
 
-// The sending end of a channel. A copy refers to the same channel. A monitor handle is never 0: a forged `new Sender<T>(0)` is a
-// contract violation (and any other forged handle is refused by the platform layer at its first use).
+// Sender<T> -- the sending end of a channel. A copy refers to the same channel. The monitor handle is private. The constructor is
+// not for user code: obtain a Sender from channel(). (A monitor handle is never 0: a forged `new Sender<T>(0)` is a contract
+// violation, and any other forged handle is refused by the platform layer at its first use. The language cannot hide a
+// constructor yet.)
 @Invariant(this.ch != 0)
 export class Sender<T> {
-  ch: usize;
+  private ch: usize;
 
+  // new Sender<T>(ch) -- not for user code: obtain a Sender from channel().
   @Requires(ch != 0)
   constructor(ch: usize) {
     this.ch = ch;
   }
 
-  // send(v): blocks while the channel is full; true when `v` was handed to the channel (moved if it is uniquely owned,
-  // copied otherwise); false when the channel is closed by either end, in which case `v` is dropped.
-  send(v: T): bool {
+  // send(v): Result<void, TaskError> -- hands `v` to the channel (moved if it is uniquely owned, copied otherwise) and returns
+  // Ok(). Err(Closed) when the channel is closed by either end; `v` is then dropped, never lost silently. Blocks while the
+  // channel is full. O(1) plus the transfer of `v`.
+  send(v: T): Result<void, TaskError> {
     const tok = putBox<T>(v);
     const ch = this.ch;
     monLock(ch);
@@ -222,7 +221,7 @@ export class Sender<T> {
     if (!ringCanPush(len, cap, chTx(flags), chRx(flags))) {
       monUnlock(ch);
       transitDrop(tok);
-      return false;
+      return Err(fail(Closed));
     }
     const slot = ringSlot(cap, head, len);
     monSet(ch, CH_HDR + slot, tok);
@@ -230,12 +229,12 @@ export class Sender<T> {
     monNotifyOne(ch, 1);
     pingWatchers(ch);
     monUnlock(ch);
-    return true;
+    return Ok();
   }
 
-  // sendUntil(v, deadline): send(v) that gives up when the absolute monotonic deadline passes while the channel is full:
-  // Err(Timeout), or Err(Closed) when it is closed by either end. `v` is dropped on an error. A free slot at the deadline
-  // still accepts it. Traps if the deadline is negative.
+  // sendUntil(v, deadline): Result<void, TaskError> -- send(v) that gives up when the absolute monotonic deadline passes while
+  // the channel is full: Err(Timeout), or Err(Closed) when it is closed by either end. `v` is dropped on an error. A free slot
+  // at the deadline still accepts it. Traps if the deadline is negative. Blocks until the deadline at most.
   @Requires(deadline.at.millis >= 0)
   sendUntil(v: T, deadline: Deadline): Result<void, TaskError> {
     const tok = putBox(v);
@@ -267,13 +266,15 @@ export class Sender<T> {
     return Ok();
   }
 
-  // sendTimeout(clock, v, timeout): sendUntil(v, now + timeout). Err(InvalidDuration) for a negative timeout.
+  // sendTimeout(clock, v, timeout): Result<void, TaskError> -- sendUntil(v, now + timeout). Err(InvalidDuration) for a negative
+  // timeout, Err(ClockUnavailable) when the clock cannot be read. Blocks for `timeout` at most.
   sendTimeout(clock: ClockGrant, v: T, timeout: Duration): Result<void, TaskError> {
     const d = deadlineIn(clock, timeout)?;
     return this.sendUntil(v, d);
   }
 
-  // close(): no more values will be sent; receivers drain what is buffered and then get None.
+  // close(): void -- no more values will be sent; receivers drain what is buffered and then get None. Idempotent. Releases the
+  // channel when the receiving end is closed too (any later use then traps). O(waiters).
   close(): void {
     const ch = this.ch;
     monLock(ch);
@@ -291,18 +292,20 @@ export class Sender<T> {
   }
 }
 
-// The receiving end of a channel. A copy refers to the same channel (several receivers share the stream).
+// Receiver<T> -- the receiving end of a channel. A copy refers to the same channel (several receivers share the stream). The
+// monitor handle is private. The constructor is not for user code: obtain a Receiver from channel().
 @Invariant(this.ch != 0)
 export class Receiver<T> {
-  ch: usize;
+  private ch: usize;
 
+  // new Receiver<T>(ch) -- not for user code: obtain a Receiver from channel().
   @Requires(ch != 0)
   constructor(ch: usize) {
     this.ch = ch;
   }
 
-  // recv(): blocks while the channel is empty; Some(v) with the oldest value, or None once the channel is closed and
-  // drained (or cancelled by rx.close()).
+  // recv(): Option<T> -- the oldest value, or None once the channel is closed and drained (or cancelled by rx.close()). Blocks
+  // while the channel is empty. O(1) plus the transfer of the value.
   recv(): Option<T> {
     const ch = this.ch;
     monLock(ch);
@@ -328,7 +331,7 @@ export class Receiver<T> {
     return Some(v);
   }
 
-  // recvUntil(deadline): recv() that gives up when the absolute monotonic deadline passes while the channel is empty:
+  // recvUntil(deadline): Result<T, TaskError> -- recv() that gives up when the absolute monotonic deadline passes while the channel is empty:
   // Ok(value), Err(Timeout), or Err(Closed) once the channel is closed and drained. A value that is already there is
   // returned even if the deadline has passed. Traps if the deadline is negative.
   @Requires(deadline.at.millis >= 0)
@@ -357,13 +360,15 @@ export class Receiver<T> {
     return Ok(v);
   }
 
-  // recvTimeout(clock, timeout): recvUntil(now + timeout). Err(InvalidDuration) for a negative timeout.
+  // recvTimeout(clock, timeout): Result<T, TaskError> -- recvUntil(now + timeout). Err(InvalidDuration) for a negative timeout,
+  // Err(ClockUnavailable) when the clock cannot be read. Blocks for `timeout` at most.
   recvTimeout(clock: ClockGrant, timeout: Duration): Result<T, TaskError> {
     const d = deadlineIn(clock, timeout)?;
     return this.recvUntil(d);
   }
 
-  // close(): this end is done: buffered values are dropped, a blocked or later send returns false.
+  // close(): void -- this end is done: buffered values are dropped, a blocked or later send returns Err(Closed). Idempotent.
+  // Releases the channel when the sending end is closed too (any later use then traps). O(buffered values + waiters).
   close(): void {
     const ch = this.ch;
     monLock(ch);
@@ -391,15 +396,86 @@ export class Receiver<T> {
       monFree(ch);
     }
   }
+
+  // One monitor `w` (word 0 = a ticket) is registered with every channel; a send or close on any of them bumps the ticket and
+  // notifies. The selector reads the ticket, scans the channels in order (the first with a value wins), and waits only while the
+  // ticket is unchanged, so a send between the scan and the wait is never lost; it holds no monitor while it takes another. A
+  // deadline `dl` < 0 means none.
+  //
+  // selectAmong(rxs, dl): Result<Selected<T>, TaskError> -- the body of select / selectUntil / selectTimeout. NOT for user code: it is
+  // a method of Receiver only because the monitor handle is private to the class; call select(rxs) instead.
+  selectAmong(rxs: Receiver<T>[], dl: int): Result<Selected<T>, TaskError> {
+    const n = rxs.length;
+    const w = monNew(1);
+    let k: usize = 0;
+    while (k < n) {
+      watch(rxs[k].ch, w);
+      k += 1;
+    }
+    let state = 0;
+    let index: usize = 0;
+    let tok: usize = 0;
+    let late = false;
+    while (state == 0) {
+      monLock(w);
+      const ticket = monGet(w, 0);
+      monUnlock(w);
+      let closed: usize = 0;
+      let j: usize = 0;
+      while (j < n && state == 0) {
+        const ch = rxs[j].ch;
+        monLock(ch);
+        const cap = monGet(ch, 0);
+        const head = monGet(ch, 1);
+        const len = monGet(ch, 2);
+        const flags = monGet(ch, 3);
+        if (len > 0) {
+          tok = popLocked(ch, cap, head, len, flags);
+          index = j;
+          state = 1;
+        } else if (ringIsDone(len, chTx(flags), chRx(flags))) {
+          closed += 1;
+        }
+        monUnlock(ch);
+        j += 1;
+      }
+      if (state == 0 && closed == n) {
+        state = 2;
+      } else if (state == 0 && late) {
+        state = 3;
+      } else if (state == 0) {
+        monLock(w);
+        while (monGet(w, 0) == ticket && !late) {
+          if (dl < 0) {
+            monWait(w, 0);
+          } else {
+            late = monWaitUntil(w, 0, dl.toUsize()) == 1;
+          }
+        }
+        monUnlock(w);
+      }
+    }
+    k = 0;
+    while (k < n) {
+      unwatch(rxs[k].ch, w);
+      k += 1;
+    }
+    monFree(w);
+    if (state == 1) {
+      const v: T = takeBox(tok);
+      return Ok(Selected<T> { index: index, value: v });
+    }
+    return Err(fail(state == 2 ? Closed : Timeout));
+  }
 }
 
-// The two ends of a channel.
+// Channel<T> -- the two ends of a channel: `{ tx, rx }`.
 export type Channel<T> = { tx: Sender<T>; rx: Receiver<T>; };
 
-// channel<T>(capacity): a bounded channel of at least one slot. A capacity of 0 (rendezvous) is not supported in stage 0:
-// E0482 for a constant, a trap otherwise (also without contract checking). Both ends refer to the same channel.
+// channel<T>(capacity: usize): Channel<T> -- a bounded channel of at least one slot; both ends refer to the same channel. A
+// capacity of 0 (rendezvous) is not supported in stage 0: E0482 for a constant, a trap otherwise (also without contract
+// checking). O(capacity).
 @Requires(capacity >= 1)
-@Ensures(result.tx.ch == result.rx.ch)
 export function channel<T>(capacity: usize): Channel<T> {
   if (capacity == 0) {
     taskTrap("channel capacity must be at least 1");
@@ -413,7 +489,7 @@ export function channel<T>(capacity: usize): Channel<T> {
 
 // ------------------------------------------------------------------------------------------------------ select, sleep
 
-// The result of a `select`: which receiver (position in the array) delivered, and the value.
+// Selected<T> -- the result of a `select`: which receiver (position in the array) delivered, and the value.
 export type Selected<T> = { index: usize; value: T; };
 
 // Registers the wake monitor `w` of a select with the channel (and removes it again).
@@ -449,98 +525,40 @@ function unwatch(ch: usize, w: usize): void {
   monUnlock(ch);
 }
 
-// One monitor `w` (word 0 = a ticket) is registered with every channel; a send or close on any of them bumps the ticket and
-// notifies. The selector reads the ticket, scans the channels in order (the first with a value wins), and waits only while the
-// ticket is unchanged, so a send between the scan and the wait is never lost; it holds no monitor while it takes another. A
-// deadline `dl` < 0 means none.
-function selectCore<T>(rxs: Receiver<T>[], dl: int): Result<Selected<T>, TaskError> {
-  const n = rxs.length;
-  const w = monNew(1);
-  let k: usize = 0;
-  while (k < n) {
-    watch(rxs[k].ch, w);
-    k += 1;
-  }
-  let state = 0;
-  let index: usize = 0;
-  let tok: usize = 0;
-  let late = false;
-  while (state == 0) {
-    monLock(w);
-    const ticket = monGet(w, 0);
-    monUnlock(w);
-    let closed: usize = 0;
-    let j: usize = 0;
-    while (j < n && state == 0) {
-      const ch = rxs[j].ch;
-      monLock(ch);
-      const cap = monGet(ch, 0);
-      const head = monGet(ch, 1);
-      const len = monGet(ch, 2);
-      const flags = monGet(ch, 3);
-      if (len > 0) {
-        tok = popLocked(ch, cap, head, len, flags);
-        index = j;
-        state = 1;
-      } else if (ringIsDone(len, chTx(flags), chRx(flags))) {
-        closed += 1;
-      }
-      monUnlock(ch);
-      j += 1;
-    }
-    if (state == 0 && closed == n) {
-      state = 2;
-    } else if (state == 0 && late) {
-      state = 3;
-    } else if (state == 0) {
-      monLock(w);
-      while (monGet(w, 0) == ticket && !late) {
-        if (dl < 0) {
-          monWait(w, 0);
-        } else {
-          late = monWaitUntil(w, 0, dl.toUsize()) == 1;
-        }
-      }
-      monUnlock(w);
-    }
-  }
-  k = 0;
-  while (k < n) {
-    unwatch(rxs[k].ch, w);
-    k += 1;
-  }
-  monFree(w);
-  if (state == 1) {
-    const v: T = takeBox(tok);
-    return Ok(Selected<T> { index: index, value: v });
-  }
-  return Err(fail(state == 2 ? Closed : Timeout));
-}
-
-// select(rxs): waits until one of the receivers has a value and returns its position and the value (the first ready receiver in
-// array order wins a tie). Receivers that are closed and drained are skipped; Err(Closed) when all of them are. The receivers
-// must carry one value type (use a variant for different kinds). Traps on an empty array.
+// select(rxs): Result<Selected<T>, TaskError> -- waits until one of the receivers has a value and returns its position and the value
+// (the first ready receiver in array order wins a tie). Receivers that are closed and drained are skipped; Err(Closed) when all of
+// them are. The receivers must carry one value type (use a variant for different kinds). Traps on an empty array. Blocks until a
+// value arrives or all channels end. O(n) per wake-up for n receivers.
 @Requires(rxs.length >= 1)
 export function select<T>(rxs: Receiver<T>[]): Result<Selected<T>, TaskError> {
-  return selectCore(rxs, -1);
+  return rxs[0].selectAmong(rxs, -1);
 }
 
-// selectUntil(rxs, deadline): select that gives up with Err(Timeout) when the absolute monotonic deadline passes first. A value
-// that is already there is delivered even if the deadline has passed. Traps if the deadline is negative.
+// selectUntil(rxs, deadline): Result<Selected<T>, TaskError> -- select that gives up with Err(Timeout) when the absolute monotonic
+// deadline passes first. A value that is already there is delivered even if the deadline has passed. Traps if the deadline is
+// negative or `rxs` is empty. Blocks until the deadline at most.
 @Requires(rxs.length >= 1 && deadline.at.millis >= 0)
-export function selectUntil<T>(rxs: Receiver<T>[], deadline: Deadline): Result<Selected<T>, TaskError> {
-  return selectCore(rxs, deadline.at.millis);
+export function selectUntil<T>(
+  rxs: Receiver<T>[],
+  deadline: Deadline,
+): Result<Selected<T>, TaskError> {
+  return rxs[0].selectAmong(rxs, deadline.at.millis);
 }
 
-// selectTimeout(clock, rxs, timeout): selectUntil(rxs, now + timeout). Err(InvalidDuration) for a negative timeout.
+// selectTimeout(clock, rxs, timeout): Result<Selected<T>, TaskError> -- selectUntil(rxs, now + timeout). Err(InvalidDuration) for a
+// negative timeout, Err(ClockUnavailable) when the clock cannot be read. Traps on an empty array. Blocks for `timeout` at most.
 @Requires(rxs.length >= 1)
-export function selectTimeout<T>(clock: ClockGrant, rxs: Receiver<T>[], timeout: Duration): Result<Selected<T>, TaskError> {
+export function selectTimeout<T>(
+  clock: ClockGrant,
+  rxs: Receiver<T>[],
+  timeout: Duration,
+): Result<Selected<T>, TaskError> {
   const d = deadlineIn(clock, timeout)?;
-  return selectCore(rxs, d.at.millis);
+  return rxs[0].selectAmong(rxs, d.at.millis);
 }
 
-// sleepUntil(deadline): blocks until the absolute monotonic deadline has passed (at least that long: never early; returns at once
-// when it has passed). Traps if the deadline is negative.
+// sleepUntil(deadline): void -- blocks until the absolute monotonic deadline has passed (at least that long: never early; returns
+// at once when it has passed). Traps if the deadline is negative. Blocks the calling task.
 @Requires(deadline.at.millis >= 0)
 export function sleepUntil(deadline: Deadline): void {
   const m = monNew(1);
@@ -553,8 +571,8 @@ export function sleepUntil(deadline: Deadline): void {
   monFree(m);
 }
 
-// sleep(clock, timeout): blocks for at least `timeout` on the monotonic clock. Err(InvalidDuration) for a negative timeout,
-// Err(ClockUnavailable) when the clock cannot be read.
+// sleep(clock, timeout): Result<void, TaskError> -- blocks for at least `timeout` on the monotonic clock. Err(InvalidDuration) for
+// a negative timeout, Err(ClockUnavailable) when the clock cannot be read. Blocks the calling task.
 export function sleep(clock: ClockGrant, timeout: Duration): Result<void, TaskError> {
   const d = deadlineIn(clock, timeout)?;
   sleepUntil(d);
@@ -588,49 +606,52 @@ function scopeWake(tab: usize): usize {
   return w;
 }
 
-// A cancellation token: a copyable value that cancels the scope it came from (`Scope.token()`), also from another task. It holds a
+// CancelToken -- a copyable value that cancels the scope it came from (`Scope.token()`), also from another task. It holds a
 // generation-tagged handle of L0: after the scope ended it is stale, `cancel()` then does nothing and `isCancelled()` is false.
+// The constructor is not for user code: obtain a token from `Scope.token()`.
 @Invariant(this.wake >= 0)
 export class CancelToken {
   private wake: usize;
 
+  // new CancelToken(wake) -- not for user code: obtain a token from Scope.token().
   constructor(wake: usize) {
     this.wake = wake;
   }
 
-  // cancel(): sets the token. Returns true when this call cancelled it, false when it was cancelled already or is stale. Waits of
-  // std:net observing the token (the scope's tasks, and the tasks of scopes nested in them) return `Err(Cancelled)`. O(1).
+  // cancel(): bool -- sets the token. Returns true when this call cancelled it, false when it was cancelled already or is stale.
+  // Waits of std:net observing the token (the scope's tasks, and the tasks of scopes nested in them) return `Err(Cancelled)`. O(1).
   cancel(): bool {
     return wakeSignal(this.wake) == 1;
   }
 
-  // isCancelled(): the token or an ancestor scope's token is set. False for a stale token. O(depth).
+  // isCancelled(): bool -- the token or an ancestor scope's token is set. False for a stale token. O(depth).
   isCancelled(): bool {
     return wakeCheck(this.wake) == 1;
   }
 }
 
-// isCancelled(): the calling task's own token, or an ancestor's, is set: it should stop at its next convenient point. A task that
-// is not inside any scope is never cancelled. O(depth).
+// isCancelled(): bool -- the calling task's own token, or an ancestor's, is set: it should stop at its next convenient point. A task
+// that is not inside any scope is never cancelled. O(depth).
 export function isCancelled(): bool {
   return wakeCheck(wakeBound()) == 1;
 }
 
-// A scope: the handle of a task table. `scope` makes one and passes it to its body; it is valid only until `scope` returns.
+// Scope -- the handle of a task table. `scope` makes one and passes it to its body; it is valid only until `scope` returns. The
+// table handle is private; the constructor is not for user code: obtain a Scope from scope() and its variants.
 @Invariant(this.tab != 0)
 export class Scope {
-  tab: usize;
+  private tab: usize;
 
+  // new Scope(tab) -- not for user code: obtain a Scope from scope(), scopeFs(), ...
   @Requires(tab != 0)
   constructor(tab: usize) {
     this.tab = tab;
   }
 
-  // spawn<T>(f): starts `f` as a task of the scope and returns its handle; T may be void (ADR-0040). `f` and everything it
-  // captures move to the task (unique values) or are copied to it; the task cannot affect the spawner's values. A body that
-  // captures a resource handle is E0483, one that captures a `Scope` is E0481. Traps when the scope has ended or no thread
-  // can be started.
-  @Ensures(result.tab == this.tab)
+  // spawn<T>(f): TaskHandle<T> -- starts `f` as a task of the scope and returns its handle; T may be void (ADR-0040). `f` and
+  // everything it captures move to the task (unique values) or are copied to it; the task cannot affect the spawner's values. A
+  // body that captures a resource handle is E0483, one that captures a `Scope` is E0481. Traps when the scope has ended or no
+  // thread can be started. O(1) plus starting a thread and the transfer of the captures.
   spawn<T>(f: () => T): TaskHandle<T> {
     const res = monNew(2);
     monLock(this.tab);
@@ -667,30 +688,32 @@ export class Scope {
     return new TaskHandle<T>(this.tab, idx, res);
   }
 
-  // token(): the scope's cancellation token, to hand to tasks (`s.spawn(() => ... token.cancel() ...)`). Traps if the scope has
-  // none (the token table is full, or scopes are nested more than 32 deep).
+  // token(): CancelToken -- the scope's cancellation token, to hand to tasks (`s.spawn(() => ... token.cancel() ...)`). Traps if
+  // the scope has none (the token table is full, or scopes are nested more than 32 deep). O(1).
   token(): CancelToken {
     return new CancelToken(scopeWake(this.tab));
   }
 
-  // cancel(): `token().cancel()`.
+  // cancel(): bool -- `token().cancel()`: true when this call cancelled the scope. Traps if the scope has no token. O(1).
   cancel(): bool {
     return wakeSignal(scopeWake(this.tab)) == 1;
   }
 
-  // isCancelled(): the scope's token (or an ancestor's) is set.
+  // isCancelled(): bool -- the scope's token (or an ancestor's) is set. Traps if the scope has no token. O(depth).
   isCancelled(): bool {
     return wakeCheck(scopeWake(this.tab)) == 1;
   }
 }
 
-// A started task. `join` may be called once; a second call, or a call after the scope has ended, traps.
+// TaskHandle<T> -- a started task. `join` may be called once; a second call, or a call after the scope has ended, traps. The table
+// and result handles are private; the constructor is not for user code: obtain a handle from spawn().
 @Invariant(this.tab != 0 && this.res != 0)
 export class TaskHandle<T> {
-  tab: usize;
-  idx: usize;
-  res: usize;
+  private tab: usize;
+  private idx: usize;
+  private res: usize;
 
+  // new TaskHandle<T>(tab, idx, res) -- not for user code: obtain a handle from Scope.spawn().
   @Requires(tab != 0 && res != 0)
   constructor(tab: usize, idx: usize, res: usize) {
     this.tab = tab;
@@ -698,7 +721,8 @@ export class TaskHandle<T> {
     this.res = res;
   }
 
-  // join(): waits for the task and returns its result. If the task panicked, traps with `task panicked: <message>`.
+  // join(): T -- waits for the task and returns its result. If the task panicked, traps with `task panicked: <message>`. Traps if
+  // the handle was joined before. Blocks until the task ends.
   join(): T {
     monLock(this.tab);
     const st = monGet(this.tab, entry(this.idx) + 2);
@@ -721,9 +745,9 @@ export class TaskHandle<T> {
     return takeBox<T>(tok);
   }
 
-  // joinUntil(deadline): waits for the task until the absolute monotonic deadline. Err(Timeout) if it has not ended by then (the
-  // handle stays valid: join or joinUntil it again); otherwise exactly `join()` (a panic of the task is a trap of the joiner).
-  // Traps if the deadline is negative, or the handle was joined before.
+  // joinUntil(deadline): Result<T, TaskError> -- waits for the task until the absolute monotonic deadline. Err(Timeout) if it has
+  // not ended by then (the handle stays valid: join or joinUntil it again); otherwise exactly `join()` (a panic of the task is a
+  // trap of the joiner). Traps if the deadline is negative, or the handle was joined before. Blocks until the deadline at most.
   @Requires(deadline.at.millis >= 0)
   joinUntil(deadline: Deadline): Result<T, TaskError> {
     const dl = deadline.at.millis.toUsize();
@@ -740,37 +764,39 @@ export class TaskHandle<T> {
     return Ok(this.join());
   }
 
-  // joinTimeout(clock, timeout): joinUntil(now + timeout). Err(InvalidDuration) for a negative timeout.
+  // joinTimeout(clock, timeout): Result<T, TaskError> -- joinUntil(now + timeout). Err(InvalidDuration) for a negative timeout,
+  // Err(ClockUnavailable) when the clock cannot be read. Blocks for `timeout` at most.
   joinTimeout(clock: ClockGrant, timeout: Duration): Result<T, TaskError> {
     const d = deadlineIn(clock, timeout)?;
     return this.joinUntil(d);
   }
-}
 
-// tryJoin(h): `h.join()` that returns None instead of trapping when the task panicked (its message is then `taskMessage()`).
-// A second join still traps. (`join` keeps its own copy of these lines so that programs that do not use the fork/join pool
-// compile to the same code as before the pool was added.)
-function tryJoin<T>(h: TaskHandle<T>): Option<T> {
-  monLock(h.tab);
-  const st = monGet(h.tab, entry(h.idx) + 2);
-  if (st != 0) {
-    monUnlock(h.tab);
-    taskTrap("task joined twice (or after the end of its scope)");
+  // tryJoinTask(): Option<T> -- join() that returns None instead of trapping when the task panicked (its message is then
+  // `taskMessage()`). A second join still traps. NOT for user code: it is a method only because the handle fields are private; it
+  // serves the fork/join pool below. (`join` keeps its own copy of these lines so that programs that do not use the fork/join
+  // pool compile to the same code as before the pool was added.)
+  tryJoinTask(): Option<T> {
+    monLock(this.tab);
+    const st = monGet(this.tab, entry(this.idx) + 2);
+    if (st != 0) {
+      monUnlock(this.tab);
+      taskTrap("task joined twice (or after the end of its scope)");
+    }
+    monSet(this.tab, entry(this.idx) + 2, 1);
+    const th = monGet(this.tab, entry(this.idx));
+    monUnlock(this.tab);
+    const status = taskJoin(th);
+    if (status != 0) {
+      monFree(this.res);
+      return None;
+    }
+    monLock(this.res);
+    const tok = monGet(this.res, 0);
+    monUnlock(this.res);
+    monFree(this.res);
+    const v: T = takeBox<T>(tok);
+    return Some(v);
   }
-  monSet(h.tab, entry(h.idx) + 2, 1);
-  const th = monGet(h.tab, entry(h.idx));
-  monUnlock(h.tab);
-  const status = taskJoin(th);
-  if (status != 0) {
-    monFree(h.res);
-    return None;
-  }
-  monLock(h.res);
-  const tok = monGet(h.res, 0);
-  monUnlock(h.res);
-  monFree(h.res);
-  const v: T = takeBox<T>(tok);
-  return Some(v);
 }
 
 // What a task does, as the runtime runs it: compute, publish the result in the result monitor. Result monitor words: [0] the token
@@ -785,13 +811,13 @@ function runTask<T>(f: () => T, wake: usize, res: usize): void {
   monUnlock(res);
 }
 
-// spawn(s, f): the function form of `s.spawn(f)`.
+// spawn(s, f): TaskHandle<T> -- the function form of `s.spawn(f)`; see Scope.spawn for errors and cost.
 @Deprecated("use s.spawn(f)")
 export function spawn<T>(s: Scope, f: () => T): TaskHandle<T> {
   return s.spawn(f);
 }
 
-// spawnDo(s, f): spawn for a body that returns nothing; join() then returns true.
+// spawnDo(s, f): TaskHandle<bool> -- spawn for a body that returns nothing; join() then returns true. See Scope.spawn for errors and cost.
 @Deprecated("use s.spawn(f), which accepts a void body (TaskHandle<void>)")
 export function spawnDo(s: Scope, f: () => void): TaskHandle<bool> {
   return s.spawn(() => {
@@ -874,8 +900,9 @@ function finish(tab: usize): void {
   }
 }
 
-// scope(body): runs `body` with a new scope and returns its result after every task spawned in the scope has ended. See the
-// header comment for panics.
+// scope(body): R -- runs `body` with a new scope and returns its result after every task spawned in the scope has ended. Traps
+// (after all tasks have ended) if a task nobody joined panicked; see the header comment for panics. Blocks until every task of
+// the scope has ended.
 export function scope<R>(body: (s: Scope) => R): R {
   const tab = begin();
   const r = body(new Scope(tab));
@@ -883,9 +910,9 @@ export function scope<R>(body: (s: Scope) => R): R {
   return r;
 }
 
-// scopeFs(fs, body), scopeProcess, scopeStdio, scopeClock: `scope` for a body that also uses a grant. A closure cannot
-// capture a grant (E0452), so the grant is passed through: the body gets it back as a second parameter (the same shape as
-// `withFileFs` of std:fs). Use it with the matching spawnFs / spawnProcess / spawnStdio / spawnClock.
+// scopeFs(fs, body): R -- `scope` for a body that also uses a grant. A closure cannot capture a grant (E0452), so the grant is
+// passed through: the body gets it back as a second parameter (the same shape as `withFileFs` of std:fs). Use it with spawnFs.
+// Errors and blocking as for scope. scopeProcess, scopeStdio, scopeClock and scopeNet below are the same for the other grants.
 export function scopeFs<R>(fs: FsGrant, body: (s: Scope, g: FsGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), fs);
@@ -893,6 +920,7 @@ export function scopeFs<R>(fs: FsGrant, body: (s: Scope, g: FsGrant) => R): R {
   return r;
 }
 
+// scopeProcess(proc, body): R -- `scope` carrying a ProcessGrant; see scopeFs. Use it with spawnProcess.
 export function scopeProcess<R>(proc: ProcessGrant, body: (s: Scope, g: ProcessGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), proc);
@@ -900,6 +928,7 @@ export function scopeProcess<R>(proc: ProcessGrant, body: (s: Scope, g: ProcessG
   return r;
 }
 
+// scopeStdio(stdio, body): R -- `scope` carrying a StdioGrant; see scopeFs. Use it with spawnStdio.
 export function scopeStdio<R>(stdio: StdioGrant, body: (s: Scope, g: StdioGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), stdio);
@@ -907,6 +936,7 @@ export function scopeStdio<R>(stdio: StdioGrant, body: (s: Scope, g: StdioGrant)
   return r;
 }
 
+// scopeClock(clock, body): R -- `scope` carrying a ClockGrant; see scopeFs. Use it with spawnClock.
 export function scopeClock<R>(clock: ClockGrant, body: (s: Scope, g: ClockGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), clock);
@@ -914,8 +944,8 @@ export function scopeClock<R>(clock: ClockGrant, body: (s: Scope, g: ClockGrant)
   return r;
 }
 
-// scopeNet(net, body): `scope` for a body that also uses a NetGrant (ADR-0017 Addendum C), for spawnNet and for a server that
-// binds a listener inside the scope (`useListener(g, ..)`) and hands accepted connections to tasks.
+// scopeNet(net, body): R -- `scope` for a body that also uses a NetGrant (ADR-0017 Addendum C), for spawnNet and for a server that
+// binds a listener inside the scope (`useListener(g, ..)`) and hands accepted connections to tasks. Errors and blocking as for scope.
 export function scopeNet<R>(net: NetGrant, body: (s: Scope, g: NetGrant) => R): R {
   const tab = begin();
   const r = body(new Scope(tab), net);
@@ -936,7 +966,10 @@ export function scopeFsDo(fs: FsGrant, body: (s: Scope, g: FsGrant) => void): vo
 }
 
 @Deprecated("use scopeProcess(proc, body) with a void body")
-export function scopeProcessDo(proc: ProcessGrant, body: (s: Scope, g: ProcessGrant) => void): void {
+export function scopeProcessDo(
+  proc: ProcessGrant,
+  body: (s: Scope, g: ProcessGrant) => void,
+): void {
   scopeProcess(proc, body);
 }
 
@@ -999,32 +1032,49 @@ function runNet<T>(tok: usize, body: (g: NetGrant) => T): T {
   return r;
 }
 
-// spawnFs(s, fs, body): a task whose body gets a file-system grant of the authority of `fs`, owned by the task.
+// spawnFs(s, fs, body): TaskHandle<T> -- a task whose body gets a file-system grant of the authority of `fs`, owned by the task
+// (revoked when the body returns or traps). Errors and cost as for Scope.spawn. spawnProcess, spawnStdio, spawnClock and spawnNet are
+// the same for the other grants.
 export function spawnFs<T>(s: Scope, fs: FsGrant, body: (g: FsGrant) => T): TaskHandle<T> {
   const c = grantClone(fs);
   const tok = grantMove(c);
   return s.spawn(() => runFs(tok, body));
 }
 
-export function spawnProcess<T>(s: Scope, proc: ProcessGrant, body: (g: ProcessGrant) => T): TaskHandle<T> {
+// spawnProcess(s, proc, body): TaskHandle<T> -- spawnFs for a ProcessGrant.
+export function spawnProcess<T>(
+  s: Scope,
+  proc: ProcessGrant,
+  body: (g: ProcessGrant) => T,
+): TaskHandle<T> {
   const c = grantClone(proc);
   const tok = grantMove(c);
   return s.spawn(() => runProcess(tok, body));
 }
 
-export function spawnStdio<T>(s: Scope, stdio: StdioGrant, body: (g: StdioGrant) => T): TaskHandle<T> {
+// spawnStdio(s, stdio, body): TaskHandle<T> -- spawnFs for a StdioGrant.
+export function spawnStdio<T>(
+  s: Scope,
+  stdio: StdioGrant,
+  body: (g: StdioGrant) => T,
+): TaskHandle<T> {
   const c = grantClone(stdio);
   const tok = grantMove(c);
   return s.spawn(() => runStdio(tok, body));
 }
 
-export function spawnClock<T>(s: Scope, clock: ClockGrant, body: (g: ClockGrant) => T): TaskHandle<T> {
+// spawnClock(s, clock, body): TaskHandle<T> -- spawnFs for a ClockGrant.
+export function spawnClock<T>(
+  s: Scope,
+  clock: ClockGrant,
+  body: (g: ClockGrant) => T,
+): TaskHandle<T> {
   const c = grantClone(clock);
   const tok = grantMove(c);
   return s.spawn(() => runClock(tok, body));
 }
 
-// spawnNet(s, net, body): a task whose body gets a network grant of the authority of `net` (the same scope: listen address,
+// spawnNet(s, net, body): TaskHandle<T> -- a task whose body gets a network grant of the authority of `net` (the same scope: listen address,
 // connect pattern and ports, and the ORIN_DENY policy), owned by the task. A task that needs more than one connection
 // binds, accepts and connects through it; a task that serves ONE accepted connection is started with `spawnAccepted` of
 // std:net, which moves the connection itself.
@@ -1036,8 +1086,10 @@ export function spawnNet<T>(s: Scope, net: NetGrant, body: (g: NetGrant) => T): 
 
 // ------------------------------------------------------------------------------------------------------ parallelMap
 
-// parallelMap(xs, f, parts): `xs.map(f)` computed by `parts` tasks, each mapping one contiguous chunk; the result is in
-// order. `f` is copied to every task, each chunk moves or is copied to its task. parts = 0 or 1 maps in the calling task.
+// parallelMap(xs, f, parts): B[] -- `xs.map(f)` computed by `parts` tasks, each mapping one contiguous chunk; the result is in
+// order. `f` is copied to every task, each chunk moves or is copied to its task. parts = 0 or 1 maps in the calling task. A panic
+// of `f` traps the caller. O(n) work over `parts` tasks. Deprecated (ADR-0048 rule 7.6): `xs.parallel().map(f)`.
+@Deprecated("use xs.parallel().map(f)")
 @Ensures(result.length == xs.length)
 export function parallelMap<A, B>(xs: A[], f: (x: A) => B, parts: usize): B[] {
   if (parts <= 1 || xs.length <= 1) {
@@ -1068,7 +1120,7 @@ export function parallelMap<A, B>(xs: A[], f: (x: A) => B, parts: usize): B[] {
 // into `chunks` numbered pieces; `body(k)` computes piece k. With `workers` >= 2 the pool starts that many worker tasks for
 // the call (a pool lives for one call: structured, like `scope`). Worker w starts with the contiguous range of pieces
 // w * chunks / workers .. (w + 1) * chunks / workers - 1 and takes them from the front; when its range is empty it STEALS the
-// back half of the largest range left (std:taskcore `Ranges`, kept in one monitor). Results are put back in piece order,
+// back half of the largest range left (std:task/internal `Ranges`, kept in one monitor). Results are put back in piece order,
 // so the result never depends on the number of workers or on who computed what. With `workers` <= 1 the pieces run in
 // order on the calling task. A panic in a piece cancels the pieces nobody has started, waits for the workers that are
 // still running and then traps the caller with the piece's own message (so a parallel pipeline traps like the sequential
@@ -1108,7 +1160,13 @@ function storeRanges(m: usize, r: Ranges): void {
 
 // The loop of worker w: claim a piece, compute it, repeat; with `until`, a piece whose result is a hit cancels every piece
 // after it.
-function poolWork<R>(m: usize, w: usize, body: (k: usize) => R, until: bool, hit: (r: R) => bool): Done<R>[] {
+function poolWork<R>(
+  m: usize,
+  w: usize,
+  body: (k: usize) => R,
+  until: bool,
+  hit: (r: R) => bool,
+): Done<R>[] {
   let out: Done<R>[] = [];
   let more = true;
   while (more) {
@@ -1131,14 +1189,20 @@ function poolWork<R>(m: usize, w: usize, body: (k: usize) => R, until: bool, hit
       },
       None => {
         more = false;
-      }
+      },
     }
   }
   return out;
 }
 
 // Runs the pieces on `nw` >= 2 worker tasks; the finished pieces in no particular order.
-function runPool<R>(chunks: usize, nw: usize, body: (k: usize) => R, until: bool, hit: (r: R) => bool): Done<R>[] {
+function runPool<R>(
+  chunks: usize,
+  nw: usize,
+  body: (k: usize) => R,
+  until: bool,
+  hit: (r: R) => bool,
+): Done<R>[] {
   const m = monNew(POOL_HDR + 2 * nw);
   let lo: usize[] = [];
   let hi: usize[] = [];
@@ -1164,7 +1228,7 @@ function runPool<R>(chunks: usize, nw: usize, body: (k: usize) => R, until: bool
   let failure = "";
   let failed = false;
   for (const h of hs) {
-    match (tryJoin(h)) {
+    match (h.tryJoinTask()) {
       Some(ds) => {
         for (const d of ds) {
           all.push(d);
@@ -1180,7 +1244,7 @@ function runPool<R>(chunks: usize, nw: usize, body: (k: usize) => R, until: bool
           storeRanges(m, rs);
           monUnlock(m);
         }
-      }
+      },
     }
   }
   finish(tab);
@@ -1203,7 +1267,7 @@ function inOrder<R>(chunks: usize, ds: Done<R>[]): Option<R>[] {
   return slots;
 }
 
-// parallelism(): how many worker threads a parallel computation uses: the environment variable ORIN_THREADS when it is a
+// parallelism(): usize -- how many worker threads a parallel computation uses: the environment variable ORIN_THREADS when it is a
 // number from 1 to 1024, else the number of processors online. Results of `forkJoin` and `parallel()` never depend on it.
 @Ensures(result >= 1)
 export function parallelism(): usize {
@@ -1211,8 +1275,9 @@ export function parallelism(): usize {
   return t >= 1 ? t : 1;
 }
 
-// forkJoin(chunks, workers, body): [body(0), body(1), ..., body(chunks - 1)], computed by `workers` worker tasks (work
-// stealing) when workers >= 2, else in order by the calling task.
+// forkJoin(chunks, workers, body): R[] -- [body(0), body(1), ..., body(chunks - 1)], computed by `workers` worker tasks (work
+// stealing) when workers >= 2, else in order by the calling task. A panic in a piece traps the caller (see the pool comment above).
+// O(chunks) bookkeeping; blocks until every piece has run.
 @Ensures(result.length == chunks)
 export function forkJoin<R>(chunks: usize, workers: usize, body: (k: usize) => R): R[] {
   if (workers <= 1 || chunks <= 1) {
@@ -1230,7 +1295,7 @@ export function forkJoin<R>(chunks: usize, workers: usize, body: (k: usize) => R
 // The record a lend is made from (two slots: see runtime/core/orin_runtime.c "lending").
 type Lent<A> = { v: A; spare: usize; };
 
-// forkJoinLent(lent, chunks, workers, body): forkJoin, with `lent` LENT to the worker tasks (ADR-0039 section 4, ADR-0049
+// forkJoinLent(lent, chunks, workers, body): R[] -- forkJoin, with `lent` LENT to the worker tasks (ADR-0039 section 4, ADR-0049
 // row 13a) instead of copied. `body` reaches the lent value through its captures; the lent graph is pinned while the pool
 // runs (counts frozen: nothing in it is freed or changed in place) and shared by every worker without a copy, so a
 // capture of the lent value costs nothing per worker. The other captures of `body` are copied to every worker as in
@@ -1240,7 +1305,12 @@ type Lent<A> = { v: A; spare: usize; };
 // With workers <= 1 or chunks <= 1 nothing is lent and `body` runs in order on the calling task. `lent` can be any value
 // but a handle (E0480).
 @Ensures(result.length == chunks)
-export function forkJoinLent<A, R>(lent: A, chunks: usize, workers: usize, body: (k: usize) => R): R[] {
+export function forkJoinLent<A, R>(
+  lent: A,
+  chunks: usize,
+  workers: usize,
+  body: (k: usize) => R,
+): R[] {
   if (workers <= 1 || chunks <= 1) {
     return forkJoin(chunks, 1, body);
   }
@@ -1250,11 +1320,16 @@ export function forkJoinLent<A, R>(lent: A, chunks: usize, workers: usize, body:
   return r;
 }
 
-// forkJoinUntil(chunks, workers, body, hit): [body(0), ..., body(j)] where j is the first piece whose result is a hit (all
+// forkJoinUntil(chunks, workers, body, hit): R[] -- [body(0), ..., body(j)] where j is the first piece whose result is a hit (all
 // pieces when none is). Pieces after a hit are cancelled; the pieces before the first hit always run, so the result is the
-// same as computing the pieces one by one and stopping at the first hit.
+// same as computing the pieces one by one and stopping at the first hit. Errors, cost and blocking as for forkJoin.
 @Ensures(result.length <= chunks)
-export function forkJoinUntil<R>(chunks: usize, workers: usize, body: (k: usize) => R, hit: (r: R) => bool): R[] {
+export function forkJoinUntil<R>(
+  chunks: usize,
+  workers: usize,
+  body: (k: usize) => R,
+  hit: (r: R) => bool,
+): R[] {
   let out: R[] = [];
   if (workers <= 1 || chunks <= 1) {
     let k: usize = 0;

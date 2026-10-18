@@ -1,24 +1,36 @@
 // Tests for std:task (ADR-0017 stage 0): channel semantics in one task, transfer by move or copy (the counters), and the structure
-// of a scope. The pure bookkeeping classes `Ring` and `Ledger` are tested in taskcore_test.or. Run with `orin test` (contracts
+// of a scope. The pure bookkeeping classes `Ring` and `Ledger` are tested in task_internal_test.or. Run with `orin test` (contracts
 // checked) and with `--no-contracts`; see tools/test_std.sh.
 import { assert, assertEq, assertEqUsize, assertEqBool, assertEqString } from "std:test";
 import {
-  scope, scopeDo, spawn, spawnDo, channel, movedCount, copiedCount, TaskHandle, parallelMap, forkJoin, forkJoinUntil,
-  forkJoinLent, parallelism
+  scope, scopeDo, spawn, spawnDo, channel, TaskHandle, parallelMap, forkJoin, forkJoinUntil,
+  forkJoinLent, parallelism, TaskError
 } from "std:task";
+import { movedCount, copiedCount } from "std:task/internal";
+
+// True when `r` is the error `Closed` (ADR-0048 E6: Sender.send reports a closed channel as a typed error, not a bool).
+function isClosed(r: Result<void, TaskError>): bool {
+  return match (r) {
+    Ok(_) => false,
+    Err(e) => match (e.kind) {
+      Closed => true,
+      _ => false,
+    },
+  };
+}
 
 // ------------------------------------------------------------------------------------------------ channels (one task)
 
 @Test
 function channelFifoAndClose(): void {
   const ch = channel<string>(3);
-  assertEqBool(ch.tx.send("one"), true, "send 1");
-  assertEqBool(ch.tx.send("two"), true, "send 2");
-  assertEqBool(ch.tx.send("three"), true, "send 3 (the channel is now full)");
+  assertEqBool(ch.tx.send("one").isOk(), true, "send 1");
+  assertEqBool(ch.tx.send("two").isOk(), true, "send 2");
+  assertEqBool(ch.tx.send("three").isOk(), true, "send 3 (the channel is now full)");
   assertEqString(ch.rx.recv().unwrap(), "one", "fifo 1");
-  assertEqBool(ch.tx.send("four"), true, "a slot is free again");
+  assertEqBool(ch.tx.send("four").isOk(), true, "a slot is free again");
   ch.tx.close();
-  assertEqBool(ch.tx.send("five"), false, "send after close is refused, not lost silently");
+  assertEqBool(isClosed(ch.tx.send("five")), true, "send after close is refused, not lost silently");
   assertEqString(ch.rx.recv().unwrap(), "two", "drain 2");
   assertEqString(ch.rx.recv().unwrap(), "three", "drain 3");
   assertEqString(ch.rx.recv().unwrap(), "four", "drain 4");
@@ -33,7 +45,7 @@ function receiverCancelDropsAndRefuses(): void {
   ch.tx.send([1, 2, 3]);
   ch.tx.send([4]);
   ch.rx.close();
-  assertEqBool(ch.tx.send([5]), false, "a cancelled channel refuses senders");
+  assertEqBool(isClosed(ch.tx.send([5])), true, "a cancelled channel refuses senders");
   ch.tx.close();
 }
 

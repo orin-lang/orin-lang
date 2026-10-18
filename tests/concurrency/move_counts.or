@@ -1,7 +1,8 @@
 // Move versus copy (ADR-0017): what the DEFAULT build (optimiser on, no contract checking) does with each way of sending a value.
 // This is pinned here and not in the conformance suites because it depends on the build: `--no-opt` copies a temporary too (no
 // owned-parameter inference), and contract checking keeps an extra reference. The values themselves are identical in every mode.
-import { scope, spawn, channel, movedCount, copiedCount } from "std:task";
+import { scope, spawn, channel } from "std:task";
+import { movedCount, copiedCount } from "std:task/internal";
 
 type Doc = { name: string; lines: string[]; };
 

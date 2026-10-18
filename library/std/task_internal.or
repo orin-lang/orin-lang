@@ -1,7 +1,23 @@
-// std:taskcore -- the pure bookkeeping of std:task (ADR-0017 stage 0): the state machine of one channel buffer (`Ring`) and of one
-// scope's task table (`Ledger`). No I/O, no threads, no primitives: `std:task` loads one of them from a monitor, changes it and stores
+// std:task/internal -- the bookkeeping behind std:task (ADR-0017 stage 0; ADR-0048 rule 7.3). NOT API: user code does not import this
+// module (W0493), and it can change in any release. It holds the state machine of one channel buffer (`Ring`) and of one scope's task
+// table (`Ledger`), the work-stealing ranges of the fork/join pool (`Ranges`), the cancellation and outcome state machines, and the
+// two test hooks `movedCount` / `copiedCount`. No I/O, no threads: `std:task` loads one of them from a monitor, changes it and stores
 // it back inside one critical section, so the invariants below hold whenever a lock is released, and they can be tested and mutated
-// (tools/mutation.sh std) without a single thread. Part of the std:task implementation; import `std:task` for the API.
+// (tools/mutation.sh std) without a single thread. The language has no visibility between "private to the file" and "exported", and
+// a contract has to be able to call these, so they are exported from here. Import `std:task` for the API.
+
+import { transferCount } from "std:fsraw";
+
+// movedCount(): usize -- how many values this task has sent by MOVE (no copy) since it started. Only values that contain a reference
+// (strings, arrays, records, ...) are counted; scalars cost nothing either way. Test hook for the transfer tests. Never fails; O(1).
+export function movedCount(): usize {
+  return transferCount(0);
+}
+
+// copiedCount(): usize -- how many values this task has sent by deep copy since it started (see movedCount). Never fails; O(1).
+export function copiedCount(): usize {
+  return transferCount(1);
+}
 
 // The ring arithmetic on plain numbers: `Ring` is built on these, and std:task calls them directly on locals loaded from the
 // channel's monitor (a `Ring` object per send / receive was 40% of the allocations of a channel benchmark), so the tests and
@@ -24,7 +40,7 @@ export function ringNextHead(cap: usize, head: usize): usize {
 
 // No value will ever be received (cancelled by the receiver, or closed by the sender and drained).
 export function ringIsDone(len: usize, txClosed: bool, rxClosed: bool): bool {
-  return rxClosed || (txClosed && len == 0);
+  return rxClosed || txClosed && len == 0;
 }
 
 // The bookkeeping of one channel buffer, a bounded ring of `cap` slots. Pure: the channel functions load it from the
@@ -56,13 +72,13 @@ export class Ring {
   }
 
   // canPop(): there is a value to receive.
-  @Ensures(result == (this.len > 0))
+  @Ensures(result == this.len > 0)
   canPop(): bool {
     return this.len > 0;
   }
 
   // isDone(): no value will ever be received (cancelled by the receiver, or closed by the sender and drained).
-  @Ensures(result == (this.rxClosed || (this.txClosed && this.len == 0)))
+  @Ensures(result == (this.rxClosed || this.txClosed && this.len == 0))
   isDone(): bool {
     return ringIsDone(this.len, this.txClosed, this.rxClosed);
   }
@@ -255,20 +271,42 @@ export function rangesOk(lo: usize[], hi: usize[], chunks: usize): bool {
 // `MonotonicInstant` (std:time); NO_DEADLINE is -1. Everything is monotone: a cancellation cause, once set, never changes.
 
 // Cancellation causes (a token's state word). 0 = live. The first cause wins and is never replaced.
-export function causeLive(): usize { return 0; }
-export function causeCancelled(): usize { return 1; }  // cancel() on this token, on an ancestor, or a trapped sibling
-export function causeDeadline(): usize { return 2; }   // the absolute monotonic deadline passed
+export function causeLive(): usize {
+  return 0;
+}
+export function causeCancelled(): usize {
+  return 1;
+} // cancel() on this token, on an ancestor, or a trapped sibling
+export function causeDeadline(): usize {
+  return 2;
+} // the absolute monotonic deadline passed
 
 // Task outcomes. 0 = still running. A settled outcome is the order of severity: Completed < Closed < Cancelled < Deadline < Error.
-export function outcomePending(): usize { return 0; }
-export function outcomeCompleted(): usize { return 1; }  // the task body returned
-export function outcomeClosed(): usize { return 2; }     // a channel end it waited on was closed and drained
-export function outcomeCancelled(): usize { return 3; }  // it stopped at a checkpoint because its token was cancelled
-export function outcomeDeadline(): usize { return 4; }   // it stopped because its deadline passed
-export function outcomeError(): usize { return 5; }      // it trapped
+export function outcomePending(): usize {
+  return 0;
+}
+export function outcomeCompleted(): usize {
+  return 1;
+} // the task body returned
+export function outcomeClosed(): usize {
+  return 2;
+} // a channel end it waited on was closed and drained
+export function outcomeCancelled(): usize {
+  return 3;
+} // it stopped at a checkpoint because its token was cancelled
+export function outcomeDeadline(): usize {
+  return 4;
+} // it stopped because its deadline passed
+export function outcomeError(): usize {
+  return 5;
+} // it trapped
 
-export function isOutcome(o: usize): bool { return o <= 5; }
-export function isSettled(o: usize): bool { return o >= 1 && o <= 5; }
+export function isOutcome(o: usize): bool {
+  return o <= 5;
+}
+export function isSettled(o: usize): bool {
+  return o >= 1 && o <= 5;
+}
 
 // The cause that survives when `cur` is already set and `next` arrives (first cause wins).
 @Requires(cur <= 2 && next <= 2)
@@ -299,7 +337,7 @@ export function outcomeJoin(a: usize, b: usize): usize {
 // The outcome a cancelled token imposes on a task that stops at a checkpoint (requires a set cause).
 @Requires(cause == 1 || cause == 2)
 @Ensures(result == 3 || result == 4)
-@Ensures((cause == 1) == (result == 3))
+@Ensures(cause == 1 == (result == 3))
 export function outcomeOfCause(cause: usize): usize {
   return cause == 2 ? 4 : 3;
 }
@@ -328,9 +366,13 @@ export function checkpointOutcome(ready: bool, closed: bool, cause: usize): usiz
 
 // ---- absolute monotonic deadlines (millis; -1 = none) ----
 
-export function noDeadline(): int { return -1; }
+export function noDeadline(): int {
+  return -1;
+}
 
-export function deadlineOk(d: int): bool { return d >= -1; }
+export function deadlineOk(d: int): bool {
+  return d >= -1;
+}
 
 // The tighter of two deadlines (a child never outlives its parent's deadline; none is the loosest).
 @Requires(deadlineOk(a) && deadlineOk(b))
@@ -363,7 +405,7 @@ export function deadlineAfterMillis(start: int, delay: int): int {
 // The deadline has passed at `now` (equality counts as passed, as std:time `isExpired`).
 @Requires(deadlineOk(d) && now >= 0)
 @Ensures(d == -1 ==> !result)
-@Ensures(d >= 0 ==> result == (now >= d))
+@Ensures(d >= 0 ==> result == now >= d)
 export function deadlineExpired(d: int, now: int): bool {
   return d >= 0 && now >= d;
 }
@@ -426,7 +468,8 @@ export class CancelState {
   @Requires(parentCause <= 2 && now >= 0)
   @Ensures(old(this.cause) != 0 ==> this.cause == old(this.cause))
   @Ensures(old(this.cause) == 0 && parentCause != 0 ==> this.cause == parentCause)
-  @Ensures(old(this.cause) == 0 && parentCause == 0 && deadlineExpired(this.deadline, now) ==> this.cause == 2)
+  @Ensures(old(this.cause) == 0 && parentCause == 0 && deadlineExpired(this.deadline, now)
+      ==> this.cause == 2)
   @Ensures(result == (this.cause != 0))
   observe(parentCause: usize, now: int): bool {
     this.cause = causeInherit(this.cause, parentCause);

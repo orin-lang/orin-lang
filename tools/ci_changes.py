@@ -25,7 +25,7 @@ import json
 import subprocess
 import sys
 
-MODULES = ["bytes", "utf8", "collections", "http", "net", "text", "html", "taskcore"]
+MODULES = ["bytes", "utf8", "collections", "http", "net", "text", "html", "task"]
 # modules whose mutants are split over several CI jobs (tools/mutation.sh std --shard I/N): the http mutants run the slow
 # property tests, about 15 minutes on one runner
 SHARDS = {"http": 3}
@@ -84,7 +84,7 @@ def decide(files, everything=False):
         mutants = list(MODULES)
     else:
         mutants = [m for m in MODULES
-                   if any(f == "library/std/%s.or" % m or f.startswith("tests/std/%s" % m) or DEPENDENTS.get(f) == m
+                   if any(f == "library/std/%s.or" % m or f == "library/std/%s_internal.or" % m or f.startswith("tests/std/%s" % m) or DEPENDENTS.get(f) == m
                           for f in files)]
     return {"code": code, "macos": macos, "vscode": vscode, "mutants": mutants,
             "std_backend_checks": checks}
