@@ -6,7 +6,7 @@
 //  2. nested storm: 8 tasks that each open a scope with 3 blocked tasks of their own; one cancel of the OUTER scope wakes all 24;
 //  3. cancel-then-spawn: tasks spawned while the cancel is in flight fail at once.
 // No descriptor leaks: the whole run uses a few hundred sockets one round after the other.
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { Bytes } from "std:bytes";
 import { milliseconds } from "std:time";
 import { Scope, TaskHandle, CancelToken, scopeNet, spawnNet } from "std:task";
@@ -163,7 +163,7 @@ function lateSpawns(net: NetGrant): int {
 }
 
 function main(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     let total: int = 0;
     let r: int = 0;
     while (r < 12) {

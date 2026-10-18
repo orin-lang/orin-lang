@@ -1,9 +1,9 @@
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { ProcessGrant } from "std:process";
 import { args } from "std:process";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => { run(proc); });
+  withHost(host, (fs, proc, stdio, clock) => { run(proc); });
 }
 function run(proc: ProcessGrant): void {
   const a = args(proc);

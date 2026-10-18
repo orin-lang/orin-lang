@@ -67,7 +67,7 @@ variants into scope (ADR-0004). An exported function, type, constant or interfac
 
 **MOD-9.** `std:name` imports a module of the standard library. The importable names are: `std:fs`, `std:process`, `std:io`, `std:math`, `std:path`, `std:json`,
 `std:jsonnumber`, `std:jsonvalue`, `std:jsondecode`, `std:time`, `std:graph`, `std:test`, `std:host`, `std:bytes`, `std:encoding`, `std:utf8`, `std:url`, `std:collections`,
-`std:http`, `std:seq`, `std:task`, `std:taskcore`, `std:net`, `std:text`, `std:html`, `std:ox`, `std:meta`, `std:metacore`, `std:metajson`. Any other `std:` name is E0301 and the
+`std:http`, `std:seq`, `std:task`, `std:task/internal`, `std:net`, `std:text`, `std:html`, `std:ox`, `std:meta`, `std:metacore`, `std:metajson`. Any other `std:` name is E0301 and the
 message lists these. Most modules are Orin source embedded in the compiler (`library/std/*.or`); `std:process` and `std:io` are C runtime built-ins and `std:fs` is Orin over C primitives. The modules that perform
 I/O are **unstable** until the I/O freeze (docs/std.md); `std:math` (`library/collections/math.or`) is float-only.
 - Tests: `tests/next/errors/e0301_unknown_std_module.or`, `tests/next/errors/std_unknown_module.or`, `tests/next/run/std_path_join.or`, `tests/next/run/std_json_parse_basic.or`,

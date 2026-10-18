@@ -657,7 +657,7 @@ RULES = [
      "the two halves of a split node are copied out with `slice`; the left half could stay in the old node's arrays "
      "(truncate in place, the old arrays are unique), only the right half is new", r"slice\(0,"),
     (r"^\$stdlib/collections\.SortedMap\.splitChild", r"arr\.slice|arraynew", "-", "array<int> (new right half)", "the new node's keys / vals: data"),
-    (r"^\$stdlib/taskcore\.Ranges\.constructor$", r"struct", "c", "class object Ranges (4 fields)",
+    (r"^\$stdlib/task_internal\.Ranges\.constructor$", r"struct", "c", "class object Ranges (4 fields)",
      "loaded from the pool's monitor words by `loadRanges`, advanced and stored back inside one critical section: scalar-"
      "replace it (as Ring / Ledger)"),
     (r"^\$stdlib/task\.loadRanges$", r"arraynew", "g", "array<usize> (lo / hi of the workers)",
@@ -739,9 +739,9 @@ RULES = [
      "long-lived object; its RC traffic is the dup / release around each method call (class d)"),
     (r"^lower/state\.Locals\.fresh$", r"struct", "-", "record MLocal {name, ty}", "the MIR declaration table: data"),
     (r"^\$stdlib/task\.Receiver\.recv", r"struct", "a", None, "`Some(v)` returned by recv and matched"),
-    (r"^\$stdlib/taskcore\.Ring\.constructor$", r"struct", "c", "class object Ring (5 scalars)",
+    (r"^\$stdlib/task_internal\.Ring\.constructor$", r"struct", "c", "class object Ring (5 scalars)",
      "loaded from the channel monitor's words, changed and stored back inside one function: scalar-replace it"),
-    (r"^\$stdlib/taskcore\.Ledger\.constructor$", r"struct", "c", "class object Ledger (3 fields)", "as Ring"),
+    (r"^\$stdlib/task_internal\.Ledger\.constructor$", r"struct", "c", "class object Ledger (3 fields)", "as Ring"),
     (r"^\$stdlib/task\.spawn", r"closure", "-", "closure", "the task body crosses to another thread"),
     (r"^\$stdlib/task\.spawn", r"struct tag0 \{l\d+, l\d+\}", "a", "pair (in/out result rebuilt)", "`lg.add()` result pair"),
     (r"^\$stdlib/task\.TaskHandle\.constructor", r"struct", "-", "class object TaskHandle", "returned to the caller"),

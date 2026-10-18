@@ -1,7 +1,7 @@
 // std:fs (ADR-0048): the typed FsError (kind, op, path, reason), fsErrorMessage, and the Result of exists / listDir.
 // Run by tools/test_std.sh with and without contract checking. Each test works in its own directory build/tests/std_fs_test_<name> (tests run in parallel).
 import { assert, assertEqString, assertEqBool, assertEqUsize } from "std:test";
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
 import {
@@ -53,7 +53,7 @@ function expectKind(label: string, e: FsError, kind: string, op: string, path: s
 
 @Test
 function readAndWrite(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_readAndWrite";
     prepare(proc, DIR);
     assertEqString(readFile(fs, DIR + "/a.txt").unwrap(), "hello\n", "read");
@@ -75,7 +75,7 @@ function readAndWrite(host: Host): void {
 
 @Test
 function existsIsAResult(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_existsIsAResult";
     prepare(proc, DIR);
     assertEqBool(exists(fs, DIR + "/a.txt").unwrap(), true, "file");
@@ -96,7 +96,7 @@ function existsIsAResult(host: Host): void {
 
 @Test
 function listDirIsAResult(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_listDirIsAResult";
     prepare(proc, DIR);
     const top = listDir(fs, DIR).unwrap();
@@ -117,7 +117,7 @@ function listDirIsAResult(host: Host): void {
 
 @Test
 function grantsAndScopes(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_grantsAndScopes";
     prepare(proc, DIR);
     const ro = withReadOnly(fs, g => writeFile(g, DIR + "/ro.txt", "x"));
@@ -132,7 +132,7 @@ function grantsAndScopes(host: Host): void {
 
 @Test
 function scopeErrors(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const DIR = BASE + "_scopeErrors";
     prepare(proc, DIR);
     const noFile = withFile(fs, DIR + "/missing.txt", Read, f => f.readAll());

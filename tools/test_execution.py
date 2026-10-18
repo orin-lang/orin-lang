@@ -63,7 +63,7 @@ def native_tests():
 
 def direct_tests(orinc):
     source = OUT / "bounded.or"
-    source.write_text('''import { Host, useProcess } from "std:host";
+    source.write_text('''import { Host, withProcess } from "std:host";
 import { ProcessGrant } from "std:process";
 import { shellTimeout, ProcessError, Timeout } from "std:io";
 import { seconds } from "std:time";
@@ -77,7 +77,7 @@ function status(r: Result<int, ProcessError>): int {
   };
 }
 function main(host: Host): void {
-  useProcess(host, proc => {
+  withProcess(host, proc => {
     console.log(status(shellTimeout(proc, "printf 'hello\\n'; exit 7", seconds(1))).toString());
     console.log(status(shellTimeout(proc, "exit 124", seconds(1))).toString());
     console.log(status(shellTimeout(proc, "sleep 30 & wait", seconds(1))).toString());
@@ -98,23 +98,23 @@ function main(host: Host): void {
         denied = run([exe], env=dict(os.environ, ORIN_DENY="process"), expected=101)
         assert "hello" not in denied.stdout and "denied" in denied.stderr, denied
         print(f"PASS {backend} direct runtime status and process denial", flush=True)
-    source.write_text('''import { Host, useStdio } from "std:host";
+    source.write_text('''import { Host, withStdio } from "std:host";
 import { shellTimeout } from "std:io";
 import { seconds } from "std:time";
 function main(host: Host): void {
-  useStdio(host, io => { shellTimeout(io, "true", seconds(1)); });
+  withStdio(host, io => { shellTimeout(io, "true", seconds(1)); });
 }
 ''')
     bad = run([orinc, "check", source], expected=1)
     assert "E0471" in bad.stderr, bad
     print("PASS wrong-family process grant rejected", flush=True)
-    source.write_text('''import { Host, useProcess } from "std:host";
+    source.write_text('''import { Host, withProcess } from "std:host";
 import { ProcessGrant } from "std:process";
 import { shellTimeout } from "std:io";
 import { seconds } from "std:time";
 @Requires(shellTimeout(proc, "true", seconds(1)).isOk())
 function impure(proc: ProcessGrant): void {}
-function main(host: Host): void { useProcess(host, proc => { impure(proc); }); }
+function main(host: Host): void { withProcess(host, proc => { impure(proc); }); }
 ''')
     bad = run([orinc, "check", source], expected=1)
     assert "E0416" in bad.stderr, bad

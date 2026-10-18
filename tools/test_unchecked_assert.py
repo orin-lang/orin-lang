@@ -12,7 +12,7 @@ import tempfile
 from runtime_files import rt_inc, rt_src, rt_llvm  # the runtime source list: tools/runtime-sources.txt
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DRIVER = '''
-import { Host, useProcess } from "std:host";
+import { Host, withProcess } from "std:host";
 import { args } from "std:process";
 import { assertEqUsize } from "std:test";
 import { uncheckedMir } from "../../compiler/tests/emit_test";
@@ -21,7 +21,7 @@ import { emitCFacts } from "../../compiler/backends/c";
 import { emitLlvmFacts } from "../../compiler/backends/llvm";
 
 function main(host: Host): void {
-  useProcess(host, proc => {
+  withProcess(host, proc => {
     const a = args(proc);
     const variant: usize = a[2] == "0" ? 0 : (a[2] == "1" ? 1 : 2);
     const p = uncheckedMir(variant);

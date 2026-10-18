@@ -1,5 +1,5 @@
 // std:fs streaming API (ADR-0025): write / append / readLine / read / readAll / flush through the scope API.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant, fsErrorMessage } from "std:fs";
 import { withFile, useFile, Read, Write, Append, File } from "std:fs";
 
@@ -13,7 +13,7 @@ function show(label: string, v: Option<string>): void {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
   const w = useFile(fs, PATH, Write, f => {

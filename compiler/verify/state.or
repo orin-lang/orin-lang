@@ -395,6 +395,7 @@ export class State {
 
 // `st`, or the state of `n` dead locals when there is none (a block that is not reached): lets a caller replay a block
 // with one `Transfer` and skip it when `st` was `None`.
+@Requires(st.isSome() ==> (st.unwrap().ls.length == n && st.unwrap().holes.length == 0))
 @Ensures(result.ls.length == n && result.holes.length == 0)
 export function stateOrDead(st: Option<State>, n: usize): State {
   match (st) {

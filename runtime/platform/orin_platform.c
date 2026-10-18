@@ -844,15 +844,19 @@ static int wake_fd(Wake *w) { /* under g_wk: the readable end, created on first 
     return w->rd;
 }
 
-/* under g_wk: 1 when the token or an ancestor is set, else 0; with fds the readable ends of the chain go to fds[0..*n-1], -1 on EMFILE */
+/* under g_wk: 1 when the token or an ancestor is set, else 0; with fds (and nothing set) the readable ends of the chain go to
+ * fds[0..*n-1], -1 on EMFILE. A set token is reported first, before any descriptor is made: the whole chain is read, so running out
+ * of descriptors at a child can never hide a cancelled ancestor (a wait would report EMFILE, an Os error, for a cancelled task). */
 static int wake_walk(int64_t h, int *fds, int *n) {
     int set = 0;
-    for (Wake *w; (w = wake_ref(h)) != NULL; h = w->parent) {
-        set |= w->set;
-        if (fds && (fds[*n] = wake_fd(w)) < 0) return -1;
-        if (fds) ++*n;
+    Wake *w;
+    for (int64_t g = h; (w = wake_ref(g)) != NULL; g = w->parent) set |= w->set;
+    if (set || !fds) return set;
+    for (; (w = wake_ref(h)) != NULL; h = w->parent) {
+        if ((fds[*n] = wake_fd(w)) < 0) return -1;
+        ++*n;
     }
-    return set;
+    return 0;
 }
 
 int64_t orin_platform_wake_open(void) {
@@ -935,7 +939,10 @@ static int net_wait(int fd, short ev, int ms) {
     }
     for (int i = 0; i < n; i++) p[i + 1].fd = wf[i], p[i + 1].events = POLLIN, p[i + 1].revents = 0;
     while ((r = poll(p, (nfds_t)(n + 1), ms)) < 0 && errno == EINTR) {}
-    if (r < 0) return errno;
+    if (r < 0) { /* poll itself failed (EAGAIN/ENOMEM under load on some systems): cancellation still takes precedence over the errno */
+        int e = errno;
+        return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : e;
+    }
     return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : r == 0 ? ORIN_PLATFORM_NET_TIMEOUT : 0;
 }
 

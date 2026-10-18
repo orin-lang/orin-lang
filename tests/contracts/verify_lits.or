@@ -1,0 +1,155 @@
+// Inputs for tools/test_verify_contracts.py: calls of a function whose precondition is a diagnostic-code check (the shape of
+// `diag(code, span, message)` of compiler/diag), on string literals, with the span read from a record field or an array
+// element; and the upper bound of array and string lengths (ADR-0053 Addendum A). Positive: valid literal codes verify
+// (the bytes of a literal of at most 16 bytes are known, a record invariant holds for a record value read from a field or an element).
+// Negative: malformed codes must not verify, a length claim below the runtime limit must not verify.
+// `// expect:` lines are `function kind status`.
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode bounds VERIFIED
+// expect: isValidCode ensures VERIFIED
+// expect: mk ensures VERIFIED
+// expect: lit_ok call-precondition VERIFIED
+// expect: lit_warn call-precondition VERIFIED
+// expect: lit_bad_letter call-precondition UNKNOWN
+// expect: lit_short call-precondition UNKNOWN
+// expect: lit_nondigit call-precondition UNKNOWN
+// expect: lit_long call-precondition UNKNOWN
+// expect: lit_field call-precondition VERIFIED
+// expect: lit_elem call-precondition VERIFIED
+// expect: lit_branches call-precondition VERIFIED
+// expect: lit_branches call-precondition VERIFIED
+// expect: lit_unchecked_span call-precondition UNKNOWN
+// expect: lit_param call-precondition UNKNOWN
+// expect: len_arr_limit ensures VERIFIED
+// expect: len_arr_small ensures REFUTED
+// expect: len_str_limit ensures VERIFIED
+// expect: len_str_small ensures REFUTED
+// expect: len_arr_2_62 ensures VERIFIED
+// expect: len_arr_add ensures VERIFIED
+
+@Invariant(this.start <= this.end)
+type Sp = { start: usize; end: usize; };
+
+type Tok = { text: string; sp: Sp; };
+
+type Raw = { text: string; start: usize; end: usize; };
+
+@Ensures(result == (code.length == 5
+    && (code.charCodeAt(0) == 69 || code.charCodeAt(0) == 87)
+    && code.charCodeAt(1) >= 48 && code.charCodeAt(1) <= 57
+    && code.charCodeAt(2) >= 48 && code.charCodeAt(2) <= 57
+    && code.charCodeAt(3) >= 48 && code.charCodeAt(3) <= 57
+    && code.charCodeAt(4) >= 48 && code.charCodeAt(4) <= 57))
+function isValidCode(code: string): bool {
+  return code.length == 5
+      && (code.charCodeAt(0) == 69 || code.charCodeAt(0) == 87)
+      && code.charCodeAt(1) >= 48 && code.charCodeAt(1) <= 57
+      && code.charCodeAt(2) >= 48 && code.charCodeAt(2) <= 57
+      && code.charCodeAt(3) >= 48 && code.charCodeAt(3) <= 57
+      && code.charCodeAt(4) >= 48 && code.charCodeAt(4) <= 57;
+}
+
+@Requires(isValidCode(code) && sp.start <= sp.end)
+@Ensures(result == sp.end - sp.start)
+function mk(code: string, sp: Sp, msg: string): usize {
+  return sp.end - sp.start;
+}
+
+function lit_ok(sp: Sp): usize {
+  return mk("E0412", sp, "m");
+}
+
+function lit_warn(sp: Sp): usize {
+  return mk("W0001", sp, "m");
+}
+
+// Wrong: `X` is not `E` or `W`.
+function lit_bad_letter(sp: Sp): usize {
+  return mk("X0412", sp, "m");
+}
+
+// Wrong: four characters.
+function lit_short(sp: Sp): usize {
+  return mk("E041", sp, "m");
+}
+
+// Wrong: `a` is not a digit.
+function lit_nondigit(sp: Sp): usize {
+  return mk("E04a2", sp, "m");
+}
+
+// Wrong: six characters.
+function lit_long(sp: Sp): usize {
+  return mk("E04123", sp, "m");
+}
+
+// The span of a token read from a field: a `Sp` satisfies its invariant wherever it is read.
+function lit_field(t: Tok): usize {
+  return mk("E0200", t.sp, "m");
+}
+
+function lit_elem(ts: Tok[], i: usize): usize {
+  return mk("E0200", ts[i].sp, "m");
+}
+
+function lit_branches(t: Tok, msg: string): usize {
+  if (t.text == "var") {
+    return mk("E0201", t.sp, "`var`");
+  }
+  return mk("E0200", t.sp, msg);
+}
+
+// Wrong: a span built by hand may be inverted (`Sp` has an invariant, so building one with start > end is a different
+// problem; here the numbers are not a `Sp`), so the precondition is not proved.
+function lit_unchecked_span(r: Raw): usize {
+  return mk("E0200", Sp { start: r.start, end: r.end }, "m");
+}
+
+// Wrong: the code is a parameter.
+function lit_param(c: string, sp: Sp): usize {
+  return mk(c, sp, "m");
+}
+
+// A real array has fewer than 2^40 elements (the runtime traps "array too large" above it), a string fewer than 2^48 bytes.
+@Ensures(result)
+function len_arr_limit(xs: int[]): bool {
+  return xs.length <= 1099511627776;
+}
+
+@Ensures(result)
+function len_arr_2_62(xs: int[]): bool {
+  return xs.length < 4611686018427387904;
+}
+
+@Ensures(result)
+function len_arr_small(xs: int[]): bool {
+  return xs.length < 1000;
+}
+
+@Ensures(result)
+function len_str_limit(s: string): bool {
+  return s.length <= 281474976710656;
+}
+
+@Ensures(result)
+function len_str_small(s: string): bool {
+  return s.length < 1000;
+}
+
+// The sum of two lengths does not overflow a `usize`.
+@Ensures(result == xs.length + ys.length)
+function len_arr_add(xs: int[], ys: int[]): usize {
+  return xs.length + ys.length;
+}
+
+function main(): void {
+  console.log(lit_ok(Sp { start: 1, end: 2 }).toString());
+}
