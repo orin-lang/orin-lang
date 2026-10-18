@@ -34,7 +34,7 @@
 //   parameter, like the body of a scope function of std:host. `spawnNet(s, net, body)` does the same for a NetGrant
 //   (with `scopeNet` to carry the grant into the scope); an accepted connection is moved into a task by std:net
 //   (`spawnAccepted`, or `acceptDetached` + a channel + `serveAccepted` for a bounded pool of workers; ADR-0017 Addendum C).
-// * `parallelMap(xs, f, parts)` is DEPRECATED: use `xs.parallel().map(f)` (data-parallel) or `forkJoin` (task-parallel).
+// * `parallelMap(xs, f, parts)` is DEPRECATED: use the `parallel()` pipeline of arrays (`map`) (data-parallel) or `forkJoin` (task-parallel).
 //
 // * Timed and wakeable waits (ADR-0017 Addendum B, C1). Every timed call has an ABSOLUTE form on a `Deadline` of std:time (an
 //   instant on the monotonic clock, so retries and nested waits cannot stretch it) and a relative form that takes the
@@ -1088,8 +1088,8 @@ export function spawnNet<T>(s: Scope, net: NetGrant, body: (g: NetGrant) => T): 
 
 // parallelMap(xs, f, parts): B[] -- `xs.map(f)` computed by `parts` tasks, each mapping one contiguous chunk; the result is in
 // order. `f` is copied to every task, each chunk moves or is copied to its task. parts = 0 or 1 maps in the calling task. A panic
-// of `f` traps the caller. O(n) work over `parts` tasks. Deprecated (ADR-0048 rule 7.6): `xs.parallel().map(f)`.
-@Deprecated("use xs.parallel().map(f)")
+// of `f` traps the caller. O(n) work over `parts` tasks. Deprecated (ADR-0048 rule 7.6): the `parallel()` pipeline of arrays (`map`). (This file never writes the call as a dot-parallel-paren, which would make the loader import the pipeline prelude into std:task: an import cycle.)
+@Deprecated("use the parallel() array pipeline (its map) or forkJoin")
 @Ensures(result.length == xs.length)
 export function parallelMap<A, B>(xs: A[], f: (x: A) => B, parts: usize): B[] {
   if (parts <= 1 || xs.length <= 1) {

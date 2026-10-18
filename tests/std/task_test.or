@@ -11,7 +11,7 @@ import { movedCount, copiedCount } from "std:task/internal";
 // True when `r` is the error `Closed` (ADR-0048 E6: Sender.send reports a closed channel as a typed error, not a bool).
 function isClosed(r: Result<void, TaskError>): bool {
   return match (r) {
-    Ok(_) => false,
+    Ok() => false,
     Err(e) => match (e.kind) {
       Closed => true,
       _ => false,
