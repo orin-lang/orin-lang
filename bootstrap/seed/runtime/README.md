@@ -19,4 +19,5 @@ snapshot: `orin_rt_task_watch` and `orin_mon_wait_until` (ADR-0017 Addendum B, C
 
 **ADR-0048 exception (std:fs).** `orin_fs_exists` returns a negative denial code instead of trapping and `orin_fs_list_dir`
 returns `Result<string[],string>` (the same two edits as `runtime/core/`), because the seed is the compiler compiled with the
-migrated `std:fs` and its stage 0 and stage 1 link this snapshot.
+migrated `std:fs` and its stage 0 and stage 1 link this snapshot. The C4 entry points `orin_fs_rename`, `orin_fs_remove_file`, `orin_fs_remove_dir`
+and `orin_fs_write_file_atomic` (with their helper `fs_check_entry`) are appended verbatim for the same reason.
