@@ -1,0 +1,5 @@
+// error: E0200
+// GRM-16: `new` must be followed by a class or `Map` name.
+function main(): void {
+  const x = new 5;
+}

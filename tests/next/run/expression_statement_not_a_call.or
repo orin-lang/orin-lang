@@ -1,0 +1,12 @@
+// EXP-8: an expression statement may be any expression; the value is discarded (the calls still run).
+function t(n: int): int {
+  console.log(`eval ${n}`);
+  return n;
+}
+
+function main(): void {
+  1 + 2;
+  "text";
+  t(1) + t(2);
+  console.log("done");
+}

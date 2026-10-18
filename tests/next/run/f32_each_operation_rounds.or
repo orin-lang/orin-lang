@@ -1,0 +1,11 @@
+// TYP-9: each f32 operation is rounded to binary32; the same sum in float (binary64) is exact.
+function main(): void {
+  const a: f32 = 16777216.0;
+  const b: f32 = a + 1.0;
+  console.log(b.toString());
+  const e: float = 16777216.0;
+  console.log((e + 1.0).toString());
+  const t: f32 = 1.0 / 3.0;
+  console.log(t.toString());
+  console.log(t == 0.3333333432674408 ? "exact" : "inexact");
+}

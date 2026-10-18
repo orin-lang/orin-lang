@@ -1,0 +1,7 @@
+// error: E0304
+import { f } from "./a";
+import { f } from "./b";
+
+function main(): void {
+  console.log(f().toString());
+}

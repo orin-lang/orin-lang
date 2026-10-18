@@ -38,9 +38,13 @@ module std:fs
   function removeDir(fs: FsGrant, path: string): Result<void, FsError>
   function removeFile(fs: FsGrant, path: string): Result<void, FsError>
   function rename(fs: FsGrant, source: string, target: string): Result<void, FsError>
+  @Deprecated("use withFile(fs, path, mode, body) with a void body (ADR-0048)")
   function useFile(fs: FsGrant, path: string, mode: FileMode, body: (file: File) => void): Result<void, FsError>
+  @Deprecated("use withFiles(fs, pathA, modeA, pathB, modeB, body) with a void body (ADR-0048)")
   function useFiles(fs: FsGrant, pathA: string, modeA: FileMode, pathB: string, modeB: FileMode, body: (a: File, b: File) => void): Result<void, FsError>
+  @Deprecated("use withReadOnly(fs, body) with a void body (ADR-0048)")
   function useReadOnly(fs: FsGrant, body: (ro: FsGrant) => void): void
+  @Deprecated("use withUnder(fs, dir, body) with a void body (ADR-0048)")
   function useUnder(fs: FsGrant, dir: string, body: (sub: FsGrant) => void): void
   function withFile<T>(fs: FsGrant, path: string, mode: FileMode, body: (file: File) => T): Result<T, FsError>
   function withFileFs<T>(fs: FsGrant, path: string, mode: FileMode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>

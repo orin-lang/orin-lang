@@ -3,7 +3,7 @@
 // UNSTABLE (ADR-0016 two-stage freeze): std I/O stays unstable until the project owner confirms the freeze. Every
 // function that touches the file system takes the FILE-SYSTEM GRANT (`FsGrant`, ADR-0027) as its first argument:
 // `readFile(fs, path)`, `withFile(fs, path, mode, body)`. A grant comes from `main(host: Host)` through std:host
-// (`useFs(host, fs => ...)`) and can be narrowed with `withUnder` / `withReadOnly` below; the scope shape and the `File`
+// (`withFs(host, fs => ...)`) and can be narrowed with `withUnder` / `withReadOnly` below; the scope shape and the `File`
 // methods did not change. The language rules for `File` and for grants are not unstable: see below.
 //
 // `File` is a RESOURCE HANDLE, not a value (spec 06): it can be passed to functions (borrowed) but not stored in a
@@ -19,9 +19,10 @@
 // simple: `readLine(): Option<string>`, `write(s): void`); the scope function reports the first one as
 // `Err(FsError)` when it closes the file. A failed read looks like end of file to `body`.
 //
-// Why two flavours: a generic result `T` cannot be `void`; `withFile` returns the body's value, `useFile`
-// takes a body that returns nothing. Both exist for one file and for two files (`withFiles`, `useFiles`), which is how
-// you stream from one file to another: a handle cannot be captured by a nested scope's closure.
+// One function per scope (ADR-0048 section 6): `withFile` returns the body's value and accepts a body that returns
+// nothing (T = void); the `use*` names (`useFile`, `useFiles`, `useUnder`, `useReadOnly`) are deprecated wrappers.
+// There is one for a file and one for two files (`withFiles`), which is how you stream from one file to another: a
+// handle cannot be captured by a nested scope's closure.
 //
 // Failure (ADR-0048 section 3): every function that can fail for an outside reason returns `Result<_, FsError>`; the
 // error has a `kind` (NotFound, PermissionDenied, Denied, ...), the failed operation `op`, the `path` and the `reason`
@@ -319,19 +320,9 @@ export function withFile<T>(fs: FsGrant, path: string, mode: FileMode, body: (fi
 }
 
 // useFile(fs, path, mode, body): Result<void, FsError> -- `withFile` for a body that returns nothing.
+@Deprecated("use withFile(fs, path, mode, body) with a void body (ADR-0048)")
 export function useFile(fs: FsGrant, path: string, mode: FileMode, body: (file: File) => void): Result<void, FsError> {
-  const h = fileOpen(fs, path, modeCode(mode));
-  if (!fileIsOpen(h)) {
-    const err = openError(path, h);
-    fileClose(h);
-    return Err(err);
-  }
-  body(h);
-  const e = fileClose(h);
-  return match (e) {
-    Some(m) => Err(closeError(path, m)),
-    None => Ok()
-  };
+  return withFile(fs, path, mode, body);
 }
 
 // withFiles<T>(fs, pathA, modeA, pathB, modeB, body): Result<T, FsError>
@@ -363,29 +354,11 @@ export function withFiles<T>(
 }
 
 // useFiles(fs, pathA, modeA, pathB, modeB, body): Result<void, FsError> -- `withFiles` for a body that returns nothing.
+@Deprecated("use withFiles(fs, pathA, modeA, pathB, modeB, body) with a void body (ADR-0048)")
 export function useFiles(
   fs: FsGrant, pathA: string, modeA: FileMode, pathB: string, modeB: FileMode, body: (a: File, b: File) => void
 ): Result<void, FsError> {
-  const a = fileOpen(fs, pathA, modeCode(modeA));
-  if (!fileIsOpen(a)) {
-    const err = openError(pathA, a);
-    fileClose(a);
-    return Err(err);
-  }
-  const b = fileOpen(fs, pathB, modeCode(modeB));
-  if (!fileIsOpen(b)) {
-    const err = openError(pathB, b);
-    fileClose(b);
-    fileClose(a);
-    return Err(err);
-  }
-  body(a, b);
-  const eb = fileClose(b);
-  const ea = fileClose(a);
-  return match (firstClose(pathA, ea, pathB, eb)) {
-    Some(err) => Err(err),
-    None => Ok()
-  };
+  return withFiles(fs, pathA, modeA, pathB, modeB, body);
 }
 
 // withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T
@@ -400,10 +373,9 @@ export function withUnder<T>(fs: FsGrant, dir: string, body: (sub: FsGrant) => T
 }
 
 // useUnder(fs, dir, body: (sub: FsGrant) => void): void -- `withUnder` for a body that returns nothing.
+@Deprecated("use withUnder(fs, dir, body) with a void body (ADR-0048)")
 export function useUnder(fs: FsGrant, dir: string, body: (sub: FsGrant) => void): void {
-  const g = grantUnder(fs, dir);
-  body(g);
-  grantRevoke(g);
+  withUnder(fs, dir, body);
 }
 
 // withReadOnly<T>(fs, body: (ro: FsGrant) => T): T
@@ -417,10 +389,9 @@ export function withReadOnly<T>(fs: FsGrant, body: (ro: FsGrant) => T): T {
 }
 
 // useReadOnly(fs, body: (ro: FsGrant) => void): void -- `withReadOnly` for a body that returns nothing.
+@Deprecated("use withReadOnly(fs, body) with a void body (ADR-0048)")
 export function useReadOnly(fs: FsGrant, body: (ro: FsGrant) => void): void {
-  const g = grantReadOnly(fs);
-  body(g);
-  grantRevoke(g);
+  withReadOnly(fs, body);
 }
 
 // withFileFs<T>(fs, path, mode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>

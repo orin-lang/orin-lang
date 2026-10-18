@@ -1,0 +1,9 @@
+import { Input, Output, output } from "std:meta";
+
+@Annotation(type)
+export type Mark = { };
+
+@Processor
+export function markProc(input: Input): Output {
+  return output([]);
+}

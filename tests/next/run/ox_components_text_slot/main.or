@@ -1,0 +1,20 @@
+// OX-10/OX-13: in a Components provider, text where an `R` is expected is `text(s)`; in a slot of type `R[]` each text child is
+// one `text(s)` element, next to element children and a spliced `{list}`; several children where one `R` is expected are `fragment([..])`.
+import ox from "./kit";
+import { Node, show, plain } from "./kit";
+
+function Row(children: Node[]): Node {
+  return <box>{children}</box>;
+}
+
+function One(children: Node): Node {
+  return <box>{children}</box>;
+}
+
+function main(): void {
+  console.log(show(<box>hello</box>));
+  console.log(show(<box>hello <box>inner</box> tail</box>));
+  console.log(show(<Row>a<box />{[plain("x"), plain("y")]}b</Row>));
+  console.log(show(<One>just text</One>));
+  console.log(show(<One>text<box />more</One>));
+}

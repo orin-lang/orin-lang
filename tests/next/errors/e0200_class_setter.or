@@ -1,0 +1,10 @@
+// error: E0200
+// TYP-33: there are no setters.
+class C {
+  set x(v: int) {
+  }
+}
+
+function main(): void {
+  console.log("x");
+}

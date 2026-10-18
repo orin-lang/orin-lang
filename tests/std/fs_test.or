@@ -7,7 +7,7 @@ import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
 import {
   FsGrant, FsError, FsErrorKind, FsOp, readFile, writeFile, exists, listDir, rename, removeFile, removeDir, writeFileAtomic,
-  withFile, useFile, withUnder, withReadOnly, fsErrorMessage, Read, Write, NotFound, NotDirectory, OutsideScope, ReadOnly,
+  withFile, useFile, useFiles, useUnder, useReadOnly, withUnder, withReadOnly, fsErrorMessage, Read, Write, NotFound, NotDirectory, OutsideScope, ReadOnly,
   WrongMode, OpRead, OpWrite, OpOpen, OpList, OpStat, OpClose, OpRename, OpRemove, Denied, PermissionDenied, IsDirectory,
   AlreadyExists, NotEmpty, TooManyFiles, Io
 } from "std:fs";
@@ -147,7 +147,7 @@ function scopeErrors(host: Host): void {
       "cannot open '" + DIR + "/missing.txt': No such file or directory",
       "message of a failed open"
     );
-    const wrongMode = useFile(fs, DIR + "/a.txt", Read, f => { f.writeLine("x"); });
+    const wrongMode = withFile(fs, DIR + "/a.txt", Read, f => { f.writeLine("x"); });
     expectKind("write to a read-only file", wrongMode.unwrapErr(), "WrongMode", "close", DIR + "/a.txt");
     assertEqString(
       fsErrorMessage(wrongMode.unwrapErr()),
@@ -229,5 +229,22 @@ function entryFunctionsHonourTheGrant(host: Host): void {
     assertEqBool(exists(fs, DIR + "/sub/b.txt").unwrap(), true, "nothing moved");
     const inside = withUnder(fs, DIR + "/sub", sub => rename(sub, DIR + "/sub/b.txt", DIR + "/sub/c.txt"));
     assert(inside.isOk(), "rename inside the scope");
+  });
+}
+
+// withX takes void bodies (ADR-0048); the old use* names stay one release as @Deprecated wrappers (warning W0440, same behaviour).
+@Test
+function voidBodiesAndDeprecatedTwins(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => {
+    const DIR = BASE + "_twins";
+    prepare(proc, DIR);
+    assertEqBool(withFile(fs, DIR + "/v.txt", Write, f => { f.writeLine("w"); }).isOk(), true, "withFile with a void body");
+    assertEqBool(useFile(fs, DIR + "/u.txt", Write, f => { f.writeLine("u"); }).isOk(), true, "useFile");
+    assertEqString(readFile(fs, DIR + "/u.txt").unwrap(), "u\n", "useFile wrote");
+    const r = useFiles(fs, DIR + "/u.txt", Read, DIR + "/u2.txt", Write, (a, b) => { b.writeLine(a.readLine().unwrap()); });
+    assertEqBool(r.isOk(), true, "useFiles");
+    assertEqString(readFile(fs, DIR + "/u2.txt").unwrap(), "u\n", "useFiles copied");
+    useReadOnly(fs, ro => { assertEqString(readFile(ro, DIR + "/u.txt").unwrap(), "u\n", "useReadOnly reads"); });
+    useUnder(fs, DIR, sub => { assertEqString(readFile(sub, DIR + "/v.txt").unwrap(), "w\n", "useUnder reads"); });
   });
 }

@@ -1,0 +1,11 @@
+// error: E0408
+// EXP-2: the initialiser of a top-level const must be a literal; a call is rejected.
+function f(a: int): int {
+  return a;
+}
+
+const x = f(1);
+
+function main(): void {
+  console.log(x.toString());
+}

@@ -1,0 +1,5 @@
+// error: E0473
+// EFF-3: the package allows no effect, console output is one.
+function main(): void {
+  console.log("not allowed");
+}

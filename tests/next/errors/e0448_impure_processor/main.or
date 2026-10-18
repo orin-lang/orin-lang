@@ -1,0 +1,9 @@
+// error: E0448
+import { Noisy } from "./anno";
+
+@Noisy
+export type Thing = { id: int; };
+
+function main(): void {
+  console.log("unreachable");
+}

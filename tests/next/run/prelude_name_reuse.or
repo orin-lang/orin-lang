@@ -1,0 +1,21 @@
+// MOD-11: prelude names need no import, and a user declaration may reuse a prelude name in its own scope.
+function parseFloat(s: string): int {
+  return 100;
+}
+
+type MapEntry = { k: int; v: int; };
+
+function main(): void {
+  // prelude names without an import
+  console.log(parseInt("12").unwrap().toString());
+  const o: Option<int> = Some(3);
+  const r: Result<int, string> = Ok(4);
+  let m = new Map<string, int>();
+  m.set("a", 5);
+  console.log(String.fromCharCode(65));
+  console.log(o.unwrap().toString() + r.unwrap().toString() + m.get("a").unwrap().toString());
+  // user declarations that reuse prelude names
+  console.log(parseFloat("abcd").toString());
+  const e = MapEntry { k: 1, v: 2 };
+  console.log((e.k + e.v).toString());
+}

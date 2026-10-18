@@ -10,7 +10,7 @@
 // seen, check log, fatal error) lives in small files of its work directory, like the module globals of the Python
 // scripts. Handles (`FsGrant`, `ProcessGrant`) cannot be stored in a class either, so every method takes them.
 
-import { FsGrant, readFile, writeFile, exists, useFile, Append } from "std:fs";
+import { FsGrant, readFile, writeFile, exists, withFile, Append } from "std:fs";
 import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
 import { Json, parse } from "std:json/legacy";
@@ -55,7 +55,7 @@ function readInt(fs: FsGrant, path: string, dflt: int): int {
 }
 
 function appendText(fs: FsGrant, path: string, text: string): void {
-  useFile(fs, path, Append, f => { f.write(text); });
+  withFile(fs, path, Append, f => { f.write(text); });
 }
 
 export class Session {

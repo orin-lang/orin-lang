@@ -1,0 +1,8 @@
+// TYP-3: in a binary operator an integer literal has the type of the other operand (either side).
+function main(): void {
+  const u: u8 = 5;
+  const a = u + 3;
+  const t: i64 = 3000000000;
+  const w = t * 2;
+  console.log(`${a} ${w} ${u < 10} ${3 + u == 8}`);
+}

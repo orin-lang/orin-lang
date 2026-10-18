@@ -1,0 +1,11 @@
+// error: E0401
+// TYP-14: a function parameter is immutable: assigning a field of it is rejected.
+type P = { x: int; y: int; };
+
+function f(p: P): void {
+  p.x = 5;
+}
+
+function main(): void {
+  f(P { x: 1, y: 2 });
+}

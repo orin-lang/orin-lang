@@ -1,0 +1,5 @@
+import { f } from "./src/util/module";
+
+function main(): void {
+  console.log(f().toString());
+}

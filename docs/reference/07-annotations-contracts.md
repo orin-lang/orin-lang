@@ -39,7 +39,12 @@ tests/next/errors/e0440_annotation_def_on_union.or, tests/next/errors/e0440_depr
 tests/next/errors/e0440_deprecated_on_field.or, tests/next/errors/e0440_inline_on_class.or,
 tests/next/errors/e0440_inline_on_type.or, tests/next/errors/e0440_test_on_class.or,
 tests/next/errors/e0440_test_on_method.or, tests/next/errors/e0440_user_annotation_on_constructor.or,
-tests/next/errors/e0440_user_annotation_wrong_target.or.
+tests/next/errors/e0440_user_annotation_wrong_target.or, tests/next/errors/e0200_requires_on_class.or,
+tests/next/errors/e0200_contract_on_interface_method.or (contract clauses are not allowed on an interface method declaration; a class
+method that implements it carries them), tests/next/errors/e0440_sealed_on_union.or, tests/next/errors/e0440_sealed_on_class.or,
+tests/next/errors/e0440_sealed_on_function.or, tests/next/run/contracts_placement_ok.or (`@Rule` on a function, method, constructor,
+class, record type and union; `@Invariant` on a class, record type and `while` / `for` loop; `@Decreases` on a function, method and loop;
+`@Deprecated` on a class, type, union and interface).
 
 **ANN-2. Mixing and order.** Clauses and annotations may be mixed in any order before one declaration; the formatter
 prints annotations first, then clauses, one per line. Loop clauses are statements directly before the loop.
@@ -72,9 +77,10 @@ tests/next/errors/e0444_inline_direct_recursion.or, tests/next/errors/e0444_inli
 
 **ANN-7. `@Deprecated("message")`.** Exactly one string-literal argument (E0441 for none, two or a non-string). A use of
 the declaration from another declaration warns W0440 with the message; the program otherwise behaves normally.
-Tests: tests/next/run/annotations_deprecated.or, tests/next/errors/e0441_deprecated_non_string.or,
+Tests: tests/next/run/annotations_deprecated.or (function, method, class, type, interface and interface method), tests/next/run/deprecated_warns.or
+(W0440 once per use site, none from inside a deprecated declaration), tests/next/errors/e0441_deprecated_non_string.or,
 tests/next/errors/e0441_deprecated_two_arguments.or, tests/next/errors/e0441_deprecated_without_message.or,
-tools/test_annotations.py (the W0440 text and JSON form).
+tools/test_annotations.py (the W0440 text and JSON form; the conformance runner checks only the warning codes of a compile).
 
 **ANN-8. `@Sealed`.** On a record type: outside its defining module the record cannot be built with a literal and its
 fields cannot be assigned (E0495); the module's functions are the only way. See chapter 9.
@@ -106,7 +112,11 @@ tests/next/errors/e0440_user_annotation_wrong_target.or.
 **ANN-12. Processors.** `@Processor(A)` marks an exported, non-generic top-level function `(input: Input): Output` (types
 from `std:meta`, not named `main`) in the module that declares `A`; one processor per annotation. The function and everything
 it calls must be pure (the contract purity rule, 7.4); otherwise, and for any wrong placement or signature, E0448.
-Tests: tests/processors/impure, tests/processors/bad_signature, tools/test_processors.py.
+Tests: tests/next/errors/e0448_generic_processor, tests/next/errors/e0448_processor_named_main, tests/next/errors/e0448_two_processors,
+tests/next/errors/e0448_wrong_parameter, tests/next/errors/e0448_wrong_return, tests/next/errors/e0448_not_exported,
+tests/next/errors/e0448_no_argument, tests/next/errors/e0448_on_type, tests/next/errors/e0448_impure_processor,
+tests/processors/impure, tests/processors/bad_signature, tools/test_processors.py. A processor that calls a function of the companion
+it generates is not E0448: the module that uses the annotation would import its own `.gen` module, which is E0521 (ANN-13).
 
 **ANN-13. Companion modules.** A processor runs only for modules that import its annotation and use it, and only when some
 module imports the companion `./m.gen`. The generated declarations are checked like hand-written code. A companion cannot
@@ -122,22 +132,25 @@ tests/next/errors/e0520_unknown_decl_kind, tests/next/errors/e0520_bad_identifie
 tests/next/errors/e0520_keyword_name, tests/next/errors/e0520_missing_key, tests/next/errors/e0520_bit_operator,
 tests/next/errors/e0520_anonymous_union, tests/next/errors/e0520_unknown_diag_ref,
 tests/next/errors/e0520_unloaded_import, tests/next/errors/e0521_direct_cycle, tests/next/errors/e0521_transitive,
-tests/next/errors/e0522_processor_error, tests/processors/trap, tests/processors/timeout, tests/processors/too_big,
+tests/next/errors/e0522_processor_error, tests/next/run/processor_warning (W0491), tests/processors/trap, tests/processors/timeout, tests/processors/too_big,
 tests/processors/too_many, tests/processors/json_bad.
 
 **ANN-14. Processor trust.** A processor that comes from a dependency runs only when the dependency or its module is listed in
 `[annotations] processors` of the root `orin.toml`; otherwise W0492 and the companion stays empty. Without a C compiler the
 processors are not run: W0490 under `check`, E0520 under `compile`. W0491 is a warning reported by a processor.
-Tests: tests/processors/dep_trusted, tests/processors/dep_trusted_module, tests/processors/dep_untrusted,
-tests/processors/deplib, tools/test_processors.py.
+Tests: tests/next/run/processor_dependency_trusted, tests/next/errors/e0300_untrusted_dependency_processor (W0492),
+tests/next/run/processor_warning (W0491), tests/processors/dep_trusted, tests/processors/dep_trusted_module,
+tests/processors/dep_untrusted, tests/processors/deplib, tools/test_processors.py (also W0490: it needs `orin check` without a C
+compiler, which the conformance runner does not run).
 
 ## 7.4 Contract clauses (ADR-0012)
 
 **CON-1. Typing.** `@Requires`, `@Ensures` and `@Invariant` expressions are `bool`; `@Decreases` is an integer (`int` or
-`usize`). Otherwise E0414. Clauses are type-checked on every build, in the scope of the declaration (parameters, `this`).
+`usize`). Otherwise E0414. Clauses are type-checked on every build, in the scope of the declaration (parameters, `this`). The scope of a constructor `@Requires` is its
+parameters: `this` is E0300 there (the class `@Invariant` is the clause that speaks about the fields).
 Tests: tests/next/errors/e0414_requires_not_bool.or, tests/next/errors/e0414_ensures_string.or,
 tests/next/errors/e0414_loop_invariant_not_bool.or, tests/next/errors/e0414_decreases_not_int.or,
-tests/next/errors/e0300_contract_unknown_name.or.
+tests/next/errors/e0300_contract_unknown_name.or, tests/next/errors/e0300_ctor_requires_this.or.
 
 **CON-2. `result` and `old`.** `result` is in scope only in `@Ensures` (and not for a `void` function); elsewhere it is E0300.
 `old(e)` is only allowed in `@Ensures` and not nested (E0415). A parameter named `result` in a function with `@Ensures`
@@ -167,21 +180,25 @@ tests/next/run/contracts_closure_erased.or, tests/next/run/genclass_contracts_er
 every return (including early `?` returns); a constructor checks its `@Requires` after the leading `this.f = e;`
 initialisations; class `@Invariant`s are checked at the end of constructors and after every non-private, non-static method.
 A violation prints the report of CON-7 and exits with status 101. Calls made from inside a clause are not checked.
+**Loop `@Invariant` and `@Decreases` (a loop clause or a function measure) are not checked at run time**: they are type-checked (CON-1)
+and checked statically by `orin verify --contracts` (CON-10), and under `--check-contracts` a loop whose invariant is false runs on.
 Tests: tests/next/run/contracts_check_ok.or, tests/next/run/contracts_requires_violation.or,
 tests/next/run/contracts_ensures_violation.or, tests/next/run/contracts_ensures_implication_violation.or,
 tests/next/run/contracts_ctor_requires_violation.or, tests/next/run/contracts_ctor_invariant_violation.or,
 tests/next/run/contracts_invariant_violation.or, tests/next/run/contracts_self_call_terminates.or,
-tests/next/run/contracts_iface.or, tests/next/run/int_contracts_runtime.or, tests/next/run/eqord_contracts.or,
+tests/next/run/contracts_iface.or (clauses of a class that implements an interface, called directly, through the interface and a bound),
+tests/next/run/contracts_loop_clauses_unchecked.or, tests/next/run/int_contracts_runtime.or, tests/next/run/eqord_contracts.or,
 tests/next/run/genclass_contracts_ok.or, tests/next/run/genclass_contracts_requires_violation.or,
 tests/next/run/genclass_contracts_ensures_violation.or, tests/next/run/genclass_contracts_invariant_violation.or.
 
 **CON-6. Record invariants.** An `@Invariant` on a record type is checked under `--check-contracts` at every record literal
 of that type (including spreads), after every write through a place that passes through such a record (field assignment,
 compound assignment, nested places, array elements, `push`/`pop` on an array field), and at every `return` of a function
-whose result type is the record (unless the returned expression is a literal).
+whose result type is the record (unless the returned expression is a literal). A field assignment whose place has an index containing a call
+(`xs[next()].f = v`) is the exception: the index would be evaluated twice, so that write is not checked.
 Tests: tests/next/run/contracts_record_ok.or, tests/next/run/contracts_record_literal_violation.or,
 tests/next/run/contracts_record_assign_violation.or, tests/next/run/contracts_record_push_violation.or,
-tests/next/run/contracts_record_return_violation.or.
+tests/next/run/contracts_record_return_violation.or, tests/next/run/contracts_record_index_call_unchecked.or.
 
 **CON-7. Violation report.** On stderr, first line `trap: contract violated: @Kind(expr) at file:line`, then `function:`,
 `values:` (the maximal non-literal operands), `blame:` (the caller for `@Requires`, the callee for `@Ensures`/`@Invariant`)
@@ -203,26 +220,14 @@ tests/next/run/contract_quality_nonstrict.or, tests/next/run/contract_quality_st
 
 **CON-10. Static verification.** `orin verify --contracts entry.or` discharges `ensures`, `call-precondition`, `invariant`,
 `bounds`, `unwrap` and `loop-invariant` obligations with z3 and reports VERIFIED, REFUTED (real counterexample) or UNKNOWN
-(never upgraded; the solver budget is set with `--timeout-ms`, `--retry-ms` and `--rlimit`, docs/contracts.md); `@Decreases` is always UNKNOWN. Exit status is 1 if a clause is REFUTED. Findings W0460 (tautology),
+(never upgraded; the solver budget is set with `--timeout-ms`, `--retry-ms` and `--rlimit`, docs/contracts.md); `@Decreases` is always UNKNOWN. Exit status is 1 if a clause is REFUTED (with `--strict`, also if one is UNKNOWN). `--format=json` prints the same results as JSON with a `summary` of the three counts. Findings W0460 (tautology),
 W0461 (unsatisfiable `@Requires`), W0462 (`@Ensures` follows from `@Requires`) are reported as warnings. The expected status
 per function is the `// expect:` header of each input.
 Tests: tests/contracts/verify_basic.or, tests/contracts/verify_arrays.or, tests/contracts/verify_classes.or,
 tests/contracts/verify_data.or, tests/contracts/verify_generics.or, tests/contracts/verify_int_widths.or,
 tests/contracts/verify_loops.or, tests/contracts/verify_quantifiers.or, tests/contracts/verify_selfref.or,
-tests/contracts/verify_soundness.or, tests/contracts/quality_vc.or, tools/test_verify_contracts.py.
+tests/contracts/verify_soundness.or, tests/contracts/quality_vc.or, tools/test_verify_contracts.py (the JSON form, the exit status and the `--strict` exit status).
 
 ## Gaps: rules without a test
 
-- Placement of `@Invariant`/`@Decreases`/`@Rule` on every listed target is not exercised one by one: no test for `@Rule` on a
-  method, constructor or `type` that must be accepted, and none for E0200 on `@Requires` before a class.
-- `@Deprecated` on class, type and interface (accepted) has no dedicated test; only the function case runs.
-- `@Sealed` on a non-record type and E0440 for `@Sealed` elsewhere are untested.
-- W0440: the exact text and the use sites that warn are checked by `tools/test_annotations.py`, not by the conformance suites.
-- W0491 (processor-reported warning), W0492 and W0490 are covered only by `tools/test_processors.py`, not by `tests/next`.
-- E0448 individual sub-cases (generic processor, processor named `main`, two processors for one annotation, processor calling a
-  companion) have one shared test directory (tests/processors/bad_signature) and no per-case conformance test.
-- Contract placement on interface methods and the exact scope of `this` in a constructor `@Requires` are only implied by
-  tests/next/run/contracts_iface.or and tests/next/run/contracts_ctor_requires_violation.or.
-- Run-time checking of loop `@Invariant` and of `@Decreases` does not exist (parsed and type-checked only); no test pins this.
-- A field assignment whose place contains an index with a call (`xs[next()].f = v`) is not checked for record invariants; no test.
-- The JSON form of the verify report and the `--strict` exit status are only covered by `tools/test_verify_contracts.py`.
+None.

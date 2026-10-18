@@ -75,8 +75,12 @@ value is allowed (`const LANGUAGE = "Orin";`).
 
 **Numbers.** `int` is a 64-bit signed integer, `float` a 64-bit float. There are also `i8 i16 i32`, `u8 u16 u32 u64`,
 `usize` (the type of lengths and indexes) and `f32`. Types never mix implicitly: `int + float` is an error, and
-`const a: float = 1;` is an error too. You convert with methods such as `small.toInt()`. Integer division truncates
+`const a: float = 1;` is an error too. You convert with methods such as `small.toInt()`, `n.toUsize()` and `n.toFloat()`; this matters most for `usize`, because
+`xs.length` is a `usize` and an array index must be one too (`xs[i.toUsize()]`, `i < xs.length.toInt()`). Integer division truncates
 (`7 / 2` is `3`); overflow and division by zero **trap** (the program stops with exit status 101) instead of wrapping.
+
+**Reserved words.** Some words that are only contextual in TypeScript are keywords here, for example `from`, `type`, `match`,
+`import` and `export`: a parameter named `from` is a syntax error (E0200). Pick another name (`src`, `origin`).
 
 **Text and booleans.** `string` is an immutable UTF-8 string, joined with `+`. Numbers and booleans become strings with
 `.toString()`; there is no implicit conversion. `bool` is `true` or `false`, and conditions must be `bool` (`if (n)` with an
