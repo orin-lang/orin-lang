@@ -238,7 +238,7 @@ See spec 04 and `README.md` (Packages).
 ### 1.11 Resources can't be stored (`File`)
 
 A `File` is a handle, not a value. You get one as the parameter of the callback of `withFile`/
-`useFile`, which opens and closes it for you on every path. It cannot be stored in a variable,
+`withFile`, which opens and closes it for you on every path. It cannot be stored in a variable,
 record, array or `Option`, returned, or captured by a closure (E0450, E0451, E0452):
 
 ```ts

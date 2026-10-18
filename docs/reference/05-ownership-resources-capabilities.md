@@ -104,8 +104,8 @@ E0450), or captured by a closure or a task body (E0452, E0483).
   `tests/next/errors/e0450_channel_of_grant.or`, `tests/next/errors/e0452_grant_captured.or`, `tests/next/errors/e0483_task_captures_grant.or`,
   `tests/next/errors/e0400_grant_forged_literal.or`.
 
-**CAP-5.** A grant can be **narrowed** and never widened: `useUnder(fs, dir, ..)` restricts a file grant to a directory (path escapes such as `..`,
-absolute paths and symbolic links leaving the directory are refused by the runtime), `useReadOnly(fs, ..)` removes writing,
+**CAP-5.** A grant can be **narrowed** and never widened: `withUnder(fs, dir, ..)` restricts a file grant to a directory (path escapes such as `..`,
+absolute paths and symbolic links leaving the directory are refused by the runtime), `withReadOnly(fs, ..)` removes writing,
 `useArgsOnly(proc, ..)` removes the right to spawn. A narrowing that does not contain its parent yields a grant that reaches nothing; a narrowing of a
 read-only grant stays read-only.
 - Tests: `tests/next/run/cap_fs_scope.or`, `tests/next/run/cap_narrow_never_widens.or`, `tests/next/run/cap_trap_args_only_shell.or`,

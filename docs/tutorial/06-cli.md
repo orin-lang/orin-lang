@@ -91,10 +91,10 @@ available.
 (arguments, `shell`), standard input/output and clock. Every I/O function takes the matching grant as its first
 argument: `args(proc)`, `readFile(fs, path)`, `writeFile(fs, path, text)`. Passing grants down as parameters
 (`run(fs, argv)`) keeps the code that needs authority visible in its signatures. A grant lives only inside the callback and
-cannot be stored or captured by a closure (nor can the `Host` itself: do not call `useFs(host, ..)` inside the callback of
+cannot be stored or captured by a closure (nor can the `Host` itself: do not call `withFs(host, ..)` inside the callback of
 another scope function). To get a value out, use `withHost(host, (fs, proc, stdio, clock) => value)`, which returns what the
-callback returns. You can narrow one before passing it on: `useUnder(fs, "data", sub => ...)`
-only allows paths inside `data/`, and `useReadOnly(fs, ro => ...)` cannot write. The environment variable
+callback returns. You can narrow one before passing it on: `withUnder(fs, "data", sub => ...)`
+only allows paths inside `data/`, and `withReadOnly(fs, ro => ...)` cannot write. The environment variable
 `ORIN_DENY=fs` (also `process`, `stdio`, `clock`, `net`) turns a family off for a run: here `readFile` then returns an
 `Err` that says `denied by the host policy`.
 

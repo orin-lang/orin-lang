@@ -1,11 +1,11 @@
 // error: E0471
 // CAP-5: a narrowed grant cannot be turned back into a wider one: the only source of a file grant is the `Host`.
 import { Host, useFs } from "std:host";
-import { useReadOnly } from "std:fs";
+import { withReadOnly } from "std:fs";
 
 function main(host: Host): void {
   useFs(host, fs => {
-    useReadOnly(fs, ro => {
+    withReadOnly(fs, ro => {
       useFs(ro, wide => {
         console.log("widened");
       });
