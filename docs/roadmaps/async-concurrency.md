@@ -48,7 +48,7 @@ freedom, safe recovery, or a supported maximum connection count. Historical
 ### 1. Define cancellation and task termination; implement the small state machines
 
 Deliver a reviewed ADR amendment plus pure Orin state machines in the existing
-`taskcore` style. Preserve current `join(): T` trap propagation by default.
+`task/internal` style. Preserve current `join(): T` trap propagation by default.
 Specify task identity, live-scope registration, terminal outcomes, cancellation
 request versus acknowledgement, and exactly-once claims of joins/results/tokens.
 Use a bounded cancellation tree: parent requests cancellation of descendants;
@@ -192,7 +192,7 @@ The rows refine the milestones above, rather than authorize implementation.
 
 | Slice | Main implementation area | Merge gate |
 |---|---|---|
-| Cancellation/termination model | ADR-0017 amendment and pure `library/std/taskcore.or` machines | Terminal-event and ownership transition tests |
+| Cancellation/termination model | ADR-0017 amendment and pure `library/std/task_internal.or` machines | Terminal-event and ownership transition tests |
 | Channel waits | Minimal L0 timed/wake primitives and `library/std/task.or` | No lost wake or token leak under cancel/close/deadline races |
 | Completion waits | Runtime completion publication plus Orin join bookkeeping | Timeout leaves a valid join obligation; exactly one final claimant |
 | Nested-scope termination | Runtime live-scope registration and Orin cancellation/drain | Trapping parent joins cooperative descendants before state release |

@@ -250,7 +250,7 @@ function acceptLoop(ln: Listener, tx: Sender<Accepted>, maxConns: int): int {
     match (r) {
       Ok(a) => {
         n += 1;
-        if (!tx.send(a)) {
+        if (tx.send(a).isErr()) {
           dropAccepted(a);
         }
       },

@@ -8,7 +8,7 @@
 #                                     default: all), one test file (tests/run/x.or, tests/next/errors/y/main.or) or every
 #                                     test whose name contains SUBSTR
 #   tools/dev.sh std [MODULE|FILE]    build, then the provable std tests (tools/test_std.sh) with build/dev/orin: all, those
-#                                     of one module (bytes, utf8, collections, http, text, task, taskcore, net, seq) or one file
+#                                     of one module (bytes, utf8, collections, http, text, task, net, seq) or one file
 #   tools/dev.sh tooling              build, then the tooling unit tests, LSP, MCP, OSIG and effects tests with build/dev/orin
 #
 # Every test step runs its cases in parallel: -j N / ORIN_JOBS=N (default: the CPU count). The build is skipped when no

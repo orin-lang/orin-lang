@@ -1,7 +1,7 @@
 // Orin mutation checks (ADR-0047 phase 5): the Orin port of tools/mutate_std.py (`std`) and tools/mutate_ox.py (`ox`), with the
 // same flags, mutants, output lines and exit status. See tooling/mutation/README.md and docs/testing.md.
 //
-//   orin-mutation std [--orinc COMPILER] [--module bytes|utf8|collections|http|net|text|html|taskcore] [--list] [--shard I/N] [-j N] [--root DIR]
+//   orin-mutation std [--orinc COMPILER] [--module bytes|utf8|collections|http|net|text|html|task] [--list] [--shard I/N] [-j N] [--root DIR]
 //   orin-mutation ox  [--orinc COMPILER] [--cc CC] [--list] [--only NAME[,NAME]] [-j N] [--root DIR]
 //
 // Exit status: 0 every mutant was killed, 1 a mutant survived (or $ORIN_JOBS is not a number), 2 usage or a broken mutant.

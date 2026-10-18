@@ -17,7 +17,7 @@ implementation techniques with no observable semantics other than speed.
 **OWN-2.** *Owned parameters and moves (ADR-0010) are inferred and internal.* The optimiser gives each MIR function parameter a mode,
 **borrowed** or **owned**, passes an argument by move when its local is dead after the call, and cancels retain/release pairs. These
 are not part of the language: a program cannot observe them, except through the performance counters (`ORIN_STATS`, `movedCount()` /
-`copiedCount()` of `std:task`). Every optimised function is re-checked by the MIR verifier, so a wrong inference is refused at compile
+`copiedCount()` of `std:task/internal`). Every optimised function is re-checked by the MIR verifier, so a wrong inference is refused at compile
 time (internal error, exit 70) and cannot produce a program.
 - Tests: `tests/run/owned_param_semantics.or`, `tests/run/ownership_edges.or`, `tests/next/run/owned_param_linear.or`,
   `tests/next/run/consume_concat.or`, `tests/next/run/append_in_place.or`, `tests/next/run/forward_self_index.or`,

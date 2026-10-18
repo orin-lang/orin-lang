@@ -1,7 +1,8 @@
 // Transfer of large and deep values (ADR-0052 Addendum B, R3e.2): the walks that decide move or copy and the deep copy itself are iterative,
 // so a chain of 200,000 records neither overflows the stack nor leaks, moved or copied; and the copy of a million integers or a hundred
 // thousand strings is correct. Counters are pinned like in move_counts.or (the default build).
-import { scope, spawn, channel, movedCount, copiedCount } from "std:task";
+import { scope, spawn, channel } from "std:task";
+import { movedCount, copiedCount } from "std:task/internal";
 
 type Chain = End | Link(int, Chain);
 
