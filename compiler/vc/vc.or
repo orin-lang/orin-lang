@@ -44,7 +44,7 @@ import { qualKey, bareOf, buildScopes } from "./scope";
 import {
   cyclicMk, Var, Chk, TR, St, Ret, Ex, Fn, Cls, ConstInfo, Prog, Cx, I64_MIN, I64_MAX, lineOf, clauseText, lit, inRange, inKind, concat, unionUsize, andAll,
   noChks, noExp, lookupVar, sortS, tyOf, fresh, freshFree, wfOf, recField, arrLen, arrSel, clausesOfList, exprOf, rulesOfList, hasClauses,
-  Writes, writesStmts
+  Writes, writesStmts, hasBigBound
 } from "./ctx";
 import { tr, trClause, wdOf, sigOf, invTerms, valueInvariants, Cl, Sig, isUnit, clHyp, clGoal } from "./expr";
 import { execStmts, emit } from "./stmt";
@@ -341,7 +341,16 @@ function buildProg(prog: LoadedProgram, sm: SourceMap, hir: Program): Prog {
   const scopes = buildScopes(prog);
   tab.setScope(scopes.types);
   const sealed = sealTab(tab);
-  let p = Prog { tab: sealed, fns: fns, fnIx: fnIx, fnCount: fnCount, classes: classes, clsIx: clsIx, consts: consts, mutNames: mutNames, vscope: scopes.vals, sites: new Map<string, bool>(), verified: new Map<string, bool>() };
+  let bigFns: string[] = [];
+  for (const fn of fns) {
+    for (const c of fn.contracts) {
+      if (c.span.end <= fn.text.length && hasBigBound(fn.text, c.span.start, c.span.end)) {
+        bigFns.push(fn.name);
+        break;
+      }
+    }
+  }
+  let p = Prog { tab: sealed, bigFns: bigFns, fns: fns, fnIx: fnIx, fnCount: fnCount, classes: classes, clsIx: clsIx, consts: consts, mutNames: mutNames, vscope: scopes.vals, sites: new Map<string, bool>(), verified: new Map<string, bool>() };
   return computeFrames(p);
 }
 

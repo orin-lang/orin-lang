@@ -343,7 +343,10 @@ values.)
 Lengths have an upper bound too: an array has at most 2^40 elements and a string at most 2^48 bytes, because the runtime
 traps (`array too large` in `arrayNew` and `growItems`, `string too large` in `strAlloc`, `runtime/core/object.or` and
 `array.or`) before it creates a larger one; every array and string is made by these functions (`concat`, `slice`, growth by
-`push` included), and the length never exceeds the capacity. So `xs.length < 2^62` is proved and `xs.length < 1000` is not.
+`push` included), and the length never exceeds the capacity. So `xs.length < 2^62` is proved and `xs.length < 1000` is not. The
+upper bound is a premise only in a function whose source (annotations and body) mentions a large bound (a number of ten digits
+or more, `<<`, `^` or `**`): elsewhere it cannot matter, and the extra premise made unrelated proofs fall to the solver's
+incompleteness.
 
 A value of a *record* type with `@Invariant` clauses that is read from a field, an element, an `Option` payload or a match
 binding satisfies them (a record cannot violate its invariant: it is checked at every literal, field write and function

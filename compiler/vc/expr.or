@@ -430,13 +430,13 @@ function trMember(g: Gen, vars: Var[], cx: Cx, base: Expr, name: string, e: Expr
         return Err("no field `" + name + "` on an array");
       }
       const so = sortS(b.g, cx, b.vt)?;
-      return mk(so.g, arrLen(so.s, b.t), VInt("usize"), concatChk(b.chks, [tfChk(arrLenOk(so.s, b.t))]));
+      return mk(so.g, arrLen(so.s, b.t), VInt("usize"), concatChk(b.chks, [tfChk(arrLenOk(cx, so.s, b.t))]));
     },
     VStr => {
       if (name != "length") {
         return Err("no field `" + name + "` on a string");
       }
-      return mk(b.g, "(slen " + b.t + ")", VInt("usize"), concatChk(b.chks, [tfChk(strLenOk(b.t))]));
+      return mk(b.g, "(slen " + b.t + ")", VInt("usize"), concatChk(b.chks, [tfChk(strLenOk(cx, b.t))]));
     },
     VMap(_, _) => {
       if (name != "size") {
