@@ -87,9 +87,16 @@ Whole-file functions (ADR-0048): `readFile(fs, path): Result<string, FsError>`, 
 `exists(fs, path): Result<bool, FsError>` (`Err` when the grant refuses the query; `Ok(false)` for an absent path),
 `listDir(fs, path): Result<string[], FsError>` (entries in byte order, subdirectories with a trailing `/`).
 
+Entry functions (freeze C4) act on the name, so a symbolic link is renamed, removed or replaced itself, never its target;
+all four are writes and a read-only grant refuses them: `rename(fs, source, target): Result<void, FsError>` (replaces an
+existing `target` atomically), `removeFile(fs, path)` (a file or link, never a directory), `removeDir(fs, path)` (empty
+directories only, `NotEmpty` otherwise), `writeFileAtomic(fs, path, data)` (temporary file, fsync, rename: a reader or a crash
+sees the old contents or all of the new ones; `path` is untouched on `Err`).
+
 `FsError` is a record `{ kind: FsErrorKind, op: FsOp, path: string, reason: string }`. `kind` is one of `NotFound`,
-`PermissionDenied`, `IsDirectory`, `NotDirectory`, `AlreadyExists`, `Denied` (host policy), `OutsideScope`, `ReadOnly`, `WrongMode`,
-`TooManyFiles`, `Io`; `op` says which operation failed (`OpRead`, `OpWrite`, `OpOpen`, `OpList`, `OpStat`, `OpClose`);
+`PermissionDenied`, `IsDirectory`, `NotDirectory`, `AlreadyExists`, `NotEmpty`, `Denied` (host policy), `OutsideScope`, `ReadOnly`,
+`WrongMode`, `TooManyFiles`, `Io`; `op` says which operation failed (`OpRead`, `OpWrite`, `OpOpen`, `OpList`, `OpStat`, `OpClose`,
+`OpRename`, `OpRemove`);
 `reason` is the system's text. `fsErrorMessage(e): string` renders it ("cannot read 'p': No such file or directory").
 
 Streaming through **resource handles** (ADR-0025, spec 06). `File` is a handle, not a value: it can only be a
