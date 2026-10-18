@@ -1414,6 +1414,18 @@ void orin_process_exit(int64_t code) { orin_platform_exit((int)code); }
  * functions through the L1 entries of compiler/mir/rt.or; the C unit tests call them through the C-named test wrappers of `--rt-wrappers`
  * (tools/rt_stub.sh). The grant tables and the file / network buffers stay C until R3c, so task.or reaches them by the hooks. */
 
+/* The layout of the task record, kept as documentation and checked by tools/test_wasm.sh (the Orbit L0 reads it in `thread_exit`). The record is
+ * created and written by runtime/core/task.or (offsets T_*); no C code uses this type since R3e.6. */
+enum { TASK_MSG = 480 };
+typedef struct {
+    uint64_t tok;       /* the transfer token of the task body (a closure) */
+    uint64_t trapped;   /* 1 when the task ended on a trap */
+    uint64_t done_mon;  /* monitor whose word 1 becomes 1 when the task ends; 0 = none */
+    char msg[TASK_MSG + 1]; /* the trap message */
+} RtTask;
+_Static_assert(offsetof(RtTask, trapped) == 8 && offsetof(RtTask, done_mon) == 16 && offsetof(RtTask, msg) == 24 && sizeof(RtTask) == 512,
+               "RtTask: tok @0, trapped @8, done_mon @16, message @24, 512 bytes (runtime/core/task.or)");
+
 /* The hooks of the heap retire (task.or `heapRetire`; core operation `hook`: HK_REVOKE_GRANTS, HK_CLOSE_FILES, HK_FREE_NETBUF). */
 static void revoke_all_grants(void) {
     for (int i = 0; i < GR_SLOTS; i++)

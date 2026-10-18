@@ -277,8 +277,8 @@ separator is raised through `process.exit(101)` after printing the same message.
     copy, the void box), `lend.or` (the pin walk) and `task.or` (`RtTask`, spawn / main / join / message / watch, `heapRetire`, `orin_trap` and
     `trapStr`, `parThreads`) replace the C functions for generated code. R3e.6 deleted the C: the "tasks and transfer" section of
     `runtime/core/orin_runtime.c` (`orin_rt_transfer_*`, `orin_rt_lend`, `orin_rt_par_threads`, `orin_rt_task_*`, `orin_rt_trap_str`,
-    `orin_rt_heap_exit`, `orin_mon_*`, `t_task`, the slot table `g_tr*`, the pin helpers, `TrSlot` / `RtTask`) and the helpers only they used
-    (`stats_add`, `xrealloc`, `sb_drain`, the free-list macros): 452 of 1,732 code lines. The live runtime has no C definition of these names any
+    `orin_rt_heap_exit`, `orin_mon_*`, `t_task`, the slot table `g_tr*`, the pin helpers, `TrSlot`) and the helpers only they used
+    (`stats_add`, `xrealloc`, `sb_drain`, the free-list macros): 443 of 1,732 code lines. The live runtime has no C definition of these names any
     more; `rtTestWraps` now carries them (`orin_mon_*` and `orin_rt_*`, declared in `orin_runtime.h`), so `runtime/core/tests/task_test.c`
     and its stub (`tools/rt_stub.sh`) are unchanged in what they call and run the 184 checks against the Orin functions. What stays C: the
     grant table and its flight table `g_gf*` (`orin_cap_clone` / `move` / `adopt_*`, R3e.5 waits for R3c), the file and network buffers, and
