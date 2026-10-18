@@ -1,0 +1,33 @@
+// std:process args and std:io stdin on Orbit (L0: orbit:process/v1). Run: orbit run args_stdin.wasm --grant log/v1 --grant process:stdin
+// --app-arg one --app-arg "two words" < input. Prints the arguments (argv[0] is not part of `args`), every stdin line, a prompt
+// written without a newline, and a byte read.
+import { Host, withHost } from "std:host";
+import { ProcessGrant, args } from "std:process";
+import { StdioGrant, readLine, readBytes, writeStdout } from "std:io";
+
+function main(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => { run(proc, stdio); });
+}
+
+function run(proc: ProcessGrant, stdio: StdioGrant): void {
+  const a = args(proc);
+  console.log("argc=" + a.length.toString());
+  for (const x of a) {
+    console.log("arg:" + x);
+  }
+  writeStdout(stdio, "name? ");
+  const first = readLine(stdio);
+  console.log("hello " + first.unwrapOr("<eof>"));
+  const four = readBytes(stdio, 4);
+  console.log("bytes=[" + four.unwrapOr("<eof>") + "]");
+  let n = 0;
+  while (true) {
+    const l = readLine(stdio);
+    if (l.isNone()) {
+      break;
+    }
+    n += 1;
+    console.log("line " + n.toString() + ": " + l.unwrap() + " (" + l.unwrap().length.toString() + ")");
+  }
+  console.log("lines=" + n.toString());
+}
