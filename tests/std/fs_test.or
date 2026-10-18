@@ -1,10 +1,16 @@
-// std:fs (ADR-0048): the typed FsError (kind, op, path, reason), fsErrorMessage, and the Result of exists / listDir.
+// std:fs (ADR-0048): the typed FsError (kind, op, path, reason), fsErrorMessage, the Result of exists / listDir, and the
+// entry functions rename / removeFile / removeDir / writeFileAtomic (freeze C4).
 // Run by tools/test_std.sh with and without contract checking. Each test works in its own directory build/tests/std_fs_test_<name> (tests run in parallel).
 import { assert, assertEqString, assertEqBool, assertEqUsize } from "std:test";
 import { Host, withHost } from "std:host";
 import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
-import { FsGrant, FsError, FsErrorKind, FsOp, readFile, writeFile, exists, listDir, withFile, withUnder, withReadOnly, useFile, useFiles, useUnder, useReadOnly, fsErrorMessage, Read, Write, NotFound, NotDirectory, OutsideScope, ReadOnly, WrongMode, OpRead, OpWrite, OpOpen, OpList, OpStat, OpClose, Denied, PermissionDenied, IsDirectory, AlreadyExists, TooManyFiles, Io } from "std:fs";
+import {
+  FsGrant, FsError, FsErrorKind, FsOp, readFile, writeFile, exists, listDir, rename, removeFile, removeDir, writeFileAtomic,
+  withFile, useFile, useFiles, useUnder, useReadOnly, withUnder, withReadOnly, fsErrorMessage, Read, Write, NotFound, NotDirectory, OutsideScope, ReadOnly,
+  WrongMode, OpRead, OpWrite, OpOpen, OpList, OpStat, OpClose, OpRename, OpRemove, Denied, PermissionDenied, IsDirectory,
+  AlreadyExists, NotEmpty, TooManyFiles, Io
+} from "std:fs";
 
 const BASE: string = "build/tests/std_fs_test";
 
@@ -15,6 +21,7 @@ function kindName(k: FsErrorKind): string {
     IsDirectory => "IsDirectory",
     NotDirectory => "NotDirectory",
     AlreadyExists => "AlreadyExists",
+    NotEmpty => "NotEmpty",
     Denied => "Denied",
     OutsideScope => "OutsideScope",
     ReadOnly => "ReadOnly",
@@ -31,7 +38,9 @@ function opName(op: FsOp): string {
     OpOpen => "open",
     OpList => "list",
     OpStat => "stat",
-    OpClose => "close"
+    OpClose => "close",
+    OpRename => "rename",
+    OpRemove => "remove"
   };
 }
 
@@ -148,6 +157,78 @@ function scopeErrors(host: Host): void {
     const ok = withFile(fs, DIR + "/d.txt", Write, f => { f.writeLine("one"); return 1; });
     assertEqBool(ok.isOk(), true, "a normal scope is Ok");
     assertEqString(readFile(fs, DIR + "/d.txt").unwrap(), "one\n", "the scope wrote");
+  });
+}
+
+@Test
+function renameAndRemove(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => {
+    const DIR = BASE + "_renameAndRemove";
+    prepare(proc, DIR);
+    assert(rename(fs, DIR + "/a.txt", DIR + "/moved.txt").isOk(), "rename");
+    assertEqBool(exists(fs, DIR + "/a.txt").unwrap(), false, "the old name is gone");
+    assertEqString(readFile(fs, DIR + "/moved.txt").unwrap(), "hello\n", "the new name has the contents");
+    assert(writeFile(fs, DIR + "/target.txt", "old").isOk(), "target");
+    assert(rename(fs, DIR + "/moved.txt", DIR + "/target.txt").isOk(), "rename over an existing file");
+    assertEqString(readFile(fs, DIR + "/target.txt").unwrap(), "hello\n", "the target was replaced");
+    const missing = rename(fs, DIR + "/nothing", DIR + "/x");
+    expectKind("rename a missing file", missing.unwrapErr(), "NotFound", "rename", DIR + "/nothing");
+    assertEqString(
+      fsErrorMessage(missing.unwrapErr()),
+      "cannot rename '" + DIR + "/nothing': No such file or directory",
+      "message of a failed rename"
+    );
+
+    assert(removeFile(fs, DIR + "/target.txt").isOk(), "removeFile");
+    assertEqBool(exists(fs, DIR + "/target.txt").unwrap(), false, "the file is gone");
+    expectKind("remove a missing file", removeFile(fs, DIR + "/target.txt").unwrapErr(), "NotFound", "remove",
+      DIR + "/target.txt");
+    assert(removeFile(fs, DIR + "/other").isErr(), "removeFile refuses a directory");
+    expectKind("remove a non-empty directory", removeDir(fs, DIR + "/sub").unwrapErr(), "NotEmpty", "remove", DIR + "/sub");
+    assertEqBool(exists(fs, DIR + "/sub/b.txt").unwrap(), true, "nothing was removed");
+    assert(removeDir(fs, DIR + "/other").isOk(), "removeDir of an empty directory");
+    assertEqBool(exists(fs, DIR + "/other").unwrap(), false, "the directory is gone");
+    expectKind("removeDir of a file", removeDir(fs, DIR + "/sub/b.txt").unwrapErr(), "NotDirectory", "remove",
+      DIR + "/sub/b.txt");
+  });
+}
+
+@Test
+function atomicWrite(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => {
+    const DIR = BASE + "_atomicWrite";
+    prepare(proc, DIR);
+    assert(writeFileAtomic(fs, DIR + "/a.txt", "new").isOk(), "replace");
+    assertEqString(readFile(fs, DIR + "/a.txt").unwrap(), "new", "the new contents");
+    assert(writeFileAtomic(fs, DIR + "/fresh.txt", "x").isOk(), "create");
+    assertEqString(readFile(fs, DIR + "/fresh.txt").unwrap(), "x", "a new file");
+    assertEqString(listDir(fs, DIR).unwrap().join(","), "a.txt,fresh.txt,other/,sub/", "no temporary file is left");
+    const noDir = writeFileAtomic(fs, DIR + "/nodir/x.txt", "x");
+    expectKind("missing directory", noDir.unwrapErr(), "NotFound", "write", DIR + "/nodir/x.txt");
+  });
+}
+
+@Test
+function entryFunctionsHonourTheGrant(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => {
+    const DIR = BASE + "_entryGrant";
+    prepare(proc, DIR);
+    expectKind("rename, read-only", withReadOnly(fs, g => rename(g, DIR + "/a.txt", DIR + "/b.txt")).unwrapErr(), "ReadOnly",
+      "rename", DIR + "/a.txt");
+    expectKind("removeFile, read-only", withReadOnly(fs, g => removeFile(g, DIR + "/a.txt")).unwrapErr(), "ReadOnly",
+      "remove", DIR + "/a.txt");
+    expectKind("removeDir, read-only", withReadOnly(fs, g => removeDir(g, DIR + "/other")).unwrapErr(), "ReadOnly",
+      "remove", DIR + "/other");
+    expectKind("writeFileAtomic, read-only", withReadOnly(fs, g => writeFileAtomic(g, DIR + "/a.txt", "x")).unwrapErr(),
+      "ReadOnly", "write", DIR + "/a.txt");
+    const out = withUnder(fs, DIR + "/sub", sub => rename(sub, DIR + "/sub/b.txt", DIR + "/b.txt"));
+    expectKind("rename out of the scope", out.unwrapErr(), "OutsideScope", "rename", DIR + "/sub/b.txt");
+    const outRemove = withUnder(fs, DIR + "/sub", sub => removeFile(sub, DIR + "/a.txt"));
+    expectKind("remove outside the scope", outRemove.unwrapErr(), "OutsideScope", "remove", DIR + "/a.txt");
+    assertEqString(readFile(fs, DIR + "/a.txt").unwrap(), "hello\n", "nothing changed");
+    assertEqBool(exists(fs, DIR + "/sub/b.txt").unwrap(), true, "nothing moved");
+    const inside = withUnder(fs, DIR + "/sub", sub => rename(sub, DIR + "/sub/b.txt", DIR + "/sub/c.txt"));
+    assert(inside.isOk(), "rename inside the scope");
   });
 }
 
