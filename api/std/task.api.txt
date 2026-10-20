@@ -12,7 +12,7 @@ module std:task
   @Invariant(this.ch != 0)
     constructor(ch: usize)
     @Requires(ch != 0)
-    method recv(): Option<T>
+    method recv(): Result<T, TaskError>
     method recvUntil(deadline: Deadline): Result<T, TaskError>
     @Requires(deadline.at.millis >= 0)
     method recvTimeout(clock: ClockGrant, timeout: Duration): Result<T, TaskError>
@@ -93,7 +93,7 @@ module std:task
   function selectUntil<T>(rxs: Receiver<T>[], deadline: Deadline): Result<Selected<T>, TaskError>
   @Requires(rxs.length >= 1 && deadline.at.millis >= 0)
   function sleep(clock: ClockGrant, timeout: Duration): Result<void, TaskError>
-  function sleepUntil(deadline: Deadline): void
+  function sleepUntil(deadline: Deadline): Result<void, TaskError>
   @Requires(deadline.at.millis >= 0)
   @Deprecated("use s.spawn(f)")
   function spawn<T>(s: Scope, f: () => T): TaskHandle<T>

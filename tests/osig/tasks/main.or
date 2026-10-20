@@ -12,8 +12,8 @@ function produce(ch: Channel<int>): void {
 
 function consume(ch: Channel<int>): int {
   return match (ch.rx.recv()) {
-    Some(v) => v,
-    None => 0
+    Ok(v) => v,
+    Err(e) => 0
   };
 }
 
