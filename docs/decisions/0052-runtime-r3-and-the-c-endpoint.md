@@ -488,6 +488,9 @@ commit of the step it affects, so it can be reverted alone.
 6. **C2 (trap-safe structured cleanup).** The roadmap asks for it "in Orin inside R3e". Recommend after R3e.6, as its own change on `task.or`: R3e is a
    1:1 port whose oracle is identical counters and output against the legacy world, which a behaviour change (cancel and join the descendants of a
    trapping parent) would destroy.
+   **Decided 2026-10-20 (project coordinator, design #62 decisions 3 and 4):** a trap in a child cancels its siblings in the same scope
+   (first failure cancels the scope, as in Swift task groups, Kotlin `coroutineScope` and Trio nurseries), and the unwind lives in
+   `runtime/core/task.or` (a registry of live children), not in a callback into the `library/std/task.or` ledger. Implemented in #65.
 7. **Measuring the task benchmarks.** Recommend `perf stat -e instructions:u` for the three task benchmarks with the thresholds of section 5, wall-time
    medians as the fallback and no new valgrind mode. Confirm that the budget rule (+1 % LLVM, below +2 % C per step) applies to them.
 8. **LLVM and ThreadSanitizer.** Recommend only recording the R3e.0 experiment and not building an instrumented LLVM mode in R3e (it needs
