@@ -16,25 +16,31 @@
 <text class="t2" x="58.0" y="70.0" font-size="11" text-anchor="end" font-weight="normal">32.8G</text>
 <text class="t2" x="24.0" y="161.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 161.0)">instructions</text>
 <text class="t2" x="78.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="350.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-19</text>
+<text class="t2" x="214.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-19</text>
+<text class="t2" x="350.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-20</text>
 <text class="t2" x="214.0" y="286.0" font-size="11" text-anchor="middle" font-weight="normal">run date (MM-DD)</text>
-<path class="s1" d="M78.0,220.6 L350.0,117.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path class="s1" d="M78.0,220.6 L214.0,117.8 L350.0,118.5" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="220.6" r="4" stroke-width="2"><title>10-18: 32.474G</title></circle>
-<circle class="s1 ring" cx="350.0" cy="117.8" r="4" stroke-width="2"><title>10-19: 32.691G</title></circle>
+<circle class="s1 ring" cx="214.0" cy="117.8" r="4" stroke-width="2"><title>10-19: 32.691G</title></circle>
+<circle class="s1 ring" cx="350.0" cy="118.5" r="4" stroke-width="2"><title>10-20: 32.69G</title></circle>
 <text class="t" x="388.0" y="53.0" font-size="13" text-anchor="start" font-weight="600">Wall time, median (noisy)</text>
 <line class="grid" x1="440.0" y1="256.0" x2="740.0" y2="256.0" stroke-width="1"/>
 <text class="t2" x="434.0" y="260.0" font-size="11" text-anchor="end" font-weight="normal">0</text>
-<line class="grid" x1="440.0" y1="192.7" x2="740.0" y2="192.7" stroke-width="1"/>
-<text class="t2" x="434.0" y="196.7" font-size="11" text-anchor="end" font-weight="normal">1</text>
-<line class="grid" x1="440.0" y1="129.3" x2="740.0" y2="129.3" stroke-width="1"/>
-<text class="t2" x="434.0" y="133.3" font-size="11" text-anchor="end" font-weight="normal">2</text>
+<line class="grid" x1="440.0" y1="208.5" x2="740.0" y2="208.5" stroke-width="1"/>
+<text class="t2" x="434.0" y="212.5" font-size="11" text-anchor="end" font-weight="normal">1</text>
+<line class="grid" x1="440.0" y1="161.0" x2="740.0" y2="161.0" stroke-width="1"/>
+<text class="t2" x="434.0" y="165.0" font-size="11" text-anchor="end" font-weight="normal">2</text>
+<line class="grid" x1="440.0" y1="113.5" x2="740.0" y2="113.5" stroke-width="1"/>
+<text class="t2" x="434.0" y="117.5" font-size="11" text-anchor="end" font-weight="normal">3</text>
 <line class="grid" x1="440.0" y1="66.0" x2="740.0" y2="66.0" stroke-width="1"/>
-<text class="t2" x="434.0" y="70.0" font-size="11" text-anchor="end" font-weight="normal">3</text>
+<text class="t2" x="434.0" y="70.0" font-size="11" text-anchor="end" font-weight="normal">4</text>
 <text class="t2" x="400.0" y="161.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 400.0 161.0)">seconds</text>
 <text class="t2" x="454.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="726.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-19</text>
+<text class="t2" x="590.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-19</text>
+<text class="t2" x="726.0" y="271.0" font-size="11" text-anchor="middle" font-weight="normal">10-20</text>
 <text class="t2" x="590.0" y="286.0" font-size="11" text-anchor="middle" font-weight="normal">run date (MM-DD)</text>
-<path class="s1" d="M454.0,88.0 L726.0,98.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-<circle class="s1 ring" cx="454.0" cy="88.0" r="4" stroke-width="2"><title>10-18: 2.653</title></circle>
-<circle class="s1 ring" cx="726.0" cy="98.2" r="4" stroke-width="2"><title>10-19: 2.491</title></circle>
+<path class="s1" d="M454.0,130.0 L590.0,137.7 L726.0,107.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="454.0" cy="130.0" r="4" stroke-width="2"><title>10-18: 2.653</title></circle>
+<circle class="s1 ring" cx="590.0" cy="137.7" r="4" stroke-width="2"><title>10-19: 2.491</title></circle>
+<circle class="s1 ring" cx="726.0" cy="107.1" r="4" stroke-width="2"><title>10-20: 3.135</title></circle>
 </svg>
