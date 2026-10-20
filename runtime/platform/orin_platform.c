@@ -953,33 +953,60 @@ static int net_cancelled(void) { /* 1 when the bound token or an ancestor is set
     return r;
 }
 
-/* Waits until fd is ready for `ev`: 0, NET_TIMEOUT, NET_CANCELLED (the bound token is set before or while waiting), EINVAL for a
- * bad timeout, or an errno (EMFILE when the wake descriptor cannot be made). */
-static int net_wait(int fd, short ev, int ms) {
-    if (ms < 0 || ms > ORIN_PLATFORM_NET_MAXMS) return ORIN_PLATFORM_EINVAL;
-    struct pollfd p[WAKE_DEPTH + 2];
-    int wf[WAKE_DEPTH + 1], n = 0, r = 0;
-    p[0].fd = fd, p[0].events = ev, p[0].revents = 0;
-    if (t_wake) {
-        pthread_mutex_lock(&g_wk);
-        r = wake_walk(t_wake, wf, &n);
-        pthread_mutex_unlock(&g_wk);
-        if (r) return r < 0 ? EMFILE : ORIN_PLATFORM_NET_CANCELLED;
-    }
-    for (int i = 0; i < n; i++) p[i + 1].fd = wf[i], p[i + 1].events = POLLIN, p[i + 1].revents = 0;
-    while ((r = poll(p, (nfds_t)(n + 1), ms)) < 0 && errno == EINTR) {}
-    if (r < 0) { /* poll itself failed (EAGAIN/ENOMEM under load on some systems): cancellation still takes precedence over the errno */
-        int e = errno;
-        return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : e;
-    }
-    return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : r == 0 ? ORIN_PLATFORM_NET_TIMEOUT : 0;
-}
-
 /* what is left of a wait of `ms` that began at t0 (ms when the clock fails: the operation then keeps its per-wait bound) */
 static int net_left(int64_t t0, int ms) {
     int64_t now = orin_platform_monotonic_millis(), left = ms - (now - t0);
     return ms < 0 || ms > ORIN_PLATFORM_NET_MAXMS || now < 0 || t0 < 0 ? ms : left < 0 ? 0 : left > ms ? ms : (int)left;
 }
+
+/* Errors a wait can see that say "not now" and not "never": poll/send/accept running out of kernel buffers (macOS reports ENOBUFS
+ * for a loopback send under memory pressure, EAGAIN/ENOMEM from poll). They are retried inside the wait, never surfaced as Os. */
+static int net_transient(int e) { return e == ENOBUFS || e == ENOMEM || e == EAGAIN || e == EINTR; }
+
+/* Waits until fd is ready for `ev` (fd < 0: just waits, woken by cancellation only): 0, NET_TIMEOUT, NET_CANCELLED (the bound token
+ * is set before or while waiting, and it wins over every other outcome), EINVAL for a bad timeout, or an errno. When the wake
+ * descriptor cannot be made (EMFILE/ENFILE) the wait polls in short slices and re-reads the flag instead, so descriptor
+ * exhaustion never turns into an error. */
+static int net_wait(int fd, short ev, int ms) {
+    if (ms < 0 || ms > ORIN_PLATFORM_NET_MAXMS) return ORIN_PLATFORM_EINVAL;
+    struct pollfd p[WAKE_DEPTH + 2];
+    int wf[WAKE_DEPTH + 1], n = 0, r = 0, sliced = 0;
+    p[0].fd = fd, p[0].events = ev, p[0].revents = 0;
+    if (t_wake) {
+        pthread_mutex_lock(&g_wk);
+        r = wake_walk(t_wake, wf, &n);
+        pthread_mutex_unlock(&g_wk);
+        if (r > 0) return ORIN_PLATFORM_NET_CANCELLED;
+        if (r < 0) sliced = 1, n = 0;
+    }
+    for (int i = 0; i < n; i++) p[i + 1].fd = wf[i], p[i + 1].events = POLLIN, p[i + 1].revents = 0;
+    int64_t t0 = orin_platform_monotonic_millis();
+    for (;;) {
+        int left = net_left(t0, ms), slice = sliced && left > 10 ? 10 : left;
+        while ((r = poll(p, (nfds_t)(n + 1), slice)) < 0 && errno == EINTR) {}
+        if (r < 0) { /* poll itself failed: cancellation takes precedence over the errno; resource shortage is retried */
+            int e = errno;
+            if (net_cancelled()) return ORIN_PLATFORM_NET_CANCELLED;
+            if (!net_transient(e)) return e;
+            poll(NULL, 0, 2);
+            if (net_left(t0, ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+            continue;
+        }
+        if (net_cancelled()) return ORIN_PLATFORM_NET_CANCELLED;
+        if (r == 0 && sliced && net_left(t0, ms) > 0) continue;
+        return r == 0 ? ORIN_PLATFORM_NET_TIMEOUT : 0;
+    }
+}
+
+/* Short pause that a cancellation ends: 0 after it, NET_CANCELLED when the token is set. */
+static int net_pause(void) {
+    int w = net_wait(-1, 0, 3);
+    return w == ORIN_PLATFORM_NET_TIMEOUT ? 0 : w;
+}
+
+/* The outcome of an operation that has waited: an error is NET_CANCELLED when the bound token was set before or during the call
+ * (whatever the system call reported after the wake: a reset, ECONNABORTED, EBADF, EMFILE ...), else unchanged. */
+static int net_fin(int e) { return e && e != ORIN_PLATFORM_NET_CANCELLED && net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : e; }
 
 static int net_err(int e) {
     return e == EAGAIN || e == EINTR ? ORIN_PLATFORM_NET_TIMEOUT
@@ -1018,17 +1045,24 @@ int orin_platform_tcp_listen(const orin_platform_net *g, const char *addr, size_
 int orin_platform_tcp_accept(const orin_platform_net *l, int timeout_ms, int opt, orin_platform_net *out, char *peer, size_t pcap,
                              int *peer_port) {
     if (net_ok(l, ORIN_PLATFORM_NET_LISTENER)) return ORIN_PLATFORM_EPERM;
-    int e = net_wait(l->fd, POLLIN, timeout_ms);
-    if (e) return e;
     struct sockaddr_storage ss;
-    socklen_t sl = sizeof ss;
+    socklen_t sl;
     char serv[16];
-    int fd = accept(l->fd, (struct sockaddr *)&ss, &sl);
+    int fd, e;
+    int64_t t0 = orin_platform_monotonic_millis();
+    for (;;) {
+        if ((e = net_wait(l->fd, POLLIN, net_left(t0, timeout_ms)))) return e;
+        sl = sizeof ss;
+        fd = accept(l->fd, (struct sockaddr *)&ss, &sl);
+        if (fd >= 0 || (errno != ENOBUFS && errno != ENOMEM)) break;
+        if ((e = net_pause())) return e; /* out of kernel buffers: not now; retry until the deadline */
+        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+    }
     if (fd >= 0 && (pcap == 0 || getnameinfo((struct sockaddr *)&ss, sl, peer, (socklen_t)pcap, serv, sizeof serv,
                                              NI_NUMERICHOST | NI_NUMERICSERV)))
         close(fd), fd = -1, errno = EINVAL;
     if (fd >= 0) *peer_port = atoi(serv);
-    return fd < 0 && (errno == EAGAIN || errno == ECONNABORTED) ? ORIN_PLATFORM_NET_TIMEOUT : net_make(fd, ORIN_PLATFORM_NET_STREAM, opt, out);
+    return net_fin(fd < 0 && (errno == EAGAIN || errno == ECONNABORTED) ? ORIN_PLATFORM_NET_TIMEOUT : net_make(fd, ORIN_PLATFORM_NET_STREAM, opt, out));
 }
 
 int orin_platform_tcp_connect(const orin_platform_net *g, const char *host, size_t hl, int port, int timeout_ms, int opt,
@@ -1045,31 +1079,43 @@ int orin_platform_tcp_connect(const orin_platform_net *g, const char *host, size
             socklen_t n = sizeof e;
             int w = net_wait(s, POLLOUT, net_left(t0, timeout_ms)), soe = 0;
             if (w == 0 && getsockopt(s, SOL_SOCKET, SO_ERROR, &soe, &n) == 0 && soe == 0) fd = s;
-            else e = net_err(w ? w : soe), close(s);
-        } else e = errno, s >= 0 ? close(s) : 0;
+            else e = net_fin(net_err(w ? w : soe)), close(s);
+        } else e = net_fin(errno), s >= 0 ? close(s) : 0;
     }
     freeaddrinfo(ai);
-    return fd < 0 ? e : net_make(fd, ORIN_PLATFORM_NET_STREAM, opt, out);
+    return fd < 0 ? net_fin(e) : net_fin(net_make(fd, ORIN_PLATFORM_NET_STREAM, opt, out));
 }
 
 int orin_platform_stream_recv(const orin_platform_net *s, char *buf, size_t cap, int timeout_ms, size_t *out_len) {
     *out_len = 0;
     if (net_ok(s, ORIN_PLATFORM_NET_STREAM)) return ORIN_PLATFORM_EPERM;
-    int e = cap == 0 ? ORIN_PLATFORM_EINVAL : net_wait(s->fd, POLLIN, timeout_ms);
-    if (e) return e;
-    ssize_t n = recv(s->fd, buf, cap, MSG_DONTWAIT);
-    if (n > 0 && (size_t)n <= cap) return *out_len = (size_t)n, 0;
-    return n == 0 ? ORIN_PLATFORM_NET_EOF : net_err(errno);
+    if (cap == 0) return ORIN_PLATFORM_EINVAL;
+    int64_t t0 = orin_platform_monotonic_millis();
+    for (;;) {
+        int e = net_wait(s->fd, POLLIN, net_left(t0, timeout_ms));
+        if (e) return e;
+        ssize_t n = recv(s->fd, buf, cap, MSG_DONTWAIT);
+        if (n > 0 && (size_t)n <= cap) return *out_len = (size_t)n, 0;
+        if (n == 0) return ORIN_PLATFORM_NET_EOF;
+        if (errno != ENOBUFS && errno != ENOMEM) return net_fin(net_err(errno));
+        if ((e = net_pause())) return e;
+        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+    }
 }
 
 int orin_platform_stream_send(const orin_platform_net *s, const char *data, size_t len, int timeout_ms, size_t *out_sent) {
     *out_sent = 0;
     if (net_ok(s, ORIN_PLATFORM_NET_STREAM)) return ORIN_PLATFORM_EPERM;
-    int e = net_wait(s->fd, POLLOUT, timeout_ms);
-    if (e || len == 0) return e;
-    ssize_t n = send(s->fd, data, len, NET_SEND_FLAGS);
-    if (n >= 0 && (size_t)n <= len) return *out_sent = (size_t)n, 0;
-    return net_err(errno);
+    int64_t t0 = orin_platform_monotonic_millis();
+    for (;;) {
+        int e = net_wait(s->fd, POLLOUT, net_left(t0, timeout_ms));
+        if (e || len == 0) return e;
+        ssize_t n = send(s->fd, data, len, NET_SEND_FLAGS);
+        if (n >= 0 && (size_t)n <= len) return *out_sent = (size_t)n, 0;
+        if (errno != ENOBUFS && errno != ENOMEM) return net_fin(net_err(errno));
+        if ((e = net_pause())) return e; /* macOS: ENOBUFS from a loopback send under load; wait for buffers, do not fail */
+        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+    }
 }
 
 int orin_platform_net_shutdown(const orin_platform_net *s, int how) {
