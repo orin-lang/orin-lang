@@ -597,3 +597,17 @@ not weaken contracts, add assumptions or widen grants to make a result pass.
 - `@Invariant` on a generic record is rejected (E0408).
 - `--check-contracts` needs `exit` from `std:process`; a module that declares its own `exit` clashes.
 - The editor grammar (`editors/vscode`) does not highlight clauses yet.
+
+## Verification ratchet
+
+`tools/verify_ratchet.py --check` runs `orin verify --contracts` on `compiler/main.or` and compares the result with
+`tools/verify-baseline/compiler.txt`. It fails on any REFUTED obligation and on any obligation with more UNKNOWN results
+than the baseline; improvements pass.
+
+To regenerate the baseline (for example after another PR changed the obligation counts), run one command and commit the file:
+
+```
+python3 tools/verify_ratchet.py --update --cache-dir build/ratchet/cache
+```
+
+When two PRs both move the counts, whichever merges second reruns this command after rebasing.
