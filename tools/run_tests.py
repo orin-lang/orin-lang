@@ -180,7 +180,7 @@ def runtime_objects(args):
     return objs
 
 
-# Tests that cannot pass on Orbit before it has threads (orbit:thread/v1): a client task and the server must run at the same time, but
+# Tests that cannot pass on wasm64-orbit, which has one thread (wasm32-orbit has orbit:thread/v1, decision 10): a client task and the server must run at the same time, but
 # the one WebAssembly thread blocks in accept (or recv) and runs a queued task only when it waits on a monitor or joins it.
 ORBIT_SERIAL = {
     "next/run/net_accepted_served_twice": "the client task cannot run while the only thread waits in accept",
@@ -201,6 +201,8 @@ def orbit_command(args, wasm):
             cmd += ["--grant", "process:stdin"]
         elif cap == "fs/v1":
             cmd += ["--grant", "fs:/work=%s:rw" % ROOT, "--cwd", "/work", "--fs-max-handles", "1024"]
+        elif cap == "thread/v1":
+            cmd += ["--grant", cap, "--max-threads", "1024"]  # Orbit's default is 64; the stress tests keep a few hundred tasks alive
         elif cap == "net/v1":
             cmd += ["--grant", "net:listen=127.0.0.1:0-65535", "--grant", "net:connect=*:0-65535"]
     return cmd
@@ -304,7 +306,7 @@ def run_test(args, label, test):
     if os.path.isfile(in_path):
         with open(in_path, "rb") as f:
             stdin_data = f.read()
-    if args.target in WASM_TARGETS and args.orbit and tag in ORBIT_SERIAL:
+    if args.target == WASM64 and args.orbit and tag in ORBIT_SERIAL:
         return tag, None, ORBIT_SERIAL[tag]
     if args.target in WASM_TARGETS and args.orbit:
         rc, out, err = run_cmd(orbit_command(args, exe), RUN_TIMEOUT, env=env, stdin_data=stdin_data)

@@ -25,7 +25,10 @@
 ORBIT_IMPORT("orbit:thread/v1", "spawn") int64_t orbit_thread_spawn(int64_t arg);
 ORBIT_IMPORT("orbit:clock/v1", "monotonic_nanos") int64_t orbit_clock_monotonic_nanos(void);
 
-enum { STACK = 1 << 20, THR_MAX = 1 << 16, MON_MAX = 1 << 14, CPUS = 4 };
+#ifndef ORBIT_THREAD_STACK
+#define ORBIT_THREAD_STACK (1 << 20) /* as the main thread's (-z stack-size); no guard page below it: an overflow runs into the next block */
+#endif
+enum { STACK = ORBIT_THREAD_STACK, THR_MAX = 1 << 16, MON_MAX = 1 << 14, CPUS = 4 };
 
 typedef struct {
     void (*entry)(void *);
@@ -50,7 +53,17 @@ extern void __wasm_init_tls(void *); /* synthesised by wasm-ld */
 uint64_t orin_platform_thread_id(void) { return t_tid; }
 uint64_t orin_platform_cpu_count(void) { return CPUS; }
 void orin_orbit_main_begin(void) {}
-void orin_orbit_main_end(void) {}
+/* Tasks nobody joined end before the program does (Orbit terminates threads left alive when main returns). */
+void orin_orbit_main_end(void) {
+    for (uint32_t i = 0;; i++) {
+        orbit_lock(&g_tab_lock);
+        Rec *r = i < g_thr_hi && g_thr[i].st == 1 ? g_thr[i].r : NULL;
+        int end = i >= g_thr_hi;
+        orbit_unlock(&g_tab_lock);
+        if (end) return;
+        while (r && !__atomic_load_n(&r->done, __ATOMIC_SEQ_CST)) orbit_wait(&r->done, 0, -1);
+    }
+}
 
 static void thread_done(Rec *r) {
     __atomic_store_n(&r->done, 1, __ATOMIC_SEQ_CST);

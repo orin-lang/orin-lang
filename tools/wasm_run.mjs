@@ -4,7 +4,7 @@
 // suite can run in CI without building Orbit. It is NOT a sandbox and NOT Orbit: Orbit is the runtime; this only serves
 // the capabilities the target uses.
 //
-//   node tools/wasm_run.mjs <module.wasm> [--deny CAP]... [--app-arg X]... [--stdin] [--mount /guest=hostdir[:rw]]... [--cwd /guest/dir] [--fs-max-handles N]
+//   node tools/wasm_run.mjs <module.wasm> [--deny CAP]... [--app-arg X]... [--stdin] [--mount /guest=hostdir[:rw]]... [--cwd /guest/dir] [--fs-max-handles N] [--max-threads N]
 //
 // Capabilities served: log/v1, clock/v1, process/v1 (arguments after argv[0] = the module name; stdin with --stdin) and fs/v1 (mounts
 // as in `orbit run --grant fs:/guest=./dir:rw`, the same statuses and path rules, synchronous Node file calls) and thread/v1. NOT served:
@@ -35,12 +35,13 @@ if (!file) {
 }
 const denied = new Set();
 const appArgs = [], mounts = [];
-let stdinGranted = false, cwd = '/', maxHandles = 64;
+let stdinGranted = false, cwd = '/', maxHandles = 64, maxThreads = 1024; // Orbit's default is 64 and its ceiling 1024 (--max-threads)
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === '--deny' && i + 1 < rest.length) denied.add(rest[++i]);
   else if (rest[i] === '--app-arg' && i + 1 < rest.length) appArgs.push(rest[++i]);
   else if (rest[i] === '--stdin') stdinGranted = true;
   else if (rest[i] === '--cwd' && i + 1 < rest.length) cwd = rest[++i];
+  else if (rest[i] === '--max-threads' && i + 1 < rest.length) maxThreads = Number(rest[++i]);
   else if (rest[i] === '--fs-max-handles' && i + 1 < rest.length) maxHandles = Number(rest[++i]);
   else if (rest[i] === '--mount' && i + 1 < rest.length) {
     const m = /^(\/[^=]*)=(.*?)(:rw|:ro)?$/.exec(rest[++i]);
@@ -49,10 +50,11 @@ for (let i = 0; i < rest.length; i++) {
   } else { process.stderr.write(`wasm_run: unknown argument ${rest[i]}\n`); process.exit(2); }
 }
 const ERR_INVALID = -1n, ERR_QUOTA = -6n;
-const MAX_THREADS = 4096; // workers of one module (Orbit has a quota too)
+const MAX_WORKERS = 4096; // workers of one module, idle ones included
 // ctrl: Int32Array over a SharedArrayBuffer: next thread id, exit requested, exit status, workers, idle workers, job queue head / tail,
 // futex word of the queue, its lock
-const NEXT = 0, EXIT = 1, STATUS = 2, WORKERS = 3, IDLE = 4, HEAD = 5, TAIL = 6, SEM = 7, QLOCK = 8, JOBS = 4096;
+const NEXT = 0, EXIT = 1, STATUS = 2, WORKERS = 3, IDLE = 4, HEAD = 5, TAIL = 6, SEM = 7, QLOCK = 8, LIVE = 9, JOBS = 4096;
+const ERR_DENIED = -2n, ERR_CANCELLED = -11n;
 const fail = (msg) => { process.stderr.write(`wasm_run: ${msg}\n`); process.exit(2); };
 
 // The limits of the imported memory `env.memory` (WebAssembly.Module.imports does not tell): parse the import section.
@@ -148,10 +150,26 @@ function resolveGuest(ptr, len) {
   }
   return { mount, host, abs };
 }
-const handles = new Map();
-let nextHandle = 1;
-const addHandle = (h) => { if (handles.size >= maxHandles) return QUOTA; handles.set(nextHandle, h); return nextHandle++; };
-const hget = (h) => handles.get(Number(h));
+// fs/v1 handles are valid in every thread (Orbit: one table per isolate): files live in a table in shared memory (state, fd, mode; the
+// fds are process-wide), a directory listing stays in the worker that opened it (its handle is BAD_HANDLE elsewhere).
+const htab = isWorker ? workerData.htab : new Int32Array(new SharedArrayBuffer(12 * maxHandles));
+const localDirs = new Map();
+const addHandle = (h) => {
+  for (let i = 0; i < maxHandles; i++) {
+    if (Atomics.compareExchange(htab, 3 * i, 0, -1) !== 0) continue;
+    if (h.entries) { localDirs.set(i + 1, h); htab[3 * i + 1] = -1; htab[3 * i + 2] = 0; Atomics.store(htab, 3 * i, 2); }
+    else { htab[3 * i + 1] = h.fd; htab[3 * i + 2] = h.mode; Atomics.store(htab, 3 * i, 1); }
+    return i + 1;
+  }
+  return QUOTA;
+};
+const hget = (h) => {
+  const i = Number(h) - 1;
+  if (!(i >= 0 && i < maxHandles)) return undefined;
+  const st = Atomics.load(htab, 3 * i);
+  return st === 1 ? { fd: htab[3 * i + 1], mode: htab[3 * i + 2] } : st === 2 ? localDirs.get(i + 1) : undefined;
+};
+const hfree = (h) => { localDirs.delete(Number(h)); Atomics.store(htab, 3 * (Number(h) - 1), 0); };
 const big = (x) => BigInt(x);
 caps['process/v1'] = {
   arg_count: () => argv.length,
@@ -204,7 +222,7 @@ caps['fs/v1'] = {
   close(h) {
     const f = hget(h);
     if (!f) return BAD_HANDLE;
-    handles.delete(Number(h));
+    hfree(h);
     if (!f.entries) nodeFs.closeSync(f.fd);
     return OK;
   },
@@ -312,6 +330,9 @@ const unlockQ = (ctrl) => Atomics.store(ctrl, QLOCK, 0);
 function threadSpawner(common) {
   const { ctrl, jobs } = common;
   return (arg) => {
+    if (maxThreads === 0) return ERR_DENIED;
+    if (Atomics.load(ctrl, EXIT)) return ERR_CANCELLED; // the module is ending
+    if (Atomics.add(ctrl, LIVE, 1) >= maxThreads) { Atomics.sub(ctrl, LIVE, 1); return ERR_QUOTA; } // spawned threads alive at once
     const tid = Atomics.add(ctrl, NEXT, 1) + 1;
     lockQ(ctrl);
     if (Atomics.load(ctrl, IDLE) > 0) { // hand the job to an idle worker
@@ -324,10 +345,10 @@ function threadSpawner(common) {
       return BigInt(tid);
     }
     unlockQ(ctrl);
-    if (Atomics.load(ctrl, WORKERS) >= MAX_THREADS) return ERR_QUOTA;
+    if (Atomics.load(ctrl, WORKERS) >= MAX_WORKERS) { Atomics.sub(ctrl, LIVE, 1); return ERR_QUOTA; }
     Atomics.add(ctrl, WORKERS, 1);
     try { new Worker(fileURLToPath(import.meta.url), { workerData: { ...common, first: { tid, arg: Number(arg) } } }); }
-    catch { Atomics.sub(ctrl, WORKERS, 1); return ERR_INVALID; }
+    catch { Atomics.sub(ctrl, WORKERS, 1); Atomics.sub(ctrl, LIVE, 1); return ERR_INVALID; }
     return BigInt(tid);
   };
 }
@@ -346,6 +367,7 @@ if (isWorker) {
     for (;;) {
       const [st, trapped] = guarded(instance, () => instance.exports.orin_thread_start(BigInt(job.tid), BigInt(job.arg)));
       if (trapped) { endModule(ctrl, st); break; }
+      Atomics.sub(ctrl, LIVE, 1);
       job = null;
       lockQ(ctrl); Atomics.add(ctrl, IDLE, 1); unlockQ(ctrl);
       while (!job) {
@@ -367,7 +389,7 @@ if (isWorker) {
   Atomics.store(ctrl, WORKERS, 1);
   caps['thread/v1'] = { spawn: () => ERR_INVALID };
   buildImports(); // the load checks fail here, with status 2, before anything starts
-  const w = new Worker(fileURLToPath(import.meta.url), { workerData: { mod, memory, ctrl, jobs, start, first: null, cfg: [file, ...rest] } });
+  const w = new Worker(fileURLToPath(import.meta.url), { workerData: { mod, memory, ctrl, jobs, start, first: null, htab, cfg: [file, ...rest] } });
   w.on('error', (e) => { process.stderr.write(`wasm_run: ${e && e.stack || e}\n`); process.exit(134); });
   Atomics.waitAsync(ctrl, EXIT, 0).value.then(() => process.exit(Atomics.load(ctrl, STATUS)));
 } else {

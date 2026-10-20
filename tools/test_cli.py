@@ -436,13 +436,19 @@ class CliTests(unittest.TestCase):
         self.assertIn(b'orbit.manifest{"abi":1,"requires":["log/v1"],"producer":"orin"}', module32)
         self.assertNotIn(b"wasi_snapshot_preview1", module32)
         self.assertNotEqual(module, module32)
-        # tasks run one at a time inside the one WebAssembly thread: the program builds (no E0523) and keeps the orin_tls section
+        self.assertNotIn(b"orbit:thread/v1", module32)  # a program without tasks imports no spawn
+        # wasm64: tasks run one at a time inside the one WebAssembly thread (the orin_tls section); wasm32: real threads (ADR-0055 decision 10):
+        # the module imports spawn and lists thread/v1, and has no orin_tls section
         (project / "src/main.or").write_text('import { scope, spawn } from "std:task";\n'
                                               'function main(): void { console.log(scope(s => spawn(s, () => 6 * 7).join()).toString()); }\n')
         self.run_cli("build", "--target=wasm64-orbit", cwd=project, env={"CC": "clang"})
         self.assertIn(b"orin_tls", (project / "build/dev/hello.wasm").read_bytes())
         self.run_cli("build", "--target=wasm32-orbit", cwd=project, env={"CC": "clang"})
-        self.assertIn(b"orin_tls", (project / "build/dev/hello.wasm").read_bytes())
+        threaded = (project / "build/dev/hello.wasm").read_bytes()
+        self.assertNotIn(b"orin_tls", threaded)
+        self.assertIn(b"orbit:thread/v1", threaded)
+        self.assertIn(b'"requires":["clock/v1","log/v1","thread/v1"]', threaded)
+        self.assertIn(b"orin_thread_start", threaded)
         # files, arguments and the network are capabilities of the target (orbit:fs/v1, process/v1, net/v1): the module imports exactly those listed
         (project / "src/main.or").write_text('import { Host, withHost } from "std:host";\n'
                                               'import { readFile } from "std:fs";\n'
