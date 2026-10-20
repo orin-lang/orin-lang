@@ -186,7 +186,7 @@ function workerLoop(rx: Receiver<Accepted>, commands: Sender<Command>): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         serveAcceptedDo(
           a,
           (s: Stream, peer: Peer) => {
@@ -195,7 +195,7 @@ function workerLoop(rx: Receiver<Accepted>, commands: Sender<Command>): int {
         );
         served += 1;
       },
-      None => {
+      Err(e) => {
         going = false;
       },
     }

@@ -18,7 +18,7 @@ function main(): void {
       let items = 0;
       while (true) {
         const m = ch.rx.recv();
-        if (m.isNone()) {
+        if (m.isErr()) {
           break;
         }
         sum += m.unwrap();

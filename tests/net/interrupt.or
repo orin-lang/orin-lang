@@ -215,7 +215,7 @@ function cancelCase(net: NetGrant, name: string, which: int): string {
       return which == 0 ? blockedAccept(t, tx) : (which == 1 ? blockedRecv(t, tx) : (which == 2 ? blockedSend(t, tx) : blockedConnect(t, tx)));
     });
     const stopper = spawnNet(sc, g, (t: NetGrant) => {
-      const t0 = rx.recv().unwrapOr(0);
+      const t0 = match (rx.recv()) { Ok(v) => v, Err(e) => 0 };
       sleepUntil(at(t0 + DELAY));
       return tok.cancel();
     });
@@ -267,7 +267,7 @@ function nested(net: NetGrant): string {
         const innerTok = sc2.token();
         const innerProbe = spawnNet(sc2, g2, (u: NetGrant) => blockedAccept(u, txInner));
         const innerStop = spawnNet(sc2, g2, (u: NetGrant) => {
-          const t0 = rxInner.recv().unwrapOr(0);
+          const t0 = match (rxInner.recv()) { Ok(v) => v, Err(e) => 0 };
           sleepUntil(at(t0 + DELAY));
           return innerTok.cancel();
         });
@@ -276,7 +276,7 @@ function nested(net: NetGrant): string {
         return p;
       });
     });
-    const outerStart = rxOuter.recv().unwrapOr(0);
+    const outerStart = match (rxOuter.recv()) { Ok(v) => v, Err(e) => 0 };
     const innerResult = middle.join();
     sleepUntil(at(outerStart + 3 * DELAY));
     const outerSet = outerTok.cancel();

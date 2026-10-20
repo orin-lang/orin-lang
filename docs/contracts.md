@@ -468,7 +468,11 @@ analysis cannot read (a call it cannot resolve) has the whole object as its fram
 - A user `@Invariant(e)` before `while` / `for` (syntax of ADR-0012; never checked at run time, only statically) is proved on entry and for one
   iteration (`loop-invariant` results), then assumed after the loop together with the negated condition.
 - A counting loop `while (i < N)` (or `<=`) whose body only does `i += 1` once per iteration, with `N` not changed by the body,
-  gets `i0 <= i <= max(i0, N)` for free; it is proved like a user invariant but not reported by itself.
+  gets `i0 <= i <= max(i0, N)` for free; it is proved like a user invariant but not reported by itself. The comparison may
+  be one conjunct of a `&&` chain (`while (i < xs.length && xs[i] < 0)`: the body runs only when every conjunct holds), and
+  each conjunct of that form gives its own bound. These hidden obligations are first asked with only their own premises
+  (the hypotheses of the inferred counters, the loop condition and the facts these terms depend on), which keeps them
+  small in a long function; a proof from fewer premises is a proof from all of them, and when it fails the full query is asked.
 - Otherwise what the loop assigns (variables, `this.f`, receivers of `push` / `pop` / `set` / `delete` / mutating methods)
   is havoc'd. When the clause depends on it the result is UNKNOWN: "loop without invariant: ... is unconstrained after the loop",
   `action: STRENGTHEN_SPEC`. In `for (const x of xs)` the element is `xs[i]` for the position `i` of the iteration. A body with `break` or `continue`

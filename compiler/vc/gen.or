@@ -24,7 +24,7 @@ export type Obl = {
 // declared before its first use. Facts are definitions and valid axioms that hold in every execution (a fresh
 // constant equals the term it names, a pure function satisfies its contract at a call): they are asserted
 // in every query. Path-dependent assumptions are not facts; they travel in the path condition of the state.
-@Invariant(this.sortKeys.length == this.sortSmts.length && this.litTexts.length == this.litNames.length)
+@Invariant(this.sortKeys.length == this.sortSmts.length && this.litTexts.length == this.litNames.length && this.coreIds.length == this.coreTerms.length)
 export class Gen {
   private decls: string[] = [];
   private facts: string[] = [];
@@ -45,6 +45,8 @@ export class Gen {
   private memoVals: string[] = [];
   private usedIds: string[] = [];
   private active: string[] = [];
+  private coreIds: usize[] = [];
+  private coreTerms: string[][] = [];
 
   // A new unique SMT symbol with the given prefix (the counter only grows, so no symbol is handed out twice).
   @Ensures(this.counter == old(this.counter) + 1)
@@ -311,6 +313,42 @@ export class Gen {
   oblList(): Obl[] {
     return this.obls;
   }
+
+  // The path-condition terms that an obligation needs (its "core"): the hypotheses of an inferred loop counter, which the
+  // proof of its bound uses and nothing else. An obligation with a core is first tried with only these terms and the
+  // facts they depend on (`FactIx`); a proof from fewer premises is a proof from all of them.
+  @Ensures(this.coreOf(id).isSome())
+  setCore(id: usize, terms: string[]): void {
+    this.coreIds.push(id);
+    this.coreTerms.push(terms);
+  }
+
+  coreOf(id: usize): Option<string[]> {
+    let i = this.coreIds.length;
+    while (i > 0) {
+      i -= 1;
+      if (this.coreIds[i] == id) {
+        return Some(this.coreTerms[i]);
+      }
+    }
+    return None;
+  }
+
+  // The names of the declared constants (`(declare-const NAME SORT)`).
+  constNames(): string[] {
+    let out: string[] = [];
+    const pre = "(declare-const ";
+    for (const d of this.decls) {
+      if (d.startsWith(pre)) {
+        const rest = d.substring(pre.length, d.length);
+        const sp = rest.indexOf(" ");
+        if (sp.isSome()) {
+          out.push(rest.substring(0, sp.unwrap()));
+        }
+      }
+    }
+    return out;
+  }
 }
 
 function isSymChar(c: usize): bool {
@@ -336,6 +374,123 @@ export function hasToken(text: string, tok: string): bool {
     pos = start + 1;
   }
   return false;
+}
+
+// The symbols of an SMT text: maximal runs of symbol characters that do not start with a digit (numerals are no symbols).
+function symbolsOf(text: string): string[] {
+  let out: string[] = [];
+  let i: usize = 0;
+  while (i < text.length) {
+    const c = text.charCodeAt(i).toUsize();
+    if (isSymChar(c)) {
+      let j = i + 1;
+      while (j < text.length && isSymChar(text.charCodeAt(j).toUsize())) {
+        j += 1;
+      }
+      if (c < 48 || c > 57) {
+        out.push(text.substring(i, j));
+      }
+      i = j;
+    } else {
+      i += 1;
+    }
+  }
+  return out;
+}
+
+// The facts of a function with the declared constants each mentions, and the facts that define a constant (`(= c ..)`).
+// A query that needs few premises asks `slice` for the facts they depend on instead of asserting every fact.
+export type FactIx = { facts: string[]; fcs: string[][]; defs: Map<string, usize[]>; known: Map<string, bool>; };
+
+export function factIndex(g: Gen): FactIx {
+  const facts = g.factsList().concat(g.lemmasList());
+  let known = new Map<string, bool>();
+  for (const c of g.constNames()) {
+    known.set(c, true);
+  }
+  let fcs: string[][] = [];
+  let defs = new Map<string, usize[]>();
+  let k: usize = 0;
+  for (const f of facts) {
+    let cs: string[] = [];
+    for (const t of symbolsOf(f)) {
+      if (known.has(t) && !cs.includes(t)) {
+        cs.push(t);
+      }
+    }
+    fcs.push(cs);
+    if (f.startsWith("(= ") && f.length > 3 && isSymChar(f.charCodeAt(3).toUsize())) {
+      let j: usize = 4;
+      while (j < f.length && isSymChar(f.charCodeAt(j).toUsize())) {
+        j += 1;
+      }
+      const lhs = f.substring(3, j);
+      if (known.has(lhs)) {
+        const cur = defs.get(lhs);
+        defs.set(lhs, cur.isSome() ? cur.unwrap().concat([k]) : [k]);
+      }
+    }
+    k += 1;
+  }
+  return FactIx { facts: facts, fcs: fcs, defs: defs, known: known };
+}
+
+// The facts that the terms `seeds` depend on, in the order of the function: the definitions (`(= c ..)`) of the constants
+// they mention, and of the constants those mention, every fact without a constant (an axiom), and every other fact whose
+// constants are all among the ones reached. Any subset of the facts is sound to assert for a proof (a proof from fewer
+// premises is a proof from all of them); the point is a query the solver can answer.
+export function slice(ix: FactIx, seeds: string[]): string[] {
+  let reached = new Map<string, bool>();
+  let work: string[] = [];
+  for (const sd of seeds) {
+    for (const t of symbolsOf(sd)) {
+      if (ix.known.has(t) && !reached.has(t)) {
+        reached.set(t, true);
+        work.push(t);
+      }
+    }
+  }
+  let sel: bool[] = [];
+  let k: usize = 0;
+  while (k < ix.facts.length) {
+    sel.push(false);
+    k += 1;
+  }
+  while (work.length > 0) {
+    const c = work.pop().unwrap();
+    const d = ix.defs.get(c);
+    if (d.isSome()) {
+      for (const fi of d.unwrap()) {
+        if (!sel[fi]) {
+          sel[fi] = true;
+          for (const t of ix.fcs[fi]) {
+            if (!reached.has(t)) {
+              reached.set(t, true);
+              work.push(t);
+            }
+          }
+        }
+      }
+    }
+  }
+  let out: string[] = [];
+  k = 0;
+  while (k < ix.facts.length) {
+    let ok = sel[k];
+    if (!ok) {
+      ok = true;
+      for (const t of ix.fcs[k]) {
+        if (!reached.has(t)) {
+          ok = false;
+        }
+      }
+    }
+    if (ok) {
+      out.push(ix.facts[k]);
+    }
+    k += 1;
+  }
+  return out;
 }
 
 export type SortR = { g: Gen; s: string; };

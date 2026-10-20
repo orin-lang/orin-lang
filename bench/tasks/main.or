@@ -38,10 +38,10 @@ function pingPong(): int {
       let more = true;
       while (more) {
         match (ping.rx.recv()) {
-          Some(v) => {
+          Ok(v) => {
             pong.tx.send(v + 1);
           },
-          None => {
+          Err(e) => {
             more = false;
           },
         }
@@ -53,10 +53,10 @@ function pingPong(): int {
     while (round < 100000) {
       ping.tx.send(v);
       match (pong.rx.recv()) {
-        Some(r) => {
+        Ok(r) => {
           v = r + 1;
         },
-        None => {
+        Err(e) => {
           v = -1;
         },
       }
@@ -85,10 +85,10 @@ function throughput(): int {
     let more = true;
     while (more) {
       match (ch.rx.recv()) {
-        Some(v) => {
+        Ok(v) => {
           sum += v;
         },
-        None => {
+        Err(e) => {
           more = false;
         },
       }
