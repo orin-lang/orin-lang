@@ -48,6 +48,7 @@ HEADER_ERROR = re.compile(r"^//\s*error:\s*(E\d{4})\s*$")
 HEADER_FLAGS = re.compile(r"^//\s*flags:\s*(.*?)\s*$")
 HEADER_WARNS = re.compile(r"^//\s*warns:\s*(.*?)\s*$")
 WARNING_CODE = re.compile(r"warning\[(W\d{4})\]")
+HEADER_WASM_SKIP = re.compile(r"^//\s*wasm-skip:\s*(.*?)\s*$")  # the test needs two tasks running at once: SKIP on the wasm targets, not run
 HEADER_STDERR = re.compile(r"^//\s*stderr:\s*(.*?)\s*$")
 
 
@@ -187,7 +188,11 @@ def run_test(args, label, test):
     flags = []          # `// flags: --check-contracts` (any header line): extra compiler flags
     want_warns = None   # `// warns: W0450 W0452` (or `none`): the warning codes of the compile, as a sorted list
     want_stderr = []    # `// stderr: text` (any header line): stderr of the run (of the compile, for an error test) must contain text
+    wasm_skip = None    # `// wasm-skip: reason` (any header line): not run on the wasm targets (one task at a time, no way to detect it by a limit line)
     for h in hdrs:
+        m = HEADER_WASM_SKIP.match(h)
+        if m:
+            wasm_skip = m.group(1)
         m = HEADER_FLAGS.match(h)
         if m:
             flags += m.group(1).split()
@@ -226,6 +231,8 @@ def run_test(args, label, test):
     with open(exp, "r", encoding="utf-8", errors="replace") as f:
         want_out = f.read()
 
+    if wasm_skip and args.target in WASM_TARGETS:
+        return tag, None, wasm_skip
     rc, _, err = compile_orin(args, entry, c_out, flags)
     if rc is None:
         return tag, False, "compiler timed out"

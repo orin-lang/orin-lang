@@ -54,7 +54,7 @@ mismatch), exit status, or compiler/C stderr head. Exit status is non-zero if an
 ## Headers for `tests/next`
 
 Beyond `// exit: N`, the leading `//` comment lines of a test may contain `// flags: --check-contracts`
-(extra compiler flags, ADR-0012), `// stderr: text` (the run's stderr must contain `text`; for an error test the compiler's stderr, which pins the text of a message) and `// warns: W0450 W0452` (the warning codes of the compile, as a multiset, must be exactly these; `// warns: none` for no warning; ADR-0028).
+(extra compiler flags, ADR-0012), `// stderr: text` (the run's stderr must contain `text`; for an error test the compiler's stderr, which pins the text of a message) and `// warns: W0450 W0452` (the warning codes of the compile, as a multiset, must be exactly these; `// warns: none` for no warning; ADR-0028). `// wasm-skip: reason` makes the wasm targets count the test as SKIP with that reason without running it, for a program whose tasks must run at the same time in a way the L0 cannot detect (a task that busy-polls a flag only another task sets: it hangs instead of ending with a `wasm64-orbit: ` line).
 `tests/contracts/` holds inputs for `tools/test_verify_contracts.py` (`orin verify --contracts`,
 needs z3): expected results are given as `// expect: <function> <kind> <STATUS>` lines.
 

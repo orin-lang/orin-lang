@@ -1,6 +1,8 @@
 // exit: 101
 // stderr: trap: task panicked: unwrap on None
 // stderr: also trapped: index out of bounds
+// wasm-skip: a task busy-polls isCancelled() for a flag only its trapping sibling sets; tasks run one at a time to completion, so it never ends
+// differential-skip-builtins: C2 behaviour change (a trapping child cancels its siblings; legacy never delivers the cancellation and hangs); the legacy world (--c-builtins, bootstrap/seed/runtime) is frozen
 // std:task, primary and secondary failures (C2): two tasks of one scope trap. The task spawned FIRST only traps after it saw the
 // cancellation caused by the other one, so the second one is the primary failure. The scope joins in spawn order, but reports the failure
 // that happened first, with the later one after it ("also trapped").

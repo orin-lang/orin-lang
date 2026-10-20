@@ -1,5 +1,6 @@
 // exit: 101
 // stderr: trap: unwrap on None
+// differential-skip-builtins: C2 behaviour change (a trap in the scope body cancels the live children, which now print their cancellation line); the legacy world (--c-builtins, bootstrap/seed/runtime) is frozen
 // std:task, trap-safe cleanup (C2): a trap in the BODY of a scope (the main thread here) cancels the tasks that are still running and joins
 // them before the process exits, so their output is complete. (Before C2 the process ended at once and the child never saw the
 // cancellation.)
