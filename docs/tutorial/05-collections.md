@@ -70,14 +70,15 @@ the appears 3 times
 ## What is in it
 
 **Arrays** are written `int[]` and `[5, 3, 8]`. They are values like everything else, and a `let` array can grow:
-`xs.push(7)`. `xs.length` is a `usize`. Indexing `xs[0]` traps when out of range, so when an index can be wrong use
+`xs.push(7)`. `xs.length` is a `usize`, and an index must be a `usize` too: a literal such as `xs[0]` is fine, an `int` variable needs
+`xs[i.toUsize()]`, and `xs.length.toInt()` gives an `int` (chapter 2). Indexing `xs[0]` traps when out of range, so when an index can be wrong use
 `xs.get(10)`, which returns an `Option`. The methods `map`, `filter`, `reduce`, `find`, `some`, `every`, `sort` and
 `forEach` take closures (`sort` takes a comparison returning a negative, zero or positive `int`, and returns a sorted copy). An empty array needs a type (`const none: int[] = [];`). `for (const x of xs)` visits each
 element.
 
 **Strings** are immutable byte strings with UTF-8 passing through unchanged. `length` is the byte count. Methods:
 `split`, `trim`, `substring(a, b)`, `includes`, `startsWith`, `endsWith`, `indexOf` (an `Option`), `charAt`, and
-`parts.join(", ")` on an array of strings. `s[i]` is not allowed; use `charAt` or `substring`. For richer text work there
+`parts.join(", ")` on an array of strings. `s[i]` is not allowed; use `charAt` or `substring`. There is no `toLowerCase` or `toUpperCase` yet. For richer text work there
 are `std:text` and `std:utf8` ([std.md](../std.md)).
 
 **Map** is a generic dictionary: `new Map<string, int>()`, `set(k, v)`, `get(k)` (an `Option`), `has`, `delete`, `size`,

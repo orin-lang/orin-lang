@@ -24,7 +24,7 @@ function names(ms: StdMutant[]): string {
 function theTableHasTheMutantsOfEveryModule(): void {
   const all = stdMutants();
   assertEqUsize(all.length, 205, "std mutants");
-  assertEqUsize(countOf(all, "taskcore"), 16, "taskcore");
+  assertEqUsize(countOf(all, "task_internal"), 16, "task_internal");
   assertEqUsize(countOf(all, "bytes"), 19, "bytes");
   assertEqUsize(countOf(all, "utf8"), 19, "utf8");
   assertEqUsize(countOf(all, "collections"), 37, "collections");
@@ -33,7 +33,7 @@ function theTableHasTheMutantsOfEveryModule(): void {
   assertEqUsize(countOf(all, "text"), 7, "text");
   assertEqUsize(countOf(all, "html"), 58, "html");
   assertEqUsize(netMutants().length, 10, "net mutants");
-  assertEqString(all[0].target + "/" + all[0].name, "taskcore/ring-push-slot-ignores-head", "first mutant");
+  assertEqString(all[0].target + "/" + all[0].name, "task_internal/ring-push-slot-ignores-head", "first mutant");
   assertEqString(netMutants()[0].name, "delimiterEnd-misses-delimiter-at-end", "first net mutant");
 }
 
@@ -107,16 +107,21 @@ function testFilesOfAModule(): void {
 function importsOfTheStdModulesBecomeRelative(): void {
   assertEqString(rewriteImports("import { a } from \"std:bytes\";\nimport { b } from \"std:test\";"),
     "import { a } from \"./bytes\";\nimport { b } from \"std:test\";", "only the mutated modules");
-  assertEqString(rewriteImports("\"std:taskcore\" \"std:ox\" \"std:html\""), "\"./taskcore\" \"./ox\" \"./html\"", "taskcore ox html");
+  assertEqString(rewriteImports("\"std:task/internal\" \"std:ox\" \"std:html\""), "\"./task_internal\" \"./ox\" \"./html\"", "task/internal ox html");
+  assertEqString(
+    rewriteImports("import { transferCount } from \"std:fsraw\";\nx"),
+    "function transferCount(which: usize): usize { return 0; }\nx",
+    "the fsraw import of task_internal becomes a stub",
+  );
   assertEqString(rewriteImports("\"std:net\""), "\"std:net\"", "net stays");
   assertEqString(rewriteImports("std:bytes"), "std:bytes", "quotes delimit the name");
 }
 
 @Test
 function resultLinesHaveTheFixedFormat(): void {
-  const r = Row { target: "taskcore", name: "ring-push-slot-ignores-head", status: "killed by tests", fails1: 2, viol: 0, fails2: 2 };
+  const r = Row { target: "task_internal", name: "ring-push-slot-ignores-head", status: "killed by tests", fails1: 2, viol: 0, fails2: 2 };
   assertEqString(rowLine(r),
-    "taskcore     ring-push-slot-ignores-head          killed by tests      tests failing:  2 (contract traps  0); without contracts:  2",
+    "task_internal ring-push-slot-ignores-head          killed by tests      tests failing:  2 (contract traps  0); without contracts:  2",
     "columns");
   const big = Row { target: "html", name: "x", status: "SURVIVED", fails1: 100, viol: 12, fails2: 0 };
   assertEqString(rowLine(big),
@@ -140,7 +145,7 @@ function summaryPerModuleInOrderOfAppearance(): void {
 
 @Test
 function mutantNamesAreListedInOrder(): void {
-  const first = selectStd(stdMutants(), netMutants(), "taskcore", 1, 1);
-  assertEqUsize(first.length, 16, "taskcore");
-  assertEqBool(names(first).startsWith("taskcore/ring-push-slot-ignores-head taskcore/ring-push-forgets-len"), true, "table order");
+  const first = selectStd(stdMutants(), netMutants(), "task", 1, 1);
+  assertEqUsize(first.length, 16, "task");
+  assertEqBool(names(first).startsWith("task_internal/ring-push-slot-ignores-head task_internal/ring-push-forgets-len"), true, "table order");
 }

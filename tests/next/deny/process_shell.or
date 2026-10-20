@@ -1,8 +1,8 @@
 // ORIN_DENY=process: `shell` traps and never runs the command
-import { Host, useProcess } from "std:host";
+import { Host, withProcess } from "std:host";
 import { shell } from "std:io";
 function main(host: Host): void {
-  useProcess(host, proc => {
+  withProcess(host, proc => {
     console.log("before");
     console.log(shell(proc, "echo SHELL RAN").unwrap().toString());
   });

@@ -1,0 +1,16 @@
+// flags: --check-contracts
+// CON-6: a field assignment whose place has an index with a call in it (`xs[next()].f = v`) is not checked for record
+// invariants (the index would be evaluated twice); the same write with a plain index is checked (see
+// contracts_record_assign_violation).
+@Invariant(this.n >= 0)
+type Cell = { n: int; };
+
+function next(): usize {
+  return 0;
+}
+
+function main(): void {
+  let xs = [Cell { n: 1 }];
+  xs[next()].n = -5;
+  console.log(xs[0].n.toString());
+}

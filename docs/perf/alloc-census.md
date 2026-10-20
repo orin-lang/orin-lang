@@ -369,7 +369,7 @@ Sites are MIR instructions (`function` + block.instruction); the same std functi
 | http_parse | `stdlib/http.MessageParser.feed` stdlib/http.or:1727 | variant Done(z, used) | 40,601 | 2.0% | (a) |
 | tasks | `stdlib/task.putBox<int>` stdlib/task.or:62 | record Box<T> (1 field) | 1,220,000 | 82.4% | (g) |
 | tasks | `stdlib/task.putBox<()=>void>` stdlib/task.or:62 | record (the runtime's transfer box) | 100,023 | 6.8% | (g) |
-| tasks | `stdlib/taskcore.Ledger.constructor` stdlib/taskcore.or:122 | class object Ledger (3 fields) | 40,206 | 2.7% | (c) |
+| tasks | `stdlib/task_internal.Ledger.constructor` stdlib/task_internal.or:122 | class object Ledger (3 fields) | 40,206 | 2.7% | (c) |
 | tasks | `stdlib/task.spawn<int>` stdlib/task.or:360 | closure | 40,000 | 2.7% | - |
 | tasks | `main.spawnJoin$closure0` bench/tasks/main.or:19 | closure | 40,000 | 2.7% | - |
 | bintrees | `main.make` bench/bintrees/main.or:5 | variant Node(Tree, Tree) | 16,842,752 | 50.4% | (f) |
@@ -417,7 +417,7 @@ Sites are MIR instructions (`function` + block.instruction); the same std functi
 | html_hand | `main.render` bench/html_hand/main.or:17 | string | 800,000 | 15.9% | ?* |
 | html_hand | `main.render` bench/html_hand/main.or:18 | string | 800,000 | 15.9% | ?* |
 | html_hand | `main.render` bench/html_hand/main.or:15 | string | 685,600 | 13.6% | ?* |
-| streams_parallel | `stdlib/taskcore.Ranges.constructor` stdlib/taskcore.or:172 | class object Ranges (4 fields) | 12,260 | 16.5% | (c) |
+| streams_parallel | `stdlib/task_internal.Ranges.constructor` stdlib/task_internal.or:172 | class object Ranges (4 fields) | 12,260 | 16.5% | (c) |
 | streams_parallel | `stdlib/task.loadRanges` stdlib/task.or:647 | array<usize> (lo / hi of the workers) | 12,250 | 16.5% | (g) |
 | streams_parallel | `stdlib/task.loadRanges` stdlib/task.or:648 | array<usize> (lo / hi of the workers) | 12,250 | 16.5% | (g) |
 | streams_parallel | `stdlib/task.inOrder<Option<int>>` stdlib/task.or:762 | Option | 12,210 | 16.4% | (a)* |

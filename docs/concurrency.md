@@ -6,7 +6,7 @@ remains is split into L0 primitives that stay C forever and one small temporary 
 [ADR-0017](decisions/0017-concurrency-design.md) and its addendum "Stage 0 as built"; related: ADR-0027 (grants are
 resources; Q10), ADR-0030 (L0 is the only C), spec 19, ADR-0038 (per-task regions later).
 
-Module: `std:task` (`library/std/task.or`, unstable; its pure bookkeeping classes are in `std:taskcore`). Stage 0 has no `async` / `await`.
+Module: `std:task` (`library/std/task.or`, unstable; its pure bookkeeping classes are in `std:task/internal`). Stage 0 has no `async` / `await`.
 
 The [proposed async/concurrency roadmap](roadmaps/async-concurrency.md) records the
 current baseline, cleanup/cancellation/deadline prerequisites and scheduler/syntax
@@ -24,7 +24,7 @@ const total = scope(s => {                    // structured: every task started 
 });
 
 const ch = channel<Msg>(16);                  // bounded, capacity >= 1
-ch.tx.send(msg);                              // blocks while full; false if the channel is closed (nothing is lost silently)
+ch.tx.send(msg);                              // blocks while full; Err(Closed) if the channel is closed (nothing is lost silently)
 match (ch.rx.recv()) { Some(m) => ..., None => ... }   // blocks while empty; None when closed and drained
 ch.tx.close();  ch.rx.close();                // end of stream / cancellation; close both ends to release the channel
 ```
@@ -35,8 +35,8 @@ ch.tx.close();  ch.rx.close();                // end of stream / cancellation; c
 | `s.spawn<T>(f: () => T): TaskHandle<T>` | starts `f` as a task (an operating-system thread with its own heap). `T` may be `void` (ADR-0040); the function form `spawn(s, f)` and `spawnDo` are `@Deprecated` wrappers kept for one release |
 | `TaskHandle<T>.join(): T` | waits for the task; its result. Panic: traps with `task panicked: <message>`. A second `join`, or a join after the scope ended, traps |
 | `channel<T>(capacity): Channel<T>` with `Channel<T> = { tx: Sender<T>, rx: Receiver<T> }` | a bounded FIFO. Both ends are copyable values and can be used by any number of tasks (several senders, several receivers) |
-| `Sender<T>.send(v): bool`, `.close()` | `send` blocks while the channel is full. `true`: handed over (moved if unique, copied otherwise). `false`: the channel is closed by either end and `v` is dropped |
-| `Receiver<T>.recv(): Option<T>`, `.close()` | `recv` blocks while empty. `None` once closed by the sender **and** drained, or cancelled by `rx.close()`. `rx.close()` drops what is buffered and makes senders get `false` |
+| `Sender<T>.send(v): Result<void, TaskError>`, `.close()` | `send` blocks while the channel is full. `Ok()`: handed over (moved if unique, copied otherwise). `Err({kind: Closed})`: the channel is closed by either end and `v` is dropped (ADR-0048 E6) |
+| `Receiver<T>.recv(): Option<T>`, `.close()` | `recv` blocks while empty. `None` once closed by the sender **and** drained, or cancelled by `rx.close()`. `rx.close()` drops what is buffered and makes senders get `Err(Closed)` |
 | `scopeFs(fs, (s, g) => ..)`, `scopeProcess`, `scopeStdio`, `scopeClock` (+ `...Do`), `spawnFs(s, g, fsg => ..)`, `spawnProcess`, `spawnStdio`, `spawnClock` | delegating a grant to a task, see "Grants" |
 | `Receiver<T>.recvUntil(deadline): Result<T, TaskError>`, `.recvTimeout(clock, timeout)` | C1: `recv` with an absolute monotonic `Deadline` (std:time) or a `Duration` from now. `Err(Timeout)`, or `Err(Closed)` once closed and drained; a value already there is delivered even at an expired deadline |
 | `Sender<T>.sendUntil(v, deadline): Result<void, TaskError>`, `.sendTimeout(clock, v, timeout)` | C1: `send` that gives up with `Err(Timeout)` while the channel stays full, `Err(Closed)` when closed (`v` is dropped on an error) |
@@ -45,9 +45,9 @@ ch.tx.close();  ch.rx.close();                // end of stream / cancellation; c
 | `sleep(clock, timeout): Result<void, TaskError>`, `sleepUntil(deadline): void` | C1: blocks at least that long on the monotonic clock; never early |
 | `TaskError = { kind: TaskErrorKind }`, `TaskErrorKind = Timeout \| Closed \| ClockUnavailable \| InvalidDuration`, `taskErrorMessage(e)` | ADR-0048 section 3.1; `Timeout` is outcome `Deadline` and `Closed` is outcome `Closed` of ADR-0017 Addendum B (`Cancelled` joins in C2) |
 | `Scope.token(): CancelToken`, `Scope.cancel(): bool`, `Scope.isCancelled(): bool`, `CancelToken.cancel(): bool`, `.isCancelled(): bool`, `isCancelled(): bool` | C3: the cancellation token of a scope (a wake source of L0). `cancel()` is true when this call set it; it is permanent. The token is a copyable value a task may capture (the Scope itself cannot be, E0481). Every task of the scope, and of scopes nested in its tasks, blocked in a `std:net` accept / connect / recv / send wakes with `Err(Cancelled)`; the free `isCancelled()` is the cooperative check of the calling task. A token kept after its scope ended is stale: `cancel()` false, `isCancelled()` false. Channel waits do not observe it yet (C2). See "Gate 1, C3" |
-| `parallelMap(xs, f, parts): B[]` | `xs.map(f)` computed by `parts` tasks over contiguous chunks, results in order |
+| `parallelMap(xs, f, parts): B[]` | **deprecated** (W0440): use `xs.parallel().map(f)`. `xs.map(f)` computed by `parts` tasks over contiguous chunks, results in order |
 | `forkJoin(chunks, workers, body): R[]`, `forkJoinUntil(chunks, workers, body, hit): R[]`, `parallelism(): usize` | the work-stealing fork/join pool behind `parallel()` on arrays (ADR-0039), see "Fork/join pool and lending" |
-| `movedCount()`, `copiedCount()` | how many values this task sent by move / by deep copy so far (`ORIN_STATS=1` prints the process totals too) |
+| `movedCount()`, `copiedCount()` (test hooks in `std:task/internal`, not API) | how many values this task sent by move / by deep copy so far (`ORIN_STATS=1` prints the process totals too) |
 
 ## Semantics
 
@@ -106,7 +106,7 @@ delegated grant).
 
 | Layer | Contents | Language | Lines (code, no comments or blank lines) |
 |---|---|---|---|
-| `std:task` (L2) | scope table and task bookkeeping (`Ledger`, `drain`), join results, panic propagation, channel buffers (`Ring`), `Sender` / `Receiver`, grant delegation, `parallelMap` | **Orin**, `library/std/task.or`, and the pure state machines `Ring` and `Ledger` in `library/std/taskcore.or` | 508 (`task.or` 416 + `taskcore.or` 92), with 8 `@Invariant` and 26 `@Requires` / `@Ensures` |
+| `std:task` (L2) | scope table and task bookkeeping (`Ledger`, `drain`), join results, panic propagation, channel buffers (`Ring`), `Sender` / `Receiver`, grant delegation, `parallelMap` | **Orin**, `library/std/task.or`, and the pure state machines `Ring` and `Ledger` in `library/std/task_internal.or` | 508 (`task.or` 416 + `taskcore.or` 92), with 8 `@Invariant` and 26 `@Requires` / `@Ensures` |
 | L0 platform | thread create / join / exit / id; monitors (mutex + 2 condition queues + integer words); the runtime lock; the lock of the stdout buffer | **C, forever** (`runtime/platform/orin_platform.{c,h}`) | +243 (platform total 700 of the 1,000 budget). Why a monitor has words: Orin values cannot be shared between tasks, so the state that tasks DO share (the task table of a scope, the buffer of a channel) needs minimal shared memory with the OS's mutual exclusion; integers behind a lock are the smallest such cell (an "atomic counter" with a lock, handle-checked), and they let every line of channel and scope logic stay Orin |
 | runtime, ported | transfer, lend, task start / join / trap, heap retire, the monitor operations that trap on a failed L0 call | **Orin since ADR-0052 R3e.1 to R3e.4; the C was deleted in R3e.6** (`runtime/core/{sync,transfer,lend,task}.or`) | 699 code lines of Orin; the 443 C lines of the former section are gone |
 | runtime, temporary | grant clone / move / adopt (`orin_cap_*`) | **C, until R3c** (`runtime/core/orin_runtime.c`, section "grants moving into a task") | 75 |
@@ -193,7 +193,7 @@ allocated.
 |---|---|
 | `tests/next/run/task_*.or` (11) | spawn / join, 500 tasks, channel ping-pong, a producer / transformer / consumer pipeline, scope-exit join, a panic propagating at `join`, a panic found at scope exit, send of large values (copy and move, content intact), every kind of value (`Map`, interface value, closure), a grant moved into tasks (scope respected, 300 tasks each with their own grant), `parallelMap`. Run by every conformance mode: C, LLVM, `--no-opt`, `--c-builtins`, sanitizers |
 | `tests/next/errors/e0481 e0482 e0483 e0450_channel_of_grant e0301_task_primitives_are_internal` | one negative test per checker rule |
-| `tests/std/taskcore_test.or` (5 `@Test`), `tests/std/task_test.or` (7) and `tests/std/expect_trap/task_*.or` (4) | the invariants and contracts of `Ring` and `Ledger` (checked by `orin test`; all 35 contract obligations of `std:taskcore` are `VERIFIED` by `orin verify --contracts`), channel semantics in one task, the move / copy counters, joins in any order, `parallelMap` against `map`; traps that hold without contracts (join twice, a panic reaching the joiner, use of a released channel, capacity 0). `tools/mutation.sh std --module taskcore`: 16 mutants, 16 killed (14 by a contract) |
+| `tests/std/task_internal_test.or` (5 `@Test`), `tests/std/task_test.or` (7) and `tests/std/expect_trap/task_*.or` (4) | the invariants and contracts of `Ring` and `Ledger` (checked by `orin test`; all 35 contract obligations of `std:task/internal` are `VERIFIED` by `orin verify --contracts`), channel semantics in one task, the move / copy counters, joins in any order, `parallelMap` against `map`; traps that hold without contracts (join twice, a panic reaching the joiner, use of a released channel, capacity 0). `tools/mutation.sh std --module task`: 16 mutants, 16 killed (14 by a contract) |
 | `compiler/tests/verify_main.or` (14 cases) | the grant move rules of the MIR verifier |
 | `tooling/clitests/src/osig.or` section 8 (`tools/clitests.sh osig`) | the task events of the OSIG |
 | `tests/concurrency/timed_waits.or`, `timed_join_panic.or` | C1: timeouts fire and never early, values arriving before the deadline, buffered value at an expired deadline, `Closed`, full-channel `sendTimeout`, `select` (ready channel, tie, skipping closed channels, all closed, woken by a send and by closes, timeout), `sleep` lower bound, `joinTimeout` on a blocked task (then a later `join`), a trapped task ends a timed join. Plain, TSan, ASan |
@@ -243,7 +243,7 @@ Added after stage 0, for parallel array pipelines (docs/std.md "Parallel pipelin
 | Piece | Where | What |
 |---|---|---|
 | `forkJoin(chunks, workers, body)`, `forkJoinUntil(chunks, workers, body, hit)`, `parallelism()` | `std:task` (Orin) | a pool for ONE call: `workers` tasks (or the caller alone when `workers` <= 1) compute `body(k)` for the pieces `k`; results in piece order; `forkJoinUntil` cancels the pieces after the first hit and still runs every piece before it. A panic in a piece cancels what nobody started, joins every worker, then traps the caller with the piece's own message (no `task panicked:` prefix, so a parallel pipeline traps like the sequential chain) |
-| work stealing | `Ranges` in `std:taskcore` (pure class, 3 invariants: equal lengths, cut <= chunks, every range inside 0..chunks and no piece in two ranges) | worker w owns pieces lo[w] .. hi[w]-1 and takes them from the front; an idle worker steals the back half of the largest range below the cut; one monitor holds the words |
+| work stealing | `Ranges` in `std:task/internal` (pure class, 3 invariants: equal lengths, cut <= chunks, every range inside 0..chunks and no piece in two ranges) | worker w owns pieces lo[w] .. hi[w]-1 and takes them from the front; an idle worker steals the back half of the largest range below the cut; one monitor holds the words |
 | `lend` | runtime C (temporary, the transfer section): `orin_rt_lend` (`lendPut`) of a TWO-slot record | pins the graph of the value (each positive count becomes `PIN | owner << 32 | count`, which is negative, so inline retain / release skip it), records the pinned objects; `transitDrop` of the token restores them. A transfer by the owner SHARES pinned objects (the workers' closures reach the input that way, no copy); a transfer by any other task COPIES them (a worker's result never refers into the lent graph) |
 | thread count | `orin_rt_par_threads()` (runtime, `parThreads`) over the new L0 `orin_platform_cpu_count()` | `ORIN_THREADS` (1..1,024) or the processors online |
 
@@ -277,7 +277,7 @@ live counters no longer wrap to 2^64 - 1 for a task whose own frees exceed its a
 
 ## Gate 1, C0: cancellation and outcomes (ADR-0017 Addendum B)
 
-C0 adds the semantics and the pure state machines only; nothing blocks differently yet. `std:taskcore` gains `CancelState` (a token's
+C0 adds the semantics and the pure state machines only; nothing blocks differently yet. `std:task/internal` gains `CancelState` (a token's
 first-cause-wins cancellation cause plus an absolute monotonic deadline that only moves earlier, with `observe`/`budget`),
 `CancelScope` (a scope's counters; a trapping child cancels the scope), `TaskCell` (a result settled once and taken once), and
 pure functions for the outcome lattice (`Completed < Closed < Cancelled < Deadline < Error`, `outcomeJoin`), checkpoint precedence
@@ -300,7 +300,7 @@ past deadline, a notification before the deadline and argument errors, plain, un
 How the std:task calls use it (all in Orin, `library/std/task.or`):
 
 * **Deadlines are absolute.** A timed wait loop re-waits with the SAME instant after a spurious wake-up, so nothing stretches it; the relative forms
-  read the clock once (`ClockGrant`, ADR-0027) and add with the saturating `deadlineAfterMillis` of std:taskcore. The `Until` forms need no
+  read the clock once (`ClockGrant`, ADR-0027) and add with the saturating `deadlineAfterMillis` of std:task/internal. The `Until` forms need no
   grant: a `Deadline` can only come from a clock reading. After a timeout the condition is checked once more, so a value that arrives at the
   deadline is delivered (the precedence of `checkpointOutcome`: completing beats closed beats timing out).
 * **`recvUntil` / `sendUntil`** wait on the channel's own condition queue with `wait_until`.

@@ -1,0 +1,5 @@
+// error: E0400
+// TYP-20: `void` is not a `Map` value type.
+function main(): void {
+  let m = new Map<string, void>();
+}

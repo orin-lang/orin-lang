@@ -4,7 +4,7 @@ sections of `orin diff`, and the `[effects]` policy of orin.toml, all with the s
 
 1. `orin effects tests/osig/effects/app` (text and JSON) equals its goldens; the summaries are what the package was written
    to show: direct and transitive effects, evidence, an interface (union over the implementations), recursion, a function
-   value of unknown origin (UNKNOWN), a closure literal and the callback of the std scope function `useHost`;
+   value of unknown origin (UNKNOWN), a closure literal and the callback of the std scope function `withHost`;
    explanation paths; determinism (other directory, copy of the package, no absolute path); filters; purity agreement;
 2. the OSIG carries the same summaries (`MAY_PERFORM`, schema osig/0.2): every primitive call site is in the summary and the
    summaries are closed under the CALLS edges, also for the demo package, the I/O program and the compiler itself;
@@ -129,7 +129,7 @@ def main():
           "entry point summary: %s" % sorted(entry))
     check(entry["Host.Acquire"]["evidence"] == "MUST" and entry["Fs.ReadFile"]["evidence"] == "MAY"
           and entry["Fs.WriteFile"]["evidence"] == "MAY",
-          "main: its own call is MUST, what the callback of useHost does is MAY")
+          "main: its own call is MUST, what the callback of withHost does is MAY")
     hop_names = [h["function"] for h in entry["Fs.ReadFile"]["path"]]
     check(hop_names == ["(root)::main", "store::loadConfig"], "explanation path of Fs.ReadFile: %s" % hop_names)
     last = entry["Fs.ReadFile"]["path"][-1]
@@ -340,14 +340,17 @@ def main():
         text = open(out_c).read() if os.path.exists(out_c) else ""
         return rc, err, text
 
+    families = {"fs/v1": "orbit_fs.h", "net/v1": "orbit_net.h", "process/v1": "orbit_proc.h"}  # the L0 family a capability pulls in
+
     def expected_tail(requires):
-        # the JSON, then its quotes escaped for the assembler (\") and again for the C string literal (\\\")
+        # the #include of each L0 family the manifest lists, then the JSON with its quotes escaped for the assembler (\") and again for the C string literal (\\\")
         items = ",".join('"%s"' % r for r in requires)
         asm = r'{"abi":1,"requires":[' + items + r'],"producer":"orin"}'
         asm = asm.replace('"', '\\"')
         c = r'.section .custom_section.orbit.manifest,"",@\n.ascii "' + asm + r'"\n.text\n'
         c = c.replace('\\', '\\\\').replace('"', '\\"').replace('\\\\n', '\\n')
-        return marker + '\n__asm__("' + c + '");\n'
+        inc = "".join('#include "%s"\n' % families[r] for r in requires if r in families)
+        return inc + marker + '\n__asm__("' + c + '");\n'
     want = {
         "hello": ["log/v1"],
         "clock": ["clock/v1", "log/v1"],
@@ -357,6 +360,13 @@ def main():
         "task": ["clock/v1", "log/v1"],
         "channel": ["clock/v1", "log/v1"],
         "closure": ["clock/v1", "log/v1"],  # an unresolved call (Unknown.*): conservative, not an error
+        # files, network, arguments and stdin are capabilities of the target (orbit:fs/v1, net/v1, process/v1): listed, and the L0 family
+        # that implements each is #included before the manifest, so a module imports exactly what its manifest lists
+        "fs": ["fs/v1", "log/v1"],
+        "net": ["log/v1", "net/v1"],
+        "process": ["log/v1", "process/v1"],
+        # an unresolved call may reach any function of the package: clock/v1, and the fs/v1 of the file code
+        "closure_fs": ["clock/v1", "fs/v1", "log/v1"],
     }
     for name, req in want.items():
         rc, err, text = manifest_of(name)
@@ -368,12 +378,12 @@ def main():
     rc, err, text = manifest_of("clock")
     check(text.endswith(marker + '\n__asm__(".section .custom_section.orbit.manifest,\\"\\",@\\n.ascii \\"{\\\\\\"abi\\\\\\":1,\\\\\\"requires\\\\\\":'
                         '[\\\\\\"clock/v1\\\\\\",\\\\\\"log/v1\\\\\\"],\\\\\\"producer\\\\\\":\\\\\\"orin\\\\\\"}\\"\\n.text\\n");\n'), "the manifest has the specified literal shape")
-    rc, err, text = manifest_of("fs")
-    check(rc == 1 and "error[E0523]" in err and "`main` needs Fs.ReadFile, which the wasm64-orbit target does not provide" in err
-          and "fs.or:4:" in err and text == "", "wasm64-orbit: an Fs program is rejected with E0523 and evidence (%s)" % err)
-    rc, err, text = manifest_of("fs", "wasm32-orbit")
-    check(rc == 1 and "error[E0523]" in err and "`main` needs Fs.ReadFile, which the wasm32-orbit target does not provide" in err
-          and text == "", "wasm32-orbit: an Fs program is rejected with E0523 naming wasm32-orbit (%s)" % err)
+    rc, err, text = manifest_of("shell")
+    check(rc == 1 and "error[E0523]" in err and "`main` needs Process.Spawn, which the wasm64-orbit target does not provide" in err
+          and "shell.or:4:" in err and text == "", "wasm64-orbit: a program that runs the shell is rejected with E0523 and evidence (%s)" % err)
+    rc, err, text = manifest_of("shell", "wasm32-orbit")
+    check(rc == 1 and "error[E0523]" in err and "`main` needs Process.Spawn, which the wasm32-orbit target does not provide" in err
+          and text == "", "wasm32-orbit: a program that runs the shell is rejected with E0523 naming wasm32-orbit (%s)" % err)
     plain = os.path.join(tmp, "plain.c")
     rc, out, err = run(orin, ["compile", os.path.join(wdir, "clock.or"), "-o", plain])
     check(rc == 0 and "orbit.manifest" not in open(plain).read(), "without --target the C has no manifest (%s)" % err)

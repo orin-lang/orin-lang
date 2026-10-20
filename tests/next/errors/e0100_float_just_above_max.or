@@ -1,0 +1,6 @@
+// error: E0100
+// LEX-14: a literal that rounds to infinity is out of range.
+function main(): void {
+  const x = 1.7976931348623159e308;
+  console.log(x.toString());
+}

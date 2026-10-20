@@ -1,0 +1,8 @@
+// exit: 101
+// stderr: trap: usize underflow
+// TYP-5: the trap text of a usize subtraction below zero.
+function main(): void {
+  let u: usize = 0;
+  u = u - 1;
+  console.log("after");
+}

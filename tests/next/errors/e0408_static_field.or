@@ -1,0 +1,9 @@
+// error: E0408
+// GRM-6 / TYP-33: static fields are not supported.
+class C {
+  static x: int = 1;
+}
+
+function main(): void {
+  console.log("x");
+}

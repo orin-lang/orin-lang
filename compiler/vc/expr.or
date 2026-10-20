@@ -19,8 +19,8 @@ import { bareOf } from "./scope";
 import { trArrayMethodX, trStringMethodX, strPredTerm, litChrFacts, allLitChrFacts } from "./methods";
 import {
   cyclicMk, cyclicVariant, Var, Chk, TR, Fn, Cls, Prog, Cx, I64_MIN, I64_MAX, lineOf, clauseText, srcText, lit, inRange, inKind, guarded, guardChks, concat, concatChk,
-  andAll, noChks, noExp, lookupVar, mk, sortS, tyOf, tyIn, symName, fresh, freshFree, wfOf, arrLen, arrData, arrMk, arrSel, inBounds,
-  isSomeT, isOkT, recField, mapHas, mapSize, mapFact, tfOf, tfChk, clausesOfList, exprOf, isThisExpr, Fresh, valKey, typeKey
+  andAll, noChks, noExp, lookupVar, mk, sortS, tyOf, tyIn, symName, fresh, freshFree, wfOf, arrLen, arrLenOk, strLenOk, arrData, arrMk, arrSel, inBounds,
+  isSomeT, isOkT, recField, mapHas, mapSize, mapFact, tfOf, TFR, tfChk, clausesOfList, exprOf, isThisExpr, Fresh, valKey, typeKey
 } from "./ctx";
 
 // The conjunction of the obligations among the checks (what a contract needs to be well defined).
@@ -430,13 +430,13 @@ function trMember(g: Gen, vars: Var[], cx: Cx, base: Expr, name: string, e: Expr
         return Err("no field `" + name + "` on an array");
       }
       const so = sortS(b.g, cx, b.vt)?;
-      return mk(so.g, arrLen(so.s, b.t), VInt("usize"), concatChk(b.chks, [tfChk("(>= " + arrLen(so.s, b.t) + " 0)")]));
+      return mk(so.g, arrLen(so.s, b.t), VInt("usize"), concatChk(b.chks, [tfChk(arrLenOk(cx, so.s, b.t))]));
     },
     VStr => {
       if (name != "length") {
         return Err("no field `" + name + "` on a string");
       }
-      return mk(b.g, "(slen " + b.t + ")", VInt("usize"), concatChk(b.chks, [tfChk("(>= (slen " + b.t + ") 0)")]));
+      return mk(b.g, "(slen " + b.t + ")", VInt("usize"), concatChk(b.chks, [tfChk(strLenOk(cx, b.t))]));
     },
     VMap(_, _) => {
       if (name != "size") {
@@ -463,7 +463,7 @@ function trMember(g: Gen, vars: Var[], cx: Cx, base: Expr, name: string, e: Expr
       }
       const so = sortS(b.g, cx, b.vt)?;
       const fterm = recField(so.s, name, b.t);
-      const tf = tfOf(so.g, cx, ft, fterm)?;
+      const tf = tfOfInv(so.g, cx, ft, fterm)?;
       return mk(tf.g, fterm, ft, concatChk(b.chks, tf.chks));
     },
     _ => Err("no field `" + name + "` on a value of type `" + vtName(b.vt) + "`")
@@ -482,7 +482,7 @@ function trIndex(g: Gen, vars: Var[], cx: Cx, base: Expr, idx: Expr, e: Expr): R
       const goal = inBounds(so.s, b.t, i.t);
       const clause = "index in bounds: `" + srcText(cx.text, e) + "`";
       const eterm = arrSel(so.s, b.t, i.t);
-      const tf = tfOf(so.g, cx, el, eterm)?;
+      const tf = tfOfInv(so.g, cx, el, eterm)?;
       return mk(tf.g, eterm, el,
         concatChk(concatChk(concatChk(b.chks, i.chks), [oblChk("bounds", "index", lineOf(cx.text, e.span.start), clause, goal)]), tf.chks));
     },
@@ -1055,13 +1055,13 @@ function trOptMethod(g0: Gen, vars: Var[], cx: Cx, r: TR, t: VT, name: string, a
   if (name == "unwrap" && args.length == 0) {
     const clause = "`unwrap` of Some: `" + srcText(cx.text, e) + "`";
     const pt = "(val" + so.s + " " + r.t + ")";
-    const tf = tfOf(g, cx, t, pt)?;
+    const tf = tfOfInv(g, cx, t, pt)?;
     return mk(tf.g, pt, t, concatChk(concatChk(r.chks, [oblChk("unwrap", "unwrap", line, clause, isSomeT(so.s, r.t))]), tf.chks));
   }
   if (name == "unwrapOr" && args.length == 1) {
     const d = tr(g, vars, cx, args[0], t)?;
     const pt = "(val" + so.s + " " + r.t + ")";
-    const tf = tfOf(d.g, cx, t, pt)?;
+    const tf = tfOfInv(d.g, cx, t, pt)?;
     return mk(tf.g, "(ite " + isSomeT(so.s, r.t) + " " + pt + " " + d.t + ")", t, concatChk(concatChk(r.chks, d.chks), guardChks(isSomeT(so.s, r.t), tf.chks)));
   }
   return Err("Option method `" + name + "` is not supported");
@@ -1242,6 +1242,29 @@ export function valueInvariants(g0: Gen, cx: Cx, vt: VT, term: string): Invs {
       return Invs { g: g0, terms: none };
     },
     _ => Invs { g: g0, terms: none }
+  };
+}
+
+// `tfOf`, and for a value of a record type with invariants also those invariants. A record cannot violate its
+// invariant (ADR-0031 A3: checked at every literal, field write and function result), so a record value *read* from a
+// field, an element, an `Option` payload or a match binding satisfies it, as a parameter does (`assumeInvariants`).
+// Classes are excluded: their invariants hold only outside the methods of the class. Without this, `diag(code, t.span, ..)`
+// leaves `sp.start <= sp.end` unknown for a span reached through a field.
+export function tfOfInv(g0: Gen, cx: Cx, vt: VT, term: string): Result<TFR, string> {
+  const tf = tfOf(g0, cx, vt, term)?;
+  return match (vt) {
+    VRec(cn) => {
+      if (cx.p.clsIx.get(cn).isSome() || cx.p.tab.findRec(cn).isNone()) {
+        return Ok(tf);
+      }
+      const iv = valueInvariants(tf.g, cx, vt, term);
+      let chks = tf.chks;
+      for (const t of iv.terms) {
+        chks = concatChk(chks, [tfChk(t)]);
+      }
+      return Ok(TFR { g: iv.g, chks: chks });
+    },
+    _ => Ok(tf)
   };
 }
 
@@ -1740,7 +1763,7 @@ function trMatch(g0: Gen, vars: Var[], cx: Cx, scrut: Expr, arms: MatchArm[], ex
     }
     let bindTf: Chk[] = [];
     for (const bd of mp.binds) {
-      const tfb = tfOf(g, cx, bd.vt, bd.term)?;
+      const tfb = tfOfInv(g, cx, bd.vt, bd.term)?;
       g = tfb.g;
       bindTf = concatChk(bindTf, tfb.chks);
     }

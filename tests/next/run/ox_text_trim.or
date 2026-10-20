@@ -1,0 +1,22 @@
+// OX-4: text children are trimmed per line and the lines are joined with one space; blank lines and whitespace-only text between
+// tags vanish. Isolated from ox_basic.
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  console.log(render(<p>
+      one
+         two   words
+      three
+  </p>));
+  console.log(render(<p>  padded  </p>));
+  console.log(render(<p>
+
+      after blank
+
+  </p>));
+  console.log(render(<div>
+      <b>x</b>
+      <i>y</i>
+  </div>));
+}

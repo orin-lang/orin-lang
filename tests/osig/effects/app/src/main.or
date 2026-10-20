@@ -1,4 +1,4 @@
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { FsGrant } from "std:fs";
 import { loadConfig, saveConfig } from "./store";
 import { say } from "./report";
@@ -7,7 +7,7 @@ import { runDynamic } from "./dynamic";
 import { fact } from "./util";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const cfg = loadConfig(fs, "app.cfg");
     say(cfg);
     saveConfig(fs, "app.out", cfg);

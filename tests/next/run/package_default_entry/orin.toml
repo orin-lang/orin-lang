@@ -1,0 +1,6 @@
+# MOD-12: no `entry` key, so the src root is `src` and [modules.util] names src/util.
+[package]
+name = "p"
+
+[modules.util]
+allowed_dependencies = []

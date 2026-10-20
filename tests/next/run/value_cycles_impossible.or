@@ -1,0 +1,9 @@
+// OWN-3: pushing a value into a field copies it; the copy is a snapshot, so no value can end up containing itself.
+type T = { kids: T[]; };
+
+function main(): void {
+  let a = T { kids: [] };
+  let b = T { kids: [a] };
+  a.kids.push(b);
+  console.log(`${a.kids.length} ${b.kids.length} ${b.kids[0].kids.length}`);
+}

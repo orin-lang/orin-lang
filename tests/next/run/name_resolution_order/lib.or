@@ -1,0 +1,3 @@
+export function parseInt(s: string): string {
+  return "import:" + s;
+}

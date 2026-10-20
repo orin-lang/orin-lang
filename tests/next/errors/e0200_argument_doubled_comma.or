@@ -1,0 +1,5 @@
+// error: E0200
+// GRM-4: a doubled comma is a syntax error (call arguments).
+function main(): void {
+  console.log("a",,);
+}

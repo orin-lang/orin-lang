@@ -1,0 +1,11 @@
+// LEX-14: literals that round to the largest finite float are accepted; tiny ones are not range errors.
+function main(): void {
+  const a = 1.7976931348623157e308;
+  const b = 1.7976931348623158e308;
+  const c = 0.17976931348623157e309;
+  const d = 1e-400;
+  console.log((a == b).toString());
+  console.log((a == c).toString());
+  console.log((a > 1e308).toString());
+  console.log((d == 0.0).toString());
+}

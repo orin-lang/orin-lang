@@ -1,0 +1,9 @@
+// error: E0200
+// TYP-33: there are no abstract members.
+class C {
+  abstract f(): int;
+}
+
+function main(): void {
+  console.log("x");
+}
