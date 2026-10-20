@@ -25,7 +25,7 @@ const total = scope(s => {                    // structured: every task started 
 
 const ch = channel<Msg>(16);                  // bounded, capacity >= 1
 ch.tx.send(msg);                              // blocks while full; Err(Closed) if the channel is closed (nothing is lost silently)
-match (ch.rx.recv()) { Some(m) => ..., None => ... }   // blocks while empty; None when closed and drained
+match (ch.rx.recv()) { Ok(m) => ..., Err(e) => ... }   // blocks while empty; Err(Closed) when closed and drained
 ch.tx.close();  ch.rx.close();                // end of stream / cancellation; close both ends to release the channel
 ```
 
@@ -36,13 +36,13 @@ ch.tx.close();  ch.rx.close();                // end of stream / cancellation; c
 | `TaskHandle<T>.join(): T` | waits for the task; its result. Panic: traps with `task panicked: <message>`. A second `join`, or a join after the scope ended, traps |
 | `channel<T>(capacity): Channel<T>` with `Channel<T> = { tx: Sender<T>, rx: Receiver<T> }` | a bounded FIFO. Both ends are copyable values and can be used by any number of tasks (several senders, several receivers) |
 | `Sender<T>.send(v): Result<void, TaskError>`, `.close()` | `send` blocks while the channel is full. `Ok()`: handed over (moved if unique, copied otherwise). `Err({kind: Closed})`: the channel is closed by either end and `v` is dropped (ADR-0048 E6) |
-| `Receiver<T>.recv(): Option<T>`, `.close()` | `recv` blocks while empty. `None` once closed by the sender **and** drained, or cancelled by `rx.close()`. `rx.close()` drops what is buffered and makes senders get `Err(Closed)` |
+| `Receiver<T>.recv(): Result<T, TaskError>`, `.close()` | `recv` blocks while empty. `Err(Closed)` once closed by the sender **and** drained, or cancelled by `rx.close()`. `rx.close()` drops what is buffered and makes senders get `Err(Closed)` |
 | `scopeFs(fs, (s, g) => ..)`, `scopeProcess`, `scopeStdio`, `scopeClock` (+ `...Do`), `spawnFs(s, g, fsg => ..)`, `spawnProcess`, `spawnStdio`, `spawnClock` | delegating a grant to a task, see "Grants" |
 | `Receiver<T>.recvUntil(deadline): Result<T, TaskError>`, `.recvTimeout(clock, timeout)` | C1: `recv` with an absolute monotonic `Deadline` (std:time) or a `Duration` from now. `Err(Timeout)`, or `Err(Closed)` once closed and drained; a value already there is delivered even at an expired deadline |
 | `Sender<T>.sendUntil(v, deadline): Result<void, TaskError>`, `.sendTimeout(clock, v, timeout)` | C1: `send` that gives up with `Err(Timeout)` while the channel stays full, `Err(Closed)` when closed (`v` is dropped on an error) |
 | `TaskHandle<T>.joinUntil(deadline): Result<T, TaskError>`, `.joinTimeout(clock, timeout)` | C1: `Err(Timeout)` if the task has not ended; the handle stays valid. Otherwise exactly `join()` (a panicked task still traps the joiner) |
 | `select<T>(rxs): Result<Selected<T>, TaskError>`, `selectUntil(rxs, deadline)`, `selectTimeout(clock, rxs, timeout)` | C1: the first ready receiver in array order wins; `Selected<T> = { index: usize; value: T }`. Closed and drained receivers are skipped; `Err(Closed)` when all are. One value type for all receivers (use a variant for different kinds). Free functions (they take an array of receivers, not a receiver) |
-| `sleep(clock, timeout): Result<void, TaskError>`, `sleepUntil(deadline): void` | C1: blocks at least that long on the monotonic clock; never early |
+| `sleep(clock, timeout): Result<void, TaskError>`, `sleepUntil(deadline): Result<void, TaskError>` | C1: blocks at least that long on the monotonic clock; never early |
 | `TaskError = { kind: TaskErrorKind }`, `TaskErrorKind = Timeout \| Closed \| ClockUnavailable \| InvalidDuration`, `taskErrorMessage(e)` | ADR-0048 section 3.1; `Timeout` is outcome `Deadline` and `Closed` is outcome `Closed` of ADR-0017 Addendum B (`Cancelled` joins in C2) |
 | `Scope.token(): CancelToken`, `Scope.cancel(): bool`, `Scope.isCancelled(): bool`, `CancelToken.cancel(): bool`, `.isCancelled(): bool`, `isCancelled(): bool` | C3: the cancellation token of a scope (a wake source of L0). `cancel()` is true when this call set it; it is permanent. The token is a copyable value a task may capture (the Scope itself cannot be, E0481). Every task of the scope, and of scopes nested in its tasks, blocked in a `std:net` accept / connect / recv / send wakes with `Err(Cancelled)`; the free `isCancelled()` is the cooperative check of the calling task. A token kept after its scope ended is stale: `cancel()` false, `isCancelled()` false. Channel waits do not observe it yet (C2). See "Gate 1, C3" |
 | `parallelMap(xs, f, parts): B[]` | **deprecated** (W0440): use `xs.parallel().map(f)`. `xs.map(f)` computed by `parts` tasks over contiguous chunks, results in order |

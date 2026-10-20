@@ -100,7 +100,7 @@ with one value type and return `Result<Selected<T>, TaskError>` with `Selected<T
 receiver in array order wins; closed and drained receivers are skipped; `Err(Closed)` when all are.
 Tests: tests/concurrency/timed_waits.or.
 
-**TSK-15. Sleep.** `sleep(clock, timeout): Result<void, TaskError>` and `sleepUntil(deadline): void` block at least that long on
+**TSK-15. Sleep.** `sleep(clock, timeout): Result<void, TaskError>` and `sleepUntil(deadline): Result<void, TaskError>` block at least that long on
 the monotonic clock; `sleepUntil` of a past deadline returns at once.
 Tests: tests/concurrency/timed_waits.or.
 

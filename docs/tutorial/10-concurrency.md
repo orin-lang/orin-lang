@@ -44,7 +44,7 @@ function main(): void {
     let sum = 0;
     while (true) {
       const m = ch.rx.recv();
-      if (m.isNone()) {
+      if (m.isErr()) {
         break;
       }
       console.log("got " + m.unwrap().toString());
@@ -92,7 +92,7 @@ the joiner (`task panicked: ...`), and a panic that nobody joins is reported whe
 **Channels.** `channel<int>(4)` makes a bounded queue (the types `Sender<T>`, `Receiver<T>`, `TaskHandle<T>` and `Scope` are imported from
 `std:task` when a function signature names them) with a sender `ch.tx` and a receiver `ch.rx`, both usable from any
 task. `send` blocks while the queue is full and returns an `Err` (kind `Closed`) if the channel was closed; `recv` blocks while it is
-empty and returns `None` once the sender has called `close()` and everything has been taken. That is how the receiver
+empty and returns `Err` (kind `Closed`) once the sender has called `close()` and everything has been taken. That is how the receiver
 above knows to stop.
 
 **Parallel pipelines.** `xs.parallel()` turns an array pipeline (`filter`, `map`, `reduce`, `find`, `some`, `every`,
