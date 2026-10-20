@@ -12,7 +12,7 @@ It passes when things improve (UNKNOWN -> VERIFIED, removed obligations) and the
 Regenerating the baseline (one command; run it after merging or rebasing a PR that changes obligation counts, e.g. the
 verifier-gaps PR that adds loop obligations):
 
-  python3 tools/verify_ratchet.py --update --cache-dir build/ratchet/cache
+  python3 tools/verify_ratchet.py --update --orin $PWD/build/bootstrap/orin2 --cache-dir $PWD/build/rat/cache --threads 4
 
 It needs only a built compiler (build/bootstrap/orin2, or --orin PATH), takes the rlimit defaults below, and refuses to write
 when anything is REFUTED. Commit tools/verify-baseline/compiler.txt; the per-module table it prints is for the PR body.
@@ -39,6 +39,20 @@ HEADER = [
 RLIMIT = 3000000
 TIMEOUT_MS = 60000
 RETRY_MS = 10000
+
+
+def z3_version():
+    try:
+        return subprocess.run(["z3", "--version"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True).stdout.strip()
+    except OSError:
+        return "(z3 not found)"
+
+
+def baseline_z3():
+    for ln in open(BASELINE, encoding="utf-8"):
+        if ln.startswith("# z3: "):
+            return ln[6:].strip()
+    return ""
 
 
 def run_verify(a, extra, tag):
@@ -119,7 +133,7 @@ def main():
     ap.add_argument("--rlimit", type=int, default=RLIMIT)
     ap.add_argument("--timeout-ms", type=int, default=TIMEOUT_MS)
     ap.add_argument("--retry-ms", type=int, default=RETRY_MS)
-    ap.add_argument("--cache-dir", default="", help="answer cache of orin verify (sat/unsat only; safe)")
+    ap.add_argument("--cache-dir", default="", help="answer cache of orin verify (sat, unsat and rlimit-unknown answers, keyed by z3 version and rlimit; safe)")
     ap.add_argument("--threads", type=int, default=0)
     ap.add_argument("--runs", type=int, default=2, help="--update: number of runs; differing obligations are unstable")
     ap.add_argument("--from-json", nargs="+", help="use these saved `verify --format=json` outputs instead of running")
@@ -148,7 +162,7 @@ def main():
             sys.exit("verify_ratchet: refusing to write a baseline with REFUTED obligations (the ratchet starts at 0)")
         os.makedirs(os.path.dirname(BASELINE), exist_ok=True)
         with open(BASELINE, "w", encoding="utf-8") as f:
-            f.write("\n".join(HEADER) + "\n")
+            f.write("\n".join(HEADER[:2] + ["# z3: " + z3_version()] + HEADER[2:]) + "\n")
             for k in sorted(cur):
                 v, u, r, un = cur[k]
                 f.write(" | ".join(k) + " | V%d U%d%s\n" % (v, u, " unstable" if un else ""))
@@ -157,6 +171,8 @@ def main():
         print(table({k: x[:3] for k, x in cur.items()}))
         return
     base = read_baseline()
+    if not a.from_json and baseline_z3() != z3_version():
+        print("verify_ratchet: note: baseline made with %r, running with %r (rlimit counts differ between z3 versions)" % (baseline_z3(), z3_version()), file=sys.stderr)
     bad, better = [], []
     for k in sorted(cur):
         v, u, r, _ = cur[k]

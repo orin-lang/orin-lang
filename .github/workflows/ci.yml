@@ -219,6 +219,59 @@ jobs:
       - name: Contract strength (mutation) tool - smoke run on the demo (ADR-0028)
         run: python3 tools/contract_mutation.py examples/contract_mutation.or --orinc build/bootstrap/orin2 --max-mutants 6 --min-kill-rate 0.3
 
+  # Verification ratchet (tools/verify_ratchet.py, docs/contracts.md): `orin verify --contracts compiler/main.or` may never
+  # get a new UNKNOWN or any REFUTED compared with tools/verify-baseline/compiler.txt. A cold run is ~70 min on 4 cores, so
+  # the answer cache of the verifier (sat, unsat and rlimit-unknown answers, keyed by z3 version and rlimit, never a
+  # wall-clock unknown) is restored and saved (also when the check fails or times out). z3 comes from apt (4.8.12, the
+  # version of the baseline: rlimit counts differ between z3 versions). A pull request that touches neither compiler/ nor
+  # tools/verify* skips the run; a push to main, the nightly run and a manual run always run it.
+  verify-ratchet:
+    needs: [changes, build]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with: { name: bootstrap }
+      - run: tar -xzf bootstrap.tgz
+      - name: Does this change touch the verified sources (compiler/, tools/verify*)?
+        id: rel
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] || git diff --name-only "$BASE_SHA" HEAD | grep -Eq '^(compiler/|tools/verify|docs/contracts\.md$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "no compiler/ or tools/verify* change: ratchet skipped"
+          fi
+      - name: z3 (apt, the version of the baseline)
+        if: steps.rel.outputs.run == 'true'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq z3
+          z3 --version
+          echo "Z3_KEY=$(z3 --version | tr -c 'A-Za-z0-9.\n' '_' | tr -s '_')-rlimit$(sed -n 's/^RLIMIT = //p' tools/verify_ratchet.py)" >> "$GITHUB_ENV"
+      - name: Restore the verifier's answer cache
+        if: steps.rel.outputs.run == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: build/verify-cache
+          key: verify-cache-${{ env.Z3_KEY }}-${{ github.sha }}
+          restore-keys: verify-cache-${{ env.Z3_KEY }}-
+      - name: Verification ratchet (no new UNKNOWN, no REFUTED)
+        if: steps.rel.outputs.run == 'true'
+        run: python3 tools/verify_ratchet.py --check --orin "$PWD/build/bootstrap/orin2" --cache-dir "$PWD/build/verify-cache" --threads 4
+      - name: Save the verifier's answer cache
+        if: always() && steps.rel.outputs.run == 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: build/verify-cache
+          key: verify-cache-${{ env.Z3_KEY }}-${{ github.sha }}
+
   tooling:
     needs: build
     runs-on: ubuntu-latest

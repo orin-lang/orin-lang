@@ -1,0 +1,1 @@
+- `orin verify --contracts --cache-dir` now also caches an `unknown` that z3 gave by running out of the `--rlimit` (deterministic, keyed by rlimit and z3 version, never a wall-clock timeout); `tools/verify_ratchet.py` runs in CI and fails on a new UNKNOWN or any REFUTED in `compiler/main.or`.

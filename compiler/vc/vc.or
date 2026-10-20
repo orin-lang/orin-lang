@@ -413,8 +413,8 @@ type Oracle = { z3: string; lim: SolverLimits; deferred: bool; answers: Map<stri
 // the wall time, so that a query that runs out of it gives `unknown` on every machine.
 // `cacheDir` (`--cache-dir DIR`, "" = off) is the directory of the persistent answer cache (docs/contracts.md, performance):
 // an answer is stored under the SHA-256 of the solver version, the limits and the query text, so a hit is exactly the answer
-// the solver gave to that very query. Only `sat` and `unsat` are stored, `unknown` and `timeout` too with `cacheUnknown`
-// (`--cache-unknown`): they depend on the load of the machine that gave them. `stats` (`--solver-stats`) prints what the
+// the solver gave to that very query. `sat` and `unsat` are stored, and an `unknown` that z3 gave because it ran out of the rlimit (deterministic: needs
+// `rlimit` > 0); an `unknown` from the wall time is not (it depends on the load), unless `cacheUnknown` (`--cache-unknown`) says so. `stats` (`--solver-stats`) prints what the
 // solver was asked and what the cache answered to stderr.
 export type SolverLimits = { timeoutMs: int; retryMs: int; rlimit: int; cacheDir: string; cacheUnknown: bool; stats: bool; };
 
@@ -448,12 +448,17 @@ function solveScript(z3: string, lim: SolverLimits, version: string): string {
   if (lim.cacheDir == "") {
     return t + run + "\nprintf '%s run\\n' $? | tee -a " + STATS_LOG + " > \"$b.rc\"\n";
   }
-  const keep = lim.cacheUnknown ? "true" : "[ \"$first\" = unsat ] || [ \"$first\" = sat ]";
+  // `unknown` is stored when it is deterministic: with an rlimit, z3 says why it gave up (`(get-info :reason-unknown)`,
+  // asked after the query so the key, the hash of BASE.smt2, is unchanged); "resource limit" is the rlimit, the same on every
+  // machine, while "timeout" (the wall time) is not. The reason line is removed from BASE.out afterwards.
+  const keep = lim.cacheUnknown ? "true" : "[ \"$first\" = unsat ] || [ \"$first\" = sat ] || { [ \"$first\" = unknown ] && [ \"$rl\" -gt 0 ] && printf '%s' \"$why\" | grep -qi 'resource'; }";
   t += "c=" + shQuote(lim.cacheDir) + "\n";
   t += "if command -v sha256sum >/dev/null 2>&1; then h() { sha256sum | cut -d' ' -f1; }; else h() { shasum -a 256 | cut -d' ' -f1; }; fi\n";
   t += "k=$( { printf '%s\\n' " + shQuote("orin-verify-cache-1 " + version) + "\" $ms $hard $rl\"; cat \"$b.smt2\"; } | h )\n";
   t += "if [ -n \"$k\" ] && [ -f \"$c/$k\" ] && cp \"$c/$k\" \"$b.out\" 2>/dev/null; then printf '0 hit\\n' | tee -a " + STATS_LOG + " > \"$b.rc\"; exit 0; fi\n";
-  t += run + "\nrc=$?\n";
+  t += "{ cat \"$b.smt2\"; echo '(get-info :reason-unknown)'; } | " + z3 + " -in -t:$ms -T:$hard $x > \"$b.out\" 2>&1\nrc=$?\n";
+  t += "why=$(grep '^(:reason-unknown' \"$b.out\" 2>/dev/null | tail -n 1)\n";
+  t += "if [ -n \"$why\" ]; then grep -v '^(:reason-unknown' \"$b.out\" > \"$b.out.t\" 2>/dev/null; mv \"$b.out.t\" \"$b.out\"; fi\n";
   t += "first=$(head -n 1 \"$b.out\" 2>/dev/null)\n";
   t += "if [ -n \"$k\" ] && { [ $rc -eq 0 ] || [ $rc -eq 1 ]; } && { " + keep + "; }; then mkdir -p \"$c\" 2>/dev/null && cp \"$b.out\" \"$c/.tmp.$k.$$\" 2>/dev/null && mv \"$c/.tmp.$k.$$\" \"$c/$k\" 2>/dev/null; fi\n";
   t += "printf '%s run\\n' $rc | tee -a " + STATS_LOG + " > \"$b.rc\"\n";

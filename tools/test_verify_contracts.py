@@ -234,6 +234,22 @@ def check_cache(orinc):
         f.write('#!/bin/sh\ncase "$1" in --version) echo "Z3 fake 2.0"; exit 0;; esac\ncat > /dev/null\necho unknown\n')
     r = run(orinc, "--format=json", "--solver-stats", "--z3", fake, "--cache-dir", ucache, "--cache-unknown", src, case="_cache")
     check((stat(r) or (0, 1, 0))[1] == 0, "cache: another solver version must not hit")
+    # with --rlimit an `unknown` that z3 gives for running out of the resource limit is deterministic and stored without
+    # --cache-unknown; one given for the wall time ("timeout") is not; the rlimit is part of the key
+    for reason, stored in (("max. resource limit exceeded", True), ("timeout", False)):
+        with open(fake, "w") as f:
+            f.write('#!/bin/sh\ncase "$1" in --version) echo "Z3 fake 3.0"; exit 0;; esac\ncat > /dev/null\necho unknown\necho \'(:reason-unknown "%s")\'\n' % reason)
+        rcache = os.path.join(work, "rlimit-" + ("res" if stored else "time"))
+        for i in (1, 2):
+            r = run(orinc, "--format=json", "--solver-stats", "--rlimit", "1000", "--z3", fake, "--cache-dir", rcache, src, case="_cache")
+            res = json.loads(r.stdout.decode())["results"]
+            s_ = stat(r) or (0, 0, 1)
+            check(all(x["status"] == "UNKNOWN" for x in res if x["kind"] != "decreases"), "cache: rlimit unknown (%s) stays UNKNOWN" % reason)
+            if i == 2:
+                check((s_[0] > 0 and s_[2] == 0) if stored else (s_[1] == 0), "cache: unknown for %r %s %r" % (reason, "is stored" if stored else "is not stored", s_))
+        if stored:
+            r = run(orinc, "--format=json", "--solver-stats", "--rlimit", "999", "--z3", fake, "--cache-dir", rcache, src, case="_cache")
+            check((stat(r) or (0, 1, 0))[1] == 0, "cache: another rlimit must not hit")
     # a missing solver stays UNKNOWN with a cache directory, and nothing is stored for it
     gone = os.path.join(work, "gone")
     r = run(orinc, "--format=json", "--z3", "/nonexistent/z3", "--cache-dir", gone, "--cache-unknown", src, case="_cache")
