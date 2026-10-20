@@ -42,22 +42,32 @@ system `clang` plus the `lld` package also works (`CC=clang`).
 | time (`std:time`, clocks) | `orbit:clock/v1`; the host may coarsen it |
 | `std:process` `args` | `orbit:process/v1`: `["<module name>", ...--app-arg]`, read on first use (`args` skips argv[0]) |
 | `std:io` stdin (`readLine`, `readBytes`) | `orbit:process/v1` `stdin_read` with `--grant process:stdin`; without it stdin is empty. A prompt written without a newline is shown before the read |
-| environment variables | none: nothing in std reads them (the runtime's own `ORIN_THREADS` is ignored; there is one thread) |
+| environment variables | none: nothing in std reads them (the runtime's own `ORIN_THREADS` is ignored) |
 | `std:fs`, `std:path` | `orbit:fs/v1`: files and directories under the mounts of `--grant fs:/guest=./host:ro\|rw`; paths are virtual, anything outside a mount is `Permission denied`; `--cwd` is the working directory. No mkdir, remove or rename (no L0 entry point yet) |
 | `std:net`, `std:http`, DNS | `orbit:net/v1`: TCP listen, accept, connect, send, recv, shutdown and `resolve`, within `--listen` / `--grant net:listen=...` / `net:connect=...`; the L0 narrowing of grants (`useListen`, `useConnect`) is enforced in the guest as natively. No UDP, TLS or poll over several sockets |
 | `std:io` `shell`, process spawning | not available: the build fails with E0523 naming the effect and where it comes from |
-| `std:task`, channels, `.parallel()` | run, one task at a time, to completion, inside the one WebAssembly thread (see below) |
+| `std:task`, channels, `.parallel()` | wasm32: real threads (shared memory, `thread/v1`); wasm64: one task at a time, to completion (see below) |
 
-## Tasks and channels: one at a time
+## Tasks and channels
 
-A WebAssembly instance has one thread, so the module runs `std:task` tasks one after the other, each to completion. `spawn`
+**wasm32-orbit has real threads** (ADR-0055, decision 10; the wasi-threads model). `std:task`, channels, scopes and `.parallel()`
+behave as natively: tasks run at the same time, ping-pong and pipelines over bounded channels work, and a task that traps
+reaches its join. The module imports its memory as shared memory (`env.memory`, maximum 65536 pages = 4 GiB; the host may
+give less) and `orbit:thread/v1 spawn(arg: i64) -> i64`; the host starts the same module again on the same memory in a new
+OS thread and calls the export `orin_thread_start(tid: i64, arg: i64)`. A trap or `exit` in any thread ends all threads. The
+manifest of a program that uses tasks lists `thread/v1` (and `clock/v1`, for timed waits). Costs: a task that traps parks its
+OS thread until the module ends (WebAssembly cannot unwind to the thread entry, and a trap would end all threads), so a program
+with thousands of trapping tasks needs a host that allows that many threads; each thread has a 1 MiB stack; there is no guard
+page below a thread stack; a real deadlock hangs, as natively.
+
+**wasm64-orbit has one thread.** The module runs `std:task` tasks one after the other, each to completion. `spawn`
 only queues a task. A queued task runs when someone would otherwise block: `join` of it, or any wait on a channel, scope or
 monitor (the waiting task gives the thread to the next queued task and re-checks its condition afterwards); tasks nobody
 joined run before `main` ends. So these work as natively: spawn-and-join, `scope`, `.parallel()` (with one core), channels
 whose sender never waits for the receiver (the capacity is large enough, or the producer is joined before the consumer
 reads), fan-out and fan-in.
 
-Two things do not work, and both end the module with a line that starts with `wasm64-orbit: ` (`wasm32-orbit: ` for the 32-bit target) on stderr instead of
+Two things do not work there, and both end the module with a line that starts with `wasm64-orbit: ` on stderr instead of
 hanging or giving a wrong answer:
 
 - **Interleaving.** A task that waits for something only a task suspended below it can produce (ping-pong over bounded
@@ -67,11 +77,11 @@ hanging or giving a wrong answer:
   unwind the task's frames, so the whole module ends: `wasm64-orbit: a task trapped: <message>`, exit status 101.
 
 Because the spawned closure is an unresolved callback to the effect analysis, the manifest of a program that spawns tasks
-also lists `clock/v1` (the module still imports only what it uses). Timed waits do not sleep: with nothing queued a timed wait returns as timed out at once, so a program that waits for a
+also lists `clock/v1`. Timed waits do not sleep: with nothing queued a timed wait returns as timed out at once, so a program that waits for a
 deadline sees it early. How it is built (ADR-0055, decision 4): the runtime keeps per-task state in `__thread` objects; the
 build turns each into an ordinary object of the section `orin_tls` (`-D__thread=__attribute__((section("orin_tls")))`), so
 they form one block, and the L0 saves that block, installs its pristine image, runs the task and restores the block. No
-atomics or WebAssembly threads are involved (the module needs no extra WebAssembly feature).
+atomics or WebAssembly threads are involved.
 
 ## Files, network and cancellation on Orbit
 
@@ -96,11 +106,11 @@ cannot be set while a host call blocks (nothing else runs), so a blocked `accept
 
 ## wasm32-orbit or wasm64-orbit?
 
-Same language, same behaviour, same manifest, same imports; only the width of the C pointers differs. In `wasm32-orbit`
+Same language and behaviour; the width of the C pointers differs, and only wasm32 has threads (a task program imports `thread/v1` and a shared memory there). In `wasm32-orbit`
 Orin values stay 64-bit (`usize`, `int`, every slot), so arithmetic and memory per object are the same as on wasm64; only
 addresses are 4 bytes. Choose by where the module runs:
 
-- **wasm32-orbit** runs everywhere (every engine and every Orbit version) and avoids the bounds-check cost of Memory64
+- **wasm32-orbit** is the target with real threads and runs everywhere (every engine and every Orbit version) and avoids the bounds-check cost of Memory64
   (ADR-0055 "Measurements" has the numbers). Limits: the memory is at most 4 GiB (an allocation that does not fit fails with
   `out of memory`, a size above 4 GiB traps with the same message, never wraps), and the module's own 1 MiB stack and data
   count against that.
@@ -111,7 +121,7 @@ The host contract is identical: every pointer and length that crosses the Orbit 
 ## Testing
 
 `tools/test_wasm.sh` runs the conformance suites as WebAssembly modules (once per width) under Node >= 24 (`tools/wasm_run.mjs` serves
-`log/v1`, `clock/v1`, `process/v1` and `fs/v1` with Orbit's load-time checks and statuses; the network tests are SKIP there), plus the
+`log/v1`, `clock/v1`, `process/v1`, `fs/v1` and `thread/v1` (worker_threads on one shared memory) with Orbit's load-time checks and statuses; the network tests are SKIP there), plus the
 differential tests of the WebAssembly L0 and its size budget. One
 suite only: `NODE=node python3 tools/run_tests.py --orinc build/bootstrap/orin2 --target wasm64-orbit --suite all` (or `--target wasm32-orbit`).
 

@@ -355,7 +355,7 @@ def main():
         "hello": ["log/v1"],
         "clock": ["clock/v1", "log/v1"],
         "exit": ["log/v1"],
-        # Task.* and Channel.* need no capability (the guest runs tasks itself, one at a time); the spawned closure is an
+        # wasm64-orbit: Task.* and Channel.* need no capability (the guest runs tasks itself, one at a time); wasm32-orbit: thread/v1, see below; the spawned closure is an
         # unresolved callback (Unknown.Callback): it adds only what some function of the program reaches (no Clock.Now anywhere: no clock/v1)
         "task": ["log/v1"],
         "channel": ["log/v1"],
@@ -373,7 +373,10 @@ def main():
         check(rc == 0 and text.endswith(expected_tail(req)), "wasm64-orbit %s: manifest %s ends the C file (%s)" % (name, req, err + text[-300:]))
         check(text.count("orbit.manifest") == 1, "wasm64-orbit %s: exactly one manifest section" % name)
         rc32, err32, text32 = manifest_of(name, "wasm32-orbit")
-        check(rc32 == 0 and text32 == text, "wasm32-orbit %s: the same C and the same manifest as wasm64-orbit (%s)" % (name, err32))
+        req32 = ["clock/v1", "log/v1", "thread/v1"] if name in ("task", "channel") else req  # decision 10: Task.* / Channel.* need thread/v1
+        check(rc32 == 0 and text32.endswith(expected_tail(req32)), "wasm32-orbit %s: manifest %s ends the C file (%s)" % (name, req32, err32 + text32[-300:]))
+        cut = lambda t: t[:t.rindex(marker)]
+        check(rc32 == 0 and cut(text32) == cut(text), "wasm32-orbit %s: the same C as wasm64-orbit before the manifest (%s)" % (name, err32))
     # the literal shape from the specification, for one case
     rc, err, text = manifest_of("clock")
     check(text.endswith(marker + '\n__asm__(".section .custom_section.orbit.manifest,\\"\\",@\\n.ascii \\"{\\\\\\"abi\\\\\\":1,\\\\\\"requires\\\\\\":'

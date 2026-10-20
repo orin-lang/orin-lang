@@ -53,7 +53,7 @@ What does the compiler emit, which memory width, which C library and which host 
    that never reads the clock does not import it. (Process, file and network access came later and cannot rely on wasm-ld alone:
    decision 9.)
 
-4. **Behaviour of the L0, fail closed.** stdout and stderr become log records (one per line; stdout = info, stderr = error,
+4. **Behaviour of the L0, fail closed.** (Since decision 10 the one-thread task scheduler below is the behaviour of `wasm64-orbit` only; `wasm32-orbit` has real threads.) stdout and stderr become log records (one per line; stdout = info, stderr = error,
    an unterminated stdout line waits for its newline, rev. 2026-10-18). Without the process, file and network capabilities
    (decision 9) the arguments are `["main"]`, the environment is empty, stdin is at end of input, files and the network return
    `EPERM`; `ORIN_DENY` does not exist (the host grant is the policy). Processes (`shell`) are never available. There is one thread, and tasks
@@ -103,7 +103,7 @@ What does the compiler emit, which memory width, which C library and which host 
    4 task tests that need interleaving or a trapping task, decision 4).
 
 7. **Budget.** `runtime/platform/orbit/` is not part of a native binary, so it does not count against the native L0 budget
-   (ADR-0054); it has its own ceiling of **1400 code lines** (1100 until decision 9) (counted like `tools/verify_platform.sh`). 805 at acceptance with
+   (ADR-0054); it has its own ceiling of **1700 code lines** (1100 until decision 9, 1400 until decision 10) (counted like `tools/verify_platform.sh`). 805 at acceptance with
    a ceiling of 900; raised to 1100 with the large-block allocator and the task scheduler (988 lines), because both are
    needed for real programs (memory near native, `std:task`) and each is covered by its own test.
    Evidence instead of CBMC for now: the shared pure primitives keep their harnesses; the rest is covered by the conformance
@@ -168,6 +168,81 @@ What does the compiler emit, which memory width, which C library and which host 
      files, a TCP echo server and client, DNS, `examples/http_server.or` hit with curl, cancellation).
    - *Budget.* The L0 grew by about 350 code lines; the ceiling of `runtime/platform/orbit` is now **1400** (decision 7).
      The native L0 budget is 1176 of 1400 (+4: the include guards of the new header; the code moved between files of `runtime/platform`).
+
+10. **Threads on `wasm32-orbit` (2026-10-18): real threads in the wasi-threads model.** Programs that need tasks to run at the same
+    time (ping-pong and pipelines over bounded channels, producer/consumer) and a task that traps and reaches its join now behave as
+    natively. `wasm64-orbit` stays as decision 4 (one thread; Memory64 has no shared-memory threads in Orbit); wasm32 is where
+    threads live. A deadlock of the sequential path now exits with status 134 as natively (it was -1, which Orbit counts as a
+    trap with exit 1); with real threads a deadlock hangs, as natively.
+    - *Host contract* (orbit `docs/host-abi.md` section 4f; names in one place, `orin_threads_orbit.c`): the module IMPORTS its memory
+      as shared memory (`env.memory`, min as linked, max 65536 pages; Orbit gives the smaller maximum of its isolate limit) and
+      imports `orbit:thread/v1 spawn(arg: i64) -> i64` (tid > 0, `ERR_QUOTA` -6, `ERR_DENIED` -2, `ERR_CANCELLED` -11, ...). The host
+      instantiates the same module again on the same memory in a new OS thread and calls the export `orin_thread_start(tid, arg)`.
+      A trap or exit in any thread ends all threads; main returning ends the leftovers (the L0 joins unjoined tasks first,
+      `orin_orbit_main_end`). Blocking is `memory.atomic.wait32` / `notify` in the guest; no host call. The exit status lives in
+      shared memory (a C variable, not a wasm global), so `orin_exit_status` of any instance reads it. A failed `spawn` is a failed
+      `thread_create` (0), which the runtime turns into the trap "cannot start a task (thread limit reached)".
+    - *Flags* (wasm32 only; `dist/orin-cli.sh`, `tools/run_tests.py`, `tools/test_orbit.py`): `-matomics -mbulk-memory`, real
+      `__thread` (the `-D__thread=...section("orin_tls")` of decision 4 stays for wasm64), and `wasm-ld --shared-memory
+      --import-memory --max-memory=4294967296`. The maximum is 4 GiB (65536 pages) because the module's address space is 4 GiB anyway
+      and the host's isolate limit, not the module, should be what bounds memory (a lower declared maximum would cap every host).
+      Verified: with `--shared-memory` wasm-ld emits correct TLS addresses (the broken addresses of decision 4 were the non-shared
+      case), makes all data segments passive and generates `__wasm_init_memory` as the start function: an atomic flag lets the first
+      instance initialise the data (and give itself a static TLS block); every other instance waits for it, so memory is initialised
+      exactly once with no code in the L0. `orin_main` (main instance) needs no TLS set-up.
+    - *A new thread* starts with the main thread's `__stack_pointer` (each instance has its own globals), so the CREATOR allocates the
+      thread's 1 MiB stack, its TLS block (`__tls_size`, `__tls_align`) and a start record, and passes the record's address as
+      `arg`; `orin_thread_start` sets `__stack_pointer` (inline asm, in a function with no frame) before it calls anything, then
+      `__wasm_init_tls(block)`, then the entry. When the entry returns it publishes "done" (atomic store + notify) and returns; the
+      joiner waits on that word and frees stack, block and record.
+    - *Locks*: a futex mutex (0/1/2 over `wait32`/`notify`, `include/orin_sync.h`) guards the allocator (malloc/free/realloc), the
+      thread and monitor tables, the runtime lock, the stdout line buffer and wake-source open/close. Monitors are the mutex plus
+      two condition counters: `wait` reads the counter while holding the monitor, releases, `wait32`s on the counter (spurious
+      wake-ups are allowed by the contract), and `notify` increments it and wakes one or all. `wait_until` converts the absolute
+      millisecond deadline into a relative timeout with `orbit:clock/v1 monotonic_nanos` (this is why a thread program lists
+      `clock/v1`). Wake sources stay L0 flags (atomic set/check); `bind` is per thread (`__thread`).
+    - *A trapping task*: the runtime records the message, retires the heap, publishes the end to a timed join and calls
+      `orin_platform_thread_exit`. WebAssembly cannot unwind to the thread entry, a trap would end every thread, so the thread marks
+      itself done (the join sees it, and the message the runtime recorded) and then PARKS for good on a word nobody notifies. Cost:
+      one parked OS thread, 1 MiB of stack and a TLS block per trapped task until the module ends (not freed by the join), and a
+      thread slot of the host's limit. Rejected: wasm exception handling (`-fwasm-exceptions`, `__builtin_wasm_throw`): the pinned
+      LLVM 19 emits the legacy `try/catch` encoding, which Wasmtime (Orbit) does not implement (it has the `exnref` form only), and
+      Node would run it. Possible later: reuse a parked thread for the next task (bounded nesting of its native stack).
+    - *Manifest*: `Task.*`, `Channel.*` -> `thread/v1` and `clock/v1` on `wasm32-orbit` (none on wasm64); `.parallel()` and the other
+      `forkJoin` functions are now `Task.Spawn` for the effect analysis (they were invisible to it, so a `.parallel()` program
+      imported `spawn` without listing it); a program using `std:coreprobe` lists everything (it calls L0 functions by table index).
+      The grant is `--grant thread/v1` (Orbit's default is 64 threads, `--max-threads N`, ceiling 1024).
+    - *Net waits*: `orbit:net/v1` calls block the calling OS thread with their `timeout_ms`; the other threads keep running, so a
+      client task and a server task run at the same time (the 2 client+server tests and the 4 task-limit tests that decision 9 had to SKIP now pass). The wake handle is
+      still not passed to the host, so a scope cancelled while a task is inside a long accept/recv/connect ends that wait by its
+      timeout, not at once (a wait that starts after the cancel stops at once as before); a host hook that forwards
+      `wake_signal` / `wake_close` can fix that without changing this layer.
+    - *Node test host* (`tools/wasm_run.mjs`): creates the shared memory from the import's declared limits (it parses the import
+      section), runs the module's main thread in a worker so the main thread can end every thread, serves `spawn` with worker_threads
+      that instantiate the module on the same memory (finished workers stay as idle workers and take the next `spawn`: 20,000
+      short tasks do not start 20,000 workers), and ends the process with the status of the first exit or trap. `--max-threads N`
+      mirrors Orbit's (default 1024, Orbit's ceiling; its default is 64). fs handles are shared between threads
+      (Orbit: valid in every thread); a directory listing stays in the thread that opened it.
+    - *State* (merged with decision 9): Node host, `tools/test_wasm.sh`: wasm64-orbit 1170 passed, 0 failed, 9 skipped (2 shell, 3 net the Node
+      host does not serve, 4 task tests that need threads: ping-pong, pipeline, panic join, panic scope exit); wasm32-orbit 1174 passed, 0 failed,
+      5 skipped (2 shell, 3 net). On the real Orbit (`orbit run --grant thread/v1`, orbit main 844ea5a): wasm32-orbit 1177 passed, 0 failed,
+      2 skipped (the shell); `tools/test_orbit.py` 54 checks, 0 failures, including `examples/http_server.or` served to eight concurrent curls.
+    - *Costs* (Node 24.11.1, one 4-core container, wall time, best of 5, wasm32 before / after this decision; `bench/*/main.or`):
+
+      | program | before | after | after, minus the host's worker start |
+      |---|---:|---:|---:|
+      | hello (startup) | 0.057 s | 0.167 s | 0 |
+      | fib | 0.702 s | 0.796 s | 0.686 s (-2 %) |
+      | bintrees | 0.869 s | 1.227 s | 1.117 s (+29 %) |
+
+      The +0.11 s of startup is Node's (the module's main thread runs in a worker so that the process can end all threads; Orbit has
+      no such cost). The allocator lock is not what bintrees pays: with the locks compiled out the time is the same (1.33 s vs 1.24 s,
+      noise); the rest is V8's shared-memory code (atomics-enabled module, shared memory accesses) and TLS through `__tls_base`.
+      Stress (Node): `tests/concurrency` runs through wasm32 by hand: all pass except `cancel_storm` (needs `net/v1`, which
+      the Node host does not serve; it runs on Orbit), `stress_tasks` (3,000 tasks alive at once need 3 GiB of 1 MiB stacks in a 4 GiB
+      memory and more threads than Orbit's ceiling of 1024: it fails with the clean "thread limit reached" trap; it passed with
+      `--max-threads 4096` and 256 KiB stacks, 20,000 tasks in 11 s) and `trap_deep` (10,000 trapped tasks = 10,000 parked threads,
+      Node runs out of memory for its workers). Budget: `runtime/platform/orbit` is 1686 code lines against the ceiling of 1400 (decision 9); the owner raised the ceiling to **1700** (`tools/test_wasm.sh`; the native budget in `verify_platform.sh` is unchanged). Why: the threaded layer is new (257 lines in `orin_threads_orbit.c`, 29 in the sync header) and wasm64 keeps the sequential path (205 lines in `orin_seq_orbit.c`, moved out of `orin_platform_orbit.c`, not new). Removing the sequential path would bring the layer back to about 1470, at the price of wasm64 tasks.
 
 ## Measurements (2026-10-17, one Linux x86_64 container, best of 3, wall time)
 

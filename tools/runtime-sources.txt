@@ -15,4 +15,4 @@ legacy.include = bootstrap/seed/runtime runtime/core
 legacy.sources = bootstrap/seed/runtime/orin_runtime.c runtime/platform/orin_platform.c
 legacy.llvm = bootstrap/seed/runtime/orin_runtime_llvm.c
 orbit.include = runtime/platform/orbit/include runtime/core
-orbit.sources = runtime/core/orin_runtime.c runtime/platform/orbit/orin_platform_orbit.c runtime/platform/orbit/orin_libc_orbit.c runtime/platform/orbit/orin_float_orbit.c runtime/platform/orbit/orin_builtins_orbit.c
+orbit.sources = runtime/core/orin_runtime.c runtime/platform/orbit/orin_platform_orbit.c runtime/platform/orbit/orin_threads_orbit.c runtime/platform/orbit/orin_seq_orbit.c runtime/platform/orbit/orin_libc_orbit.c runtime/platform/orbit/orin_float_orbit.c runtime/platform/orbit/orin_builtins_orbit.c

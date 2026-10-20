@@ -25,7 +25,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from runtime_files import rt_inc, rt_src  # noqa: E402
 
-TLS = '-D__thread=__attribute__((section("orin_tls")))'
+TLS = '-D__thread=__attribute__((section("orin_tls")))'  # wasm64: one thread, the tasks' state is one block (decision 4)
+# wasm32-orbit: real threads (decision 10): atomics, real __thread, an imported shared memory
+THREADS_CC = ["-matomics"]
+THREADS_LD = ["-Wl,--shared-memory", "-Wl,--import-memory", "-Wl,--max-memory=4294967296"]
 LOG = re.compile(r"^\[(\w+)\] [^ ]+: (.*)$")
 failures = []
 checks = 0
@@ -63,8 +66,9 @@ def build(orinc, src, target, outdir):
     if r.returncode != 0:
         raise SystemExit("compile %s failed:\n%s" % (src, r.stderr))
     triple = "--target=" + target[:6] + "-unknown-unknown"
-    cmd = ["clang", "-O2", "-w", triple, "-mbulk-memory", "-ffreestanding", "-nostdlib", TLS, *rt_inc("orbit"), c, *rt_src("orbit"),
-           "-Wl,--no-entry", "-Wl,--stack-first", "-Wl,-z,stack-size=1048576", "-o", wasm]
+    wasm32 = target == "wasm32-orbit"
+    cmd = ["clang", "-O2", "-w", triple, "-mbulk-memory", "-ffreestanding", "-nostdlib", *(THREADS_CC if wasm32 else [TLS]), *rt_inc("orbit"), c,
+           *rt_src("orbit"), "-Wl,--no-entry", "-Wl,--stack-first", "-Wl,-z,stack-size=1048576", *(THREADS_LD if wasm32 else []), "-o", wasm]
     r = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if r.returncode != 0:
         raise SystemExit("clang %s failed:\n%s" % (src, r.stderr[:2000]))
@@ -75,13 +79,19 @@ class Orbit:
     def __init__(self, binary):
         self.bin = binary
 
+    @staticmethod
+    def threads(wasm):
+        """The grant of a module whose manifest lists thread/v1 (Orbit's default limit is 64 threads)."""
+        with open(wasm, "rb") as f:
+            return ["--grant", "thread/v1"] if b"thread/v1" in f.read() else []
+
     def run(self, wasm, *opts, stdin=None, timeout=30):
-        r = subprocess.run([self.bin, "run", wasm, *opts], input=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        r = subprocess.run([self.bin, "run", wasm, *opts, *self.threads(wasm)], input=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            timeout=timeout)
         return r.returncode, logs(r.stderr.decode("utf-8", "replace")), r.stderr.decode("utf-8", "replace")
 
     def start(self, wasm, *opts):
-        return subprocess.Popen([self.bin, "run", wasm, *opts], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+        return subprocess.Popen([self.bin, "run", wasm, *opts, *self.threads(wasm)], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
 
     def inspect(self, wasm):
@@ -294,7 +304,10 @@ def main():
             ("hello", "tests/wasm_target/hello.or")]}
         want = {"hello": "log/v1", "args_stdin": "log/v1, process/v1", "files": "fs/v1, log/v1",
                 "echo": "clock/v1, log/v1, net/v1, process/v1", "client": "clock/v1, log/v1, net/v1, process/v1",
-                "cancel": "clock/v1, log/v1, net/v1", "http_server": "clock/v1, log/v1, net/v1, process/v1"}
+                "cancel": "log/v1, net/v1", "http_server": "clock/v1, log/v1, net/v1, process/v1"}
+        if target == "wasm32-orbit":  # tasks need real threads there
+            want["cancel"] = "clock/v1, log/v1, net/v1, thread/v1"  # thread/v1 brings clock/v1 (timed waits)
+            want["http_server"] += ", thread/v1"
         for n, caps in want.items():
             text = orbit.inspect(mods[n])
             check("validation: ok" in text and ("requires: " + caps + "\n") in text,

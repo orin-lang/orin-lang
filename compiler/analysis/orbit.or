@@ -20,10 +20,13 @@
 //   Fs.Narrow, Net.Narrow, Process.Narrow            -> no capability: narrowing a grant is a check inside the guest
 //   Process.Exit, Host.Acquire                       -> no capability: handled inside the guest (exit traps after recording
 //                                                       the status)
-//   Task.*, Channel.*                                -> no capability: the guest runs the tasks itself, one at a time, in its
-//                                                       one WebAssembly thread (ADR-0055); a program that needs two tasks
-//                                                       to run at once ends at run time with a "wasm64-orbit: deadlock"
-//                                                       message instead of failing to build
+//   Task.*, Channel.*                                wasm32-orbit: "thread/v1" (real threads, ADR-0055 decision 10; the module
+//                                                       imports `orbit:thread/v1 spawn`) and "clock/v1" (timed waits convert a
+//                                                       deadline with the clock)
+//                                                    wasm64-orbit: no capability: the guest runs the tasks itself, one at a
+//                                                       time, in its one WebAssembly thread (decision 4); a program that needs
+//                                                       two tasks to run at once ends at run time with a "wasm64-orbit:
+//                                                       deadlock" message instead of failing to build
 //   Unknown.* (a call the analysis cannot resolve,  -> no error; every capability that any function of the package needs is
 //   such as a call of a function value)               required (the report's package effects): the unresolved call can reach
 //                                                       only code of the program, so a capability no function reaches (no
@@ -54,7 +57,14 @@ const ORBIT_PRODUCER: string = "orin";
 // "" for an effect that needs no capability, else the capability. `known` is false for an effect the target lacks.
 type CapMap = { known: bool; cap: string; };
 
-function capabilityOf(op: string): CapMap {
+function isTaskOp(op: string): bool {
+  return op.startsWith("Task.") || op.startsWith("Channel.");
+}
+
+function capabilityOf(op: string, target: string): CapMap {
+  if (isTaskOp(op) && target == ORBIT_TARGET32) {
+    return CapMap { known: true, cap: "thread/v1" };
+  }
   if (op == "Console.Write" || op == "Stdio.Write") {
     return CapMap { known: true, cap: "log/v1" };
   }
@@ -82,9 +92,16 @@ export type OrbitPlan = {
   errors: Diagnostic[];    // E0523, one per distinct unavailable effect
 };
 
-export function orbitPlan(c: EffContext, target: string): OrbitPlan {
+// `allPlat`: the program calls L0 functions by table index (std:coreprobe), so every import the target has is possible.
+export function orbitPlan(c: EffContext, target: string, allPlat: bool): OrbitPlan {
   let caps: string[] = [];
   let unknown = false;
+  if (allPlat) {
+    caps.push("clock/v1");
+    if (target == ORBIT_TARGET32) {
+      caps.push("thread/v1");
+    }
+  }
   let errors: Diagnostic[] = [];
   let seen: string[] = [];
   const rep = buildReport(c);
@@ -93,8 +110,11 @@ export function orbitPlan(c: EffContext, target: string): OrbitPlan {
       unknown = true;
       continue;
     }
-    const m = capabilityOf(v.op);
+    const m = capabilityOf(v.op, target);
     if (m.known) {
+      if (m.cap == "thread/v1" && !caps.includes("clock/v1")) {
+        caps.push("clock/v1");
+      }
       if (m.cap != "" && !caps.includes(m.cap)) {
         caps.push(m.cap);
       }
@@ -115,7 +135,7 @@ export function orbitPlan(c: EffContext, target: string): OrbitPlan {
   if (unknown) {
     // an unresolved call may reach any function of the package: list what they need (an unavailable one is no error here)
     for (const v of rep.packageEffects) {
-      const m = isUnknownOp(v.op) ? CapMap { known: false, cap: "" } : capabilityOf(v.op);
+      const m = isUnknownOp(v.op) ? CapMap { known: false, cap: "" } : capabilityOf(v.op, target);
       if (m.known && m.cap != "" && !caps.includes(m.cap)) {
         caps.push(m.cap);
       }
@@ -123,7 +143,7 @@ export function orbitPlan(c: EffContext, target: string): OrbitPlan {
   }
   // sorted by a fixed order (no string ordering: the seed compiler lacks `<` on strings); log/v1 is always there
   let requires: string[] = [];
-  for (const k of ["clock/v1", "fs/v1", "log/v1", "net/v1", "process/v1"]) {
+  for (const k of ["clock/v1", "fs/v1", "log/v1", "net/v1", "process/v1", "thread/v1"]) {
     if (k == "log/v1" || caps.includes(k)) {
       requires.push(k);
     }
