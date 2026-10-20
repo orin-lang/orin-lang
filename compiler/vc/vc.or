@@ -449,9 +449,9 @@ function solveScript(z3: string, lim: SolverLimits, version: string): string {
     return t + run + "\nprintf '%s run\\n' $? | tee -a " + STATS_LOG + " > \"$b.rc\"\n";
   }
   // `unknown` is stored when it is deterministic: with an rlimit, z3 says why it gave up (`(get-info :reason-unknown)`,
-  // asked after the query so the key, the hash of BASE.smt2, is unchanged); "resource limit" is the rlimit, the same on every
-  // machine, while "timeout" (the wall time) is not. The reason line is removed from BASE.out afterwards.
-  const keep = lim.cacheUnknown ? "true" : "[ \"$first\" = unsat ] || [ \"$first\" = sat ] || { [ \"$first\" = unknown ] && [ \"$rl\" -gt 0 ] && printf '%s' \"$why\" | grep -qi 'resource'; }";
+  // asked after the query so the key, the hash of BASE.smt2, is unchanged); "max. resource limit exceeded" and "canceled" are
+  // the rlimit (the same on every machine) and "incomplete" is the query, while "timeout" (the wall time) and memory are not. The reason line is removed from BASE.out afterwards.
+  const keep = lim.cacheUnknown ? "true" : "[ \"$first\" = unsat ] || [ \"$first\" = sat ] || { [ \"$first\" = unknown ] && [ \"$rl\" -gt 0 ] && [ -n \"$why\" ] && ! printf '%s' \"$why\" | grep -qiE 'timeout|memory|memout'; }";
   t += "c=" + shQuote(lim.cacheDir) + "\n";
   t += "if command -v sha256sum >/dev/null 2>&1; then h() { sha256sum | cut -d' ' -f1; }; else h() { shasum -a 256 | cut -d' ' -f1; }; fi\n";
   t += "k=$( { printf '%s\\n' " + shQuote("orin-verify-cache-1 " + version) + "\" $ms $hard $rl\"; cat \"$b.smt2\"; } | h )\n";

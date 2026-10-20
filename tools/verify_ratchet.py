@@ -62,6 +62,10 @@ def run_verify(a, extra, tag):
            "--timeout-ms", str(a.timeout_ms), "--retry-ms", str(a.retry_ms), "--solver-stats"]
     if a.cache_dir:
         cmd += ["--cache-dir", os.path.abspath(a.cache_dir)]
+        if not a.no_cache_wall_unknown:
+            # also keep the wall-clock unknowns (~250 queries of ~60 s each, a third of a warm run): for a ratchet a sticky
+            # timeout is harmless (a changed function is another query text; a timeout that would be solved only improves)
+            cmd += ["--cache-unknown"]
     cmd += extra + [os.path.join(ROOT, "compiler", "main.or")]
     env = dict(os.environ)
     if a.threads:
@@ -134,6 +138,7 @@ def main():
     ap.add_argument("--timeout-ms", type=int, default=TIMEOUT_MS)
     ap.add_argument("--retry-ms", type=int, default=RETRY_MS)
     ap.add_argument("--cache-dir", default="", help="answer cache of orin verify (sat, unsat and rlimit-unknown answers, keyed by z3 version and rlimit; safe)")
+    ap.add_argument("--no-cache-wall-unknown", action="store_true", help="do not cache wall-clock unknowns (default with --cache-dir: cache them)")
     ap.add_argument("--threads", type=int, default=0)
     ap.add_argument("--runs", type=int, default=2, help="--update: number of runs; differing obligations are unstable")
     ap.add_argument("--from-json", nargs="+", help="use these saved `verify --format=json` outputs instead of running")

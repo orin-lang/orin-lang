@@ -236,10 +236,10 @@ def check_cache(orinc):
     check((stat(r) or (0, 1, 0))[1] == 0, "cache: another solver version must not hit")
     # with --rlimit an `unknown` that z3 gives for running out of the resource limit is deterministic and stored without
     # --cache-unknown; one given for the wall time ("timeout") is not; the rlimit is part of the key
-    for reason, stored in (("max. resource limit exceeded", True), ("timeout", False)):
+    for reason, stored in (("max. resource limit exceeded", True), ("canceled", True), ("timeout", False), ("memory", False)):
         with open(fake, "w") as f:
             f.write('#!/bin/sh\ncase "$1" in --version) echo "Z3 fake 3.0"; exit 0;; esac\ncat > /dev/null\necho unknown\necho \'(:reason-unknown "%s")\'\n' % reason)
-        rcache = os.path.join(work, "rlimit-" + ("res" if stored else "time"))
+        rcache = os.path.join(work, "rlimit-" + reason.replace(" ", "_").replace(".", ""))
         for i in (1, 2):
             r = run(orinc, "--format=json", "--solver-stats", "--rlimit", "1000", "--z3", fake, "--cache-dir", rcache, src, case="_cache")
             res = json.loads(r.stdout.decode())["results"]

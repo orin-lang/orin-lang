@@ -233,8 +233,8 @@ text contains the whole context of its function). The run therefore does less an
   callee's contract, see "Statuses and abstraction"): `unsat` and `unknown` are not reported for them.
 - *Answer cache* (`--cache-dir DIR`, off by default). An answer is stored in `DIR/<sha256>` under the SHA-256 of the z3 version
   (`z3 --version`), the time limit, the `rlimit` and the whole query text, so a hit is exactly the answer z3 gave to that very
-  text; a changed function, a changed contract of a callee (it is part of the text), another z3 or another limit is a miss. `sat` and `unsat` are stored (always right). With `--rlimit N` an `unknown` that z3 gives because it ran out of the resource
-  limit is stored too: the `rlimit` is deterministic (and part of the key), so the same z3 on the same text gives the same
+  text; a changed function, a changed contract of a callee (it is part of the text), another z3 or another limit is a miss. `sat` and `unsat` are stored (always right). With `--rlimit N` an `unknown` that z3 gives for a reason other than the wall time or memory (it ran out of the resource
+  limit: "max. resource limit exceeded" or "canceled"; or the query is incomplete) is stored too: the `rlimit` is deterministic (and part of the key), so the same z3 on the same text gives the same
   `unknown` on every machine; the script asks `(get-info :reason-unknown)` after the query to tell it from a wall-clock
   `unknown` ("timeout") and from a hard timeout, which say something about the machine and its load and are stored only with
   `--cache-unknown`; that makes a rerun skip the timeouts too (the largest part of the time) at the price that a timeout
@@ -636,6 +636,6 @@ When two PRs both move the counts, whichever merges second reruns this command a
 
 CI runs `tools/verify_ratchet.py --check` in the `verify-ratchet` job of `.github/workflows/ci.yml` (pushes to main, nightly, and pull
 requests that touch `compiler/` or `tools/verify*`). The verifier's answer cache is kept with `actions/cache`, keyed by the z3
-version and the rlimit with a restore-key fallback, so only the queries of changed functions are solved again: a cold run takes
+version and the rlimit with a restore-key fallback, so only the queries of changed functions are solved again (the ratchet also passes `--cache-unknown`, so the ~250 queries that run into the 60 s wall time are not repeated; `--no-cache-wall-unknown` turns that off): a cold run takes
 about 70 minutes on 4 cores, a warm one minutes. The baseline records the z3 version it was made with (`# z3:` line); z3 comes from
 apt (4.8.12) because the `rlimit` counts of another version can move a query across the limit.
