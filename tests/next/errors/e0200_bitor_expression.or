@@ -1,0 +1,7 @@
+// error: E0200
+// LEX-3/LEX-17: `|` exists only in union declarations; in an expression it is a syntax error.
+function main(): void {
+  const a = true;
+  const b = a | false;
+  console.log(b.toString());
+}

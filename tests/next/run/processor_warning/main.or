@@ -1,0 +1,8 @@
+// warns: W0491
+// ANN-13/ANN-14: a diagnostic of severity warning reported by a processor is W0491; the program still compiles and runs.
+// The processor output is the recorded sidecar models.gen.Json.json (the S4 test hook).
+import { describe } from "./models.gen";
+
+function main(): void {
+  console.log(describe());
+}

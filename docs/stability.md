@@ -33,6 +33,8 @@ Not much, and we say so:
   `changes/` fragments); read them before upgrading.
 - **Diagnostic codes** (`E0300`, `W0440`, ...) are stable identifiers. Their **message text** is not: do not
   match on it. `orin check --format=json` gives you the code.
+- **Runtime in 1.0:** 1.0 ships with the C object model next to the Orin runtime core (roadmap D8, decided
+  2026-10-18); deleting the C object model (R3f, ADR-0052) is a 1.x change that no program can observe.
 - **Not stable at all, in any release before or after 1.0:** the runtime ABI, the MIR format
   ([mir.md](mir.md)), and the generated C or LLVM IR. Do not link against them or depend on their shape.
 - Bug fixes are not breaking changes, even if a program that relied on the bug stops compiling. Soundness
@@ -63,6 +65,7 @@ short and in one place; this is it.
 |---|---|---|
 | `std:meta` (annotation-processor interface, ADR-0046 slice S3) | [std-meta.md](std-meta.md), [`library/std/meta.or`](../library/std/meta.or), `metacore.or`, `metajson.or` | Experimental. The compiler already uses it: `orin expand` and the `.gen` companion modules run processors written against it (ADR-0046 slices S4-S6), but names and shapes may still change until promoted. |
 | OX markup (JSX-like syntax) and its providers `std:html`, `std:ox` | [ox.md](ox.md), [`library/std/ox.or`](../library/std/ox.or), [`library/std/html.or`](../library/std/html.or) | Experimental; provider details may change. |
+| Process start with an argument list (argv) in `std:process` | [std.md](std.md) | Experimental at 1.0 (decided 2026-10-18): 1.0 has only the shell-based `io.shell`/`shellTimeout`; an argv API follows in 1.x. |
 | `std:task` beyond the Gate 1 API | [concurrency.md](concurrency.md), [`library/std/task.or`](../library/std/task.or) | Stage 0, unstable. Gate 1 review decides what is frozen; additions beyond it stay experimental. |
 
 Also unstable until the owner confirms the std I/O freeze (ADR-0016 amendment, ADR-0027): `std:host`,

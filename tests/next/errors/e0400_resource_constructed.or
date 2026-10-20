@@ -1,7 +1,7 @@
 // error: E0400
 // a File cannot be created from a literal or a record literal
 import { Host } from "std:host";
-import { withFile, useFile, Read, Write, File } from "std:fs";
+import { withFile, Read, Write, File } from "std:fs";
 function main(host: Host): void {
   run();
 }

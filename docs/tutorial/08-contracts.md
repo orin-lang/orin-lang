@@ -43,7 +43,8 @@ function main(): void {
   of `e` on entry (for methods). A violation is the *function's* fault.
 - `a ==> b` means "if `a` then `b`". A contract expression has no side effects: it may use arithmetic, comparisons,
   `match`, array and string methods and calls of pure functions.
-- Contracts cost nothing in a normal build: they produce no code. `orin run` prints:
+- Contracts cost nothing in a normal build: they produce no code. `orin run` has no `--check-contracts` flag; the clauses
+  are checked by `orin test` and by a program built with `orin compile --check-contracts`. `orin run` prints:
 
 <!-- file: examples/tutorial/08-contracts.out -->
 ```text

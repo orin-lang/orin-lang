@@ -1,0 +1,6 @@
+[package]
+name = "app"
+entry = "main.or"
+
+[dependencies]
+greeter = { path = "dep" }

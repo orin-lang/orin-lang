@@ -1,0 +1,74 @@
+// std:fs and std:path on Orbit (L0: orbit:fs/v1) under a mount: read, write, append, stream, list, errors, and the paths the
+// mount does not contain. Run: orbit run files.wasm --grant log/v1 --grant fs:/data=./dir:rw   (./dir holds in.txt and sub/)
+import { Host, withHost } from "std:host";
+import { FsGrant, FsError, readFile, writeFile, exists, listDir, fsErrorMessage, withFile, Read, Write, Append, withUnder, withReadOnly } from "std:fs";
+
+function main(host: Host): void {
+  withHost(host, (fs, proc, stdio, clock) => { run(fs); });
+}
+
+function failure(label: string, r: Result<string, FsError>): void {
+  console.log(label + ": " + (r.isOk() ? "unexpectedly ok" : fsErrorMessage(r.unwrapErr())));
+}
+
+function okOr<T>(r: Result<T, FsError>, d: T): T {
+  return match (r) {
+    Ok(v) => v,
+    Err(e) => d
+  };
+}
+
+function run(fs: FsGrant): void {
+  console.log("exists in.txt: " + okOr(exists(fs, "/data/in.txt"), false).toString());
+  console.log("exists nothing: " + okOr(exists(fs, "/data/nothing"), true).toString());
+  console.log("read: " + okOr(readFile(fs, "/data/in.txt"), "?"));
+  console.log("write: " + writeFile(fs, "/data/out.txt", "hello from orin\nsecond line\n").isOk().toString());
+  console.log("readback: " + okOr(readFile(fs, "/data/out.txt"), "?").length.toString() + " bytes");
+  for (const e of okOr(listDir(fs, "/data"), [])) {
+    console.log("entry: " + e);
+  }
+  failure("missing", readFile(fs, "/data/missing.txt"));
+  failure("outside the mount", readFile(fs, "/etc/passwd"));
+  failure("dotdot", readFile(fs, "/data/../etc/passwd"));
+  failure("a directory", readFile(fs, "/data/sub"));
+  const w = withFile(fs, "/data/stream.txt", Write, f => {
+    f.writeLine("one");
+    f.writeLine("two");
+    f.write("three");
+    return 0;
+  });
+  const a = withFile(fs, "/data/stream.txt", Append, f => {
+    f.writeLine("-four");
+    return 0;
+  });
+  console.log("stream written: " + (w.isOk() && a.isOk()).toString());
+  const r = withFile(fs, "/data/stream.txt", Read, f => {
+    let n = 0;
+    while (true) {
+      const ln = f.readLine();
+      if (ln.isNone()) {
+        break;
+      }
+      n += 1;
+      console.log("line " + n.toString() + ": " + ln.unwrap());
+    }
+    return n;
+  });
+  console.log("stream lines: " + okOr(r, -1).toString());
+  let big = "";
+  let i: int = 0;
+  while (i < 8192) {
+    i += 1;
+    big = big + "0123456789abcdef";
+  }
+  writeFile(fs, "/data/big.txt", big);
+  console.log("big: " + (okOr(readFile(fs, "/data/big.txt"), "") == big).toString());
+  withReadOnly(fs, ro => {
+    console.log("read-only write refused: " + writeFile(ro, "/data/ro.txt", "x").isErr().toString());
+    return 0;
+  });
+  withUnder(fs, "/data/sub", sub => {
+    console.log("under: " + readFile(sub, "/data/in.txt").isErr().toString());
+    return 0;
+  });
+}

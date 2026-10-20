@@ -1,0 +1,5 @@
+box[text(hello)]
+box[text(hello ),box[text(inner)],text( tail)]
+box[text(a),box[],text(x),text(y),text(b)]
+box[text(just text)]
+box[group[text(text),box[],text(more)]]

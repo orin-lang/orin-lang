@@ -1,0 +1,8 @@
+// error: E0400
+// TYP-20: a `void` call cannot be bound to a variable.
+function f(): void {
+}
+
+function main(): void {
+  const x = f();
+}

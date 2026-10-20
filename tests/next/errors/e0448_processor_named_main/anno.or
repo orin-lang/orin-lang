@@ -1,0 +1,10 @@
+import { Input, Output, output } from "std:meta";
+
+@Annotation(type)
+export type Mark = { };
+
+// A processor cannot be called `main`.
+@Processor(Mark)
+export function main(input: Input): Output {
+  return output([]);
+}

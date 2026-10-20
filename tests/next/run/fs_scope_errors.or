@@ -1,8 +1,8 @@
 // std:fs scope API: error paths. The scope returns Err when the file cannot be opened (the body is not run) and
 // when an operation on the file failed (wrong mode), and the file is closed on every path.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant, fsErrorMessage } from "std:fs";
-import { withFile, useFile, withFiles, useFiles, Read, Write, File, FsError } from "std:fs";
+import { withFile, withFiles, Read, Write, File, FsError } from "std:fs";
 
 const OK_PATH: string = "build/tests/fs_scope_errors.txt";
 
@@ -25,21 +25,21 @@ function twoLines(fs: FsGrant, path: string): Result<string, FsError> {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
-  useFile(fs, OK_PATH, Write, f => { f.writeLine("one"); f.writeLine("two"); }).unwrap();
+  withFile(fs, OK_PATH, Write, f => { f.writeLine("one"); f.writeLine("two"); }).unwrap();
 
   // open failures: the body must not run
   const e1 = withFile(fs, "build/tests/no_such_dir/x.txt", Read, f => { return 1; });
   console.log("missing dir: " + e1.isErr().toString() + " " + fsErrorMessage(e1.unwrapErr()));
-  const e2 = useFile(fs, "build/tests/definitely_missing.txt", Read, f => { console.log("BODY RAN"); });
+  const e2 = withFile(fs, "build/tests/definitely_missing.txt", Read, f => { console.log("BODY RAN"); });
   console.log("missing file: " + fsErrorMessage(e2.unwrapErr()));
-  const e3 = useFile(fs, "build/tests", Write, f => { console.log("BODY RAN"); });
+  const e3 = withFile(fs, "build/tests", Write, f => { console.log("BODY RAN"); });
   console.log("directory: " + e3.isErr().toString());
   const e4 = withFiles(fs, OK_PATH, Read, "build/tests/no_such_dir/y.txt", Write, (a, b) => { console.log("BODY RAN"); return 0; });
   console.log("second file missing: " + fsErrorMessage(e4.unwrapErr()));
-  const e5 = useFiles(fs, "build/tests/definitely_missing.txt", Read, OK_PATH, Write, (a, b) => { console.log("BODY RAN"); });
+  const e5 = withFiles(fs, "build/tests/definitely_missing.txt", Read, OK_PATH, Write, (a, b) => { console.log("BODY RAN"); });
   console.log("first file missing: " + fsErrorMessage(e5.unwrapErr()));
   // (e4 failed after the first file was opened: that file was closed again, so it can be opened again)
   console.log("still readable: " + firstLine(fs, OK_PATH).unwrap());
@@ -59,7 +59,7 @@ function run(fs: FsGrant): void {
   console.log("a Write scope truncates the file: " + (withFile(fs, OK_PATH, Read, f => f.readAll()).unwrap() == "").toString());
 
   // `?` in a function using the scope
-  useFile(fs, OK_PATH, Write, f => { f.writeLine("one"); f.writeLine("two"); }).unwrap();
+  withFile(fs, OK_PATH, Write, f => { f.writeLine("one"); f.writeLine("two"); }).unwrap();
   console.log(twoLines(fs, OK_PATH).unwrap());
   console.log(twoLines(fs, "build/tests/definitely_missing.txt").isErr().toString());
 

@@ -1,0 +1,10 @@
+// error: E0304
+import { sqrt } from "std:math";
+
+function sqrt(x: float): float {
+  return x;
+}
+
+function main(): void {
+  console.log("x");
+}

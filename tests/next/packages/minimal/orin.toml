@@ -1,0 +1,3 @@
+# MOD-12: only `name`; version defaults to "0.0.0", entry to "src/main.or".
+[package]
+name = "minimal"

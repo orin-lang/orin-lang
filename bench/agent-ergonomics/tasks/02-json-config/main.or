@@ -1,0 +1,60 @@
+// A JSON config reader with validation: required and optional fields, ranges, unknown-field policy.
+import { parseDocument, defaultReadOptions, defaultLimits, jsonParseErrorMessage } from "std:json";
+import { decodeRoot, requiredField, optionalField, decodeString, decodeInt, decodeBool, decodeArray,
+  checkFields, decodeErrorMessage, DecodeCursor, DecodeError, UnknownFieldPolicy, RejectUnknown } from "std:json/decode";
+
+type Config = { name: string; port: int; debug: bool; tags: string[]; };
+
+function decodeConfig(root: DecodeCursor): Result<Config, DecodeError> {
+  checkFields(root, ["name", "port", "debug", "tags"], RejectUnknown)?;
+  const name = decodeString(requiredField(root, "name")?)?;
+  const port = decodeInt(requiredField(root, "port")?, 1, 65535)?;
+  let debug = false;
+  const dbg = optionalField(root, "debug")?;
+  if (dbg.isSome()) {
+    debug = decodeBool(dbg.unwrap())?;
+  }
+  let tags: string[] = [];
+  const t = optionalField(root, "tags")?;
+  if (t.isSome()) {
+    for (const item of decodeArray(t.unwrap())?) {
+      tags.push(decodeString(item)?);
+    }
+  }
+  return Ok(Config { name: name, port: port, debug: debug, tags: tags });
+}
+
+function load(text: string): Result<Config, string> {
+  const parsed = parseDocument(text, defaultReadOptions());
+  if (parsed.isErr()) {
+    return Err("parse error: " + jsonParseErrorMessage(parsed.unwrapErr()));
+  }
+  const root = decodeRoot(parsed.unwrap(), defaultLimits());
+  if (root.isErr()) {
+    return Err("invalid: " + decodeErrorMessage(root.unwrapErr()));
+  }
+  const cfg = decodeConfig(root.unwrap());
+  if (cfg.isErr()) {
+    return Err("invalid: " + decodeErrorMessage(cfg.unwrapErr()));
+  }
+  return Ok(cfg.unwrap());
+}
+
+function main(): void {
+  const inputs = [
+    "{\"name\":\"svc\",\"port\":8080,\"debug\":true,\"tags\":[\"a\",\"b\"]}",
+    "{\"name\":\"svc\",\"port\":70000}",
+    "{\"name\":\"svc\"}",
+    "{\"name\":\"svc\",\"port\":1,\"extra\":1}",
+    "{\"name\":3,\"port\":1}",
+    "{\"name\":\"x\",\"port\":",
+  ];
+  for (const text of inputs) {
+    match (load(text)) {
+      Ok(c) => {
+        console.log("ok " + c.name + " port=" + c.port.toString() + " debug=" + c.debug.toString() + " tags=" + c.tags.join(","));
+      },
+      Err(e) => { console.log(e); },
+    }
+  }
+}

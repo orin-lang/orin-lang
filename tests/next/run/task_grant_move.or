@@ -1,8 +1,8 @@
 // std:task: a grant is moved into a task (ADR-0017, ADR-0027 Q10). The tasks get their own derived grants with the authority of
 // the spawner's grant (here narrowed to tests/next/run), cannot reach more than that, and the grants are revoked when the tasks
 // end (the table holds 256 live grants, and 300 tasks below each use one).
-import { Host, useFs, useClock } from "std:host";
-import { readFile, useUnder, FsGrant } from "std:fs";
+import { Host, withFs, withClock } from "std:host";
+import { readFile, withUnder, FsGrant } from "std:fs";
 import { nowMillis } from "std:time";
 import { scopeFsDo, scopeClockDo, spawnFs, spawnClock, TaskHandle } from "std:task";
 
@@ -11,8 +11,8 @@ function readable(fs: FsGrant, path: string): bool {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => {
-    useUnder(fs, "tests/next/run", sub => {
+  withFs(host, fs => {
+    withUnder(fs, "tests/next/run", sub => {
       scopeFsDo(sub, (s, g) => {
         const inside = spawnFs(s, g, fsg => readable(fsg, "tests/next/run/task_grant_move.or"));
         const outside = spawnFs(s, g, fsg => readable(fsg, "tests/next/errors/e0481_task_captures_scope.or"));
@@ -37,7 +37,7 @@ function main(host: Host): void {
       });
     });
   });
-  useClock(host, clock => {
+  withClock(host, clock => {
     scopeClockDo(clock, (s, c) => {
       const t = spawnClock(s, c, cg => nowMillis(cg) > 1000000000000);
       console.log("clock in a task: " + (t.join() ? "plausible" : "wrong"));

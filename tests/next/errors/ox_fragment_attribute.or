@@ -1,0 +1,9 @@
+// error: E0200
+// OX-3: a fragment has no attributes: `<>` is a single opening, there is no position for an attribute, and `< class="x">`
+// (a space after `<`) is not markup at all (OX-2).
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  console.log(render(< class="x">x</>));
+}

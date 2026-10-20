@@ -1,0 +1,7 @@
+// `export { x } from` of a third module: the importer gets the entity of a.or through b.or.
+import { value, Pair } from "./b";
+
+function main(): void {
+  const p: Pair = Pair { a: value(), b: 1 };
+  console.log((p.a + p.b).toString());
+}

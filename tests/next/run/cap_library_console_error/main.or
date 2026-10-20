@@ -1,0 +1,8 @@
+// stderr: warning: from the library
+// CAP-6: library code without a grant can write to stderr (and stdout): console output is ambient authority.
+import { warn } from "./lib";
+
+function main(): void {
+  warn("from the library");
+  console.log("done");
+}

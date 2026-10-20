@@ -1,0 +1,82 @@
+// A Result-heavy parser for "key=value" lines with typed errors and `?`.
+type ParseError = EmptyKey(int) | MissingEquals(int) | BadInt(int, string) | Duplicate(string);
+
+type Entry = { key: string; value: string; };
+
+function describe(e: ParseError): string {
+  return match (e) {
+    EmptyKey(n) => "line " + n.toString() + ": empty key",
+    MissingEquals(n) => "line " + n.toString() + ": missing '='",
+    BadInt(n, text) => "line " + n.toString() + ": not an integer: " + text,
+    Duplicate(k) => "duplicate key: " + k,
+  };
+}
+
+function parseLine(lineNo: int, line: string): Result<Entry, ParseError> {
+  const eq = line.indexOf("=");
+  if (eq.isNone()) {
+    return Err(MissingEquals(lineNo));
+  }
+  const key = line.substring(0, eq.unwrap()).trim();
+  const value = line.substring(eq.unwrap() + 1, line.length).trim();
+  if (key.length == 0) {
+    return Err(EmptyKey(lineNo));
+  }
+  return Ok(Entry { key: key, value: value });
+}
+
+function parseAll(text: string): Result<Entry[], ParseError> {
+  let entries: Entry[] = [];
+  let seen = new Map<string, bool>();
+  let lineNo = 0;
+  for (const raw of text.split("\n")) {
+    lineNo += 1;
+    const line = raw.trim();
+    if (line.length == 0 || line.startsWith("#")) {
+      continue;
+    }
+    const e = parseLine(lineNo, line)?;
+    if (seen.has(e.key)) {
+      return Err(Duplicate(e.key));
+    }
+    seen.set(e.key, true);
+    entries.push(e);
+  }
+  return Ok(entries);
+}
+
+function intValue(lineNo: int, e: Entry): Result<int, ParseError> {
+  return match (parseInt(e.value)) {
+    Some(n) => Ok(n),
+    None => Err(BadInt(lineNo, e.value)),
+  };
+}
+
+function total(entries: Entry[]): Result<int, ParseError> {
+  let sum = 0;
+  let n = 0;
+  for (const e of entries) {
+    n += 1;
+    sum += intValue(n, e)?;
+  }
+  return Ok(sum);
+}
+
+function report(text: string): string {
+  const entries = parseAll(text);
+  if (entries.isErr()) {
+    return "error: " + describe(entries.unwrapErr());
+  }
+  return match (total(entries.unwrap())) {
+    Ok(n) => "ok: " + entries.unwrap().length.toString() + " entries, total " + n.toString(),
+    Err(e) => "error: " + describe(e),
+  };
+}
+
+function main(): void {
+  console.log(report("a=1\n# comment\nb = 2\n\nc=39\n"));
+  console.log(report("a=1\nbroken\n"));
+  console.log(report("=5\n"));
+  console.log(report("a=1\na=2\n"));
+  console.log(report("a=1\nb=x2\n"));
+}

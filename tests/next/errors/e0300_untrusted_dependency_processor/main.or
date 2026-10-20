@@ -1,0 +1,9 @@
+// error: E0300
+// stderr: W0492
+// ANN-14: a processor of a dependency that [annotations] processors does not list is not run (W0492); its companion stays empty.
+import { Thing } from "./models";
+import { describeThing } from "./models.gen";
+
+function main(): void {
+  console.log(describeThing());
+}

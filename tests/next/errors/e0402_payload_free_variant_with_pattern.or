@@ -1,0 +1,12 @@
+// error: E0402
+// EXP-16: the arity of a variant pattern must match the variant (sub-patterns on a payload-free variant).
+type U = A | B(int);
+
+function main(): void {
+  const u: U = B(2);
+  const r = match (u) {
+    A(x) => 1,
+    B(v) => v,
+  };
+  console.log(r.toString());
+}

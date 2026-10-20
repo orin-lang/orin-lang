@@ -1,7 +1,7 @@
 // Grants are passed down as borrowed arguments through ordinary functions, recursion and function values that take them
 // as parameters; the scope ends them. Nested scopes use withFileFs (a closure cannot capture a grant).
-import { Host, useFs } from "std:host";
-import { FsGrant, FsError, writeFile, readFile, withFileFs, useFile, Read, Write } from "std:fs";
+import { Host, withFs } from "std:host";
+import { FsGrant, FsError, writeFile, readFile, withFileFs, withFile, Read, Write } from "std:fs";
 
 const P: string = "build/tests/cap_chain.txt";
 
@@ -14,7 +14,7 @@ function readBack(fs: FsGrant, f: (g: FsGrant) => string): string {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => {
+  withFs(host, fs => {
     writeThrough(fs, 5).unwrap();
     console.log(readBack(fs, g => readFile(g, P).unwrap()));
     const depth = withFileFs(fs, P, Read, (f, fs2) => {

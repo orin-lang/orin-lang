@@ -1,7 +1,7 @@
 // An Orin HTTP client for tools/test_net.sh: GET /health on 127.0.0.1:<port> through a grant that covers exactly that port,
 // then tries to leave the granted scope (another port, another host) and a widened narrowing; every attempt must be refused.
 // Prints one line per step.
-import { Host, withProcess, useNet } from "std:host";
+import { Host, withProcess, withNet } from "std:host";
 import { args } from "std:process";
 import { milliseconds } from "std:time";
 import { Bytes, fromString } from "std:bytes";
@@ -46,7 +46,7 @@ function attempt(net: NetGrant, host: string, port: int): string {
 function main(host: Host): void {
   const argv = withProcess(host, p => args(p));
   const port = match (parseInt(argv[0])) { Some(v) => v, None => 0 };
-  useNet(host, net => {
+  withNet(host, net => {
     useConnect(net, "127.0.0.1", port, port, c => {
       const r = useConnection(c, "127.0.0.1", port, milliseconds(2000), (s: Stream) => { console.log("health: " + getHealth(s)); });
       console.log("granted connect: " + (r.isOk() ? "ok" : "FAIL " + netErrorMessage(r.unwrapErr())));

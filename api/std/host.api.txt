@@ -1,11 +1,18 @@
 orin-api 1
 module std:host
+  @Deprecated("use withArgsOnly(proc, body) with a void body (ADR-0048)")
   function useArgsOnly(proc: ProcessGrant, body: (p: ProcessGrant) => void): void
+  @Deprecated("use withClock(host, body) with a void body (ADR-0048)")
   function useClock(host: Host, body: (clock: ClockGrant) => void): void
+  @Deprecated("use withFs(host, body) with a void body (ADR-0048)")
   function useFs(host: Host, body: (fs: FsGrant) => void): void
+  @Deprecated("use withHost(host, body) with a void body (ADR-0048)")
   function useHost(host: Host, body: (fs: FsGrant, proc: ProcessGrant, stdio: StdioGrant, clock: ClockGrant) => void): void
+  @Deprecated("use withNet(host, body) with a void body (ADR-0048)")
   function useNet(host: Host, body: (net: NetGrant) => void): void
+  @Deprecated("use withProcess(host, body) with a void body (ADR-0048)")
   function useProcess(host: Host, body: (proc: ProcessGrant) => void): void
+  @Deprecated("use withStdio(host, body) with a void body (ADR-0048)")
   function useStdio(host: Host, body: (stdio: StdioGrant) => void): void
   function withArgsOnly<T>(proc: ProcessGrant, body: (p: ProcessGrant) => T): T
   function withClock<T>(host: Host, body: (clock: ClockGrant) => T): T

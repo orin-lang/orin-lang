@@ -16,12 +16,15 @@ the same block (also a duplicate match binding or a duplicate arrow parameter) i
 **EXP-2.** A top-level `const` has an optional type annotation and an initialiser; the initialiser of a top-level constant must be a
 literal (an integer, possibly negated, a float, a string or a boolean; no call, no operator), otherwise E0408. A top-level constant is immutable and may be
 exported.
-- Tests: `tests/run/top_level_const.or`, `tests/errors/e0400_const_type.or`, `tests/parse_edge/err0200_const_top_noinit.or`.
+- Tests: `tests/run/top_level_const.or`, `tests/errors/e0400_const_type.or`, `tests/parse_edge/err0200_const_top_noinit.or`,
+  `tests/next/errors/e0408_top_level_const_call.or`, `tests/next/errors/e0408_top_level_const_operator.or`,
+  `tests/next/errors/e0408_top_level_const_closure.or`, `tests/next/errors/e0408_top_level_const_array.or`.
 
-**EXP-3.** Names are resolved in this order: local scope, the module's declarations, its imports, then the prelude (chapter 6). An unknown
+**EXP-3.** Names are resolved in this order: local scope, the module's declarations and imports, then the prelude (chapter 6); a local hides a module
+name, and a module declaration or an import hides a prelude name. A declaration and an import of the same name do not shadow each other: they conflict (E0304). An unknown
 value is E0300 `unresolved name` (a function: `unresolved function`), an unknown type E0300.
 - Tests: `tests/errors/e0300_unresolved_name.or`, `tests/errors/e0300_unresolved_function.or`, `tests/errors/e0300_unknown_type.or`,
-  `tests/next/errors/e0300_template_unknown_name.or`.
+  `tests/next/errors/e0300_template_unknown_name.or`, `tests/next/run/name_resolution_order`, `tests/next/errors/e0304_import_and_declaration_same_name.or`.
 
 ## 4.2 Assignment and places
 
@@ -45,7 +48,8 @@ are unaffected (value semantics, chapter 3). `xs[i] = v` traps when `i` is out o
 starts, so changing the array in the body does not change the iteration; the loop variable is immutable and scoped to the body.
 `break;` and `continue;` act on the innermost loop and are E0409 outside one.
 - Tests: `tests/run/while_break_continue.or`, `tests/run/nested_loops.or`, `tests/run/array_for_of.or`, `tests/run/array_for_of_snapshot.or`,
-  `tests/errors/e0409_break_outside_loop.or`, `tests/errors/e0409_continue_outside_loop.or`, `tests/errors/e0400_arg_type.or`.
+  `tests/errors/e0409_break_outside_loop.or`, `tests/errors/e0409_continue_outside_loop.or`, `tests/errors/e0400_arg_type.or`,
+  `tests/next/errors/e0400_for_of_string.or`, `tests/next/errors/e0400_for_of_map.or`.
 
 **EXP-7.** `return e;` must have the function's result type (E0400); `return;` is for `void` functions; returning a value from a `void`
 function is E0400. A non-`void` function must return on every path (E0403). The rule is conservative: the last statement of the body
@@ -57,7 +61,8 @@ function is E0400. A non-`void` function must return on every path (E0403). The 
 
 **EXP-8.** An expression statement may be any expression; its value is discarded. A statement that is a `match` expression needs no `;`.
 A bare block `{ .. }` is a statement with its own scope.
-- Tests: `tests/run/match_option_result.or`, `tests/parse_edge/ok_match_stmt_noterm.or`, `tests/parse_edge/ok_blocks.or`.
+- Tests: `tests/run/match_option_result.or`, `tests/parse_edge/ok_match_stmt_noterm.or`, `tests/parse_edge/ok_blocks.or`,
+  `tests/next/run/expression_statement_not_a_call.or`.
 
 ## 4.4 Calls, members and indexing
 
@@ -118,7 +123,8 @@ type of the arms, which must agree (E0400); an arm body is an expression or a bl
 arm has no value and must end in `return`, `break` or `continue`; in statement position block arms may complete normally. A later arm
 after a catch-all is accepted without a warning.
 - Tests: `tests/run/match_diverging_arms.or`, `tests/run/match_option_result.or`, `tests/run/match_literals.or`,
-  `tests/next/run/closure_match_body.or`, `tests/next/run/class_match_arm_call.or`, `tests/next/run/iface_cond_and_match.or`.
+  `tests/next/run/closure_match_body.or`, `tests/next/run/class_match_arm_call.or`, `tests/next/run/iface_cond_and_match.or`,
+  `tests/next/run/match_arm_after_catch_all.or`.
 
 **EXP-16.** Patterns: `_` (anything, no binding); an integer literal (optionally negative) or string or `true`/`false` against a scalar of that
 type; a variant name; a variant with sub-patterns `V(p1, p2)`. A sub-pattern is a binding name or `_` (nested variant patterns are rejected,
@@ -128,7 +134,10 @@ An integer literal pattern must fit the scrutinee's type (E0430). Floats, templa
 matched (E0402/E0200).
 - Tests: `tests/run/match_literals.or`, `tests/run/match_option_result.or`, `tests/run/union_basic.or`, `tests/next/errors/e0430_pattern_literal_range.or`,
   `tests/next/errors/e0402_match_float.or`, `tests/next/errors/e0402_match_map.or`, `tests/next/errors/e0402_match_on_type_param.or`,
-  `tests/parse_edge/err0200_match_pattern_or.or`, `tests/parse_edge/ok_match_ident_pattern_default.or`.
+  `tests/parse_edge/err0200_match_pattern_or.or`, `tests/parse_edge/ok_match_ident_pattern_default.or`,
+  `tests/next/errors/e0402_variant_pattern_too_many_fields.or`, `tests/next/errors/e0402_variant_pattern_binds_none.or`,
+  `tests/next/errors/e0402_payload_free_variant_with_pattern.or`, `tests/next/errors/e0405_pattern_name_not_a_variant.or`,
+  `tests/next/errors/e0402_nested_variant_pattern.or`.
 
 **EXP-17.** A match must be **exhaustive**. On a tagged union, `Option` or `Result` every variant must be covered or a `_` arm present; on
 `int`, `string`, `bool` and the other scalars a `_` arm is required (E0402). A missing variant is reported by name.
@@ -160,11 +169,13 @@ is E0412; a grant-typed parameter such as `main(fs: FsGrant)` is E0472.
 
 **EXP-20.** Evaluation is strict and sequential. Within an expression, operands are evaluated **left to right** (`a + b * c` evaluates `a`,
 then `b`, then `c`, whatever the precedence); call arguments, array elements and record-literal fields (in the order written, not the
-declaration order) are evaluated left to right before the call or construction; the condition of `?:` before its branch.
-- Tests: `tests/next/run/ox_member_tags.or` (attribute order), `tests/next/run/ox_spread_intrinsic.or` (a print shows the order), `tests/next/run/str_append_num.or`.
+declaration order) are evaluated left to right before the call or construction; the condition of `?:` before its branch; the receiver of a method call before its arguments; the parts of a template literal in order;
+`&&` and `||` evaluate the right operand only when needed. Left to right is the rule of the language (ADR-0056 C7), not an accident of the backend.
+- Tests: `tests/next/run/ox_member_tags.or` (attribute order), `tests/next/run/ox_spread_intrinsic.or` (a print shows the order), `tests/next/run/str_append_num.or`,
+  `tests/next/run/eval_order_expressions.or`.
 
 **EXP-21.** In an assignment `xs[i] = e;`, the sub-expressions of the place (`xs`, `i`) are evaluated before `e`.
-- Tests: none (probed with `orin2`; see Gaps).
+- Tests: `tests/next/run/eval_order_assignment.or`.
 
 **EXP-22.** A **trap** ends the program with the message on stderr and exit status 101; stdout produced before the trap is kept. The traps
 of the language are: integer overflow, division or modulo by zero, failed integer or float conversion, array and string index/slice
@@ -173,7 +184,10 @@ out of range, `charAt`/`substring`/`split` misuse, `unwrap` on the wrong variant
 after a trap.
 - Tests: `tests/run/overflow_add.or`, `tests/run/array_oob_trap.or`, `tests/run/option_unwrap_trap.or`, `tests/run/result_unwrap_trap.or`,
   `tests/run/div_zero_trap.or`, `tests/run/string_charat_trap.or`, `tests/run/core_oom_trap.or`, `tests/next/run/int_trap_i32_add_overflow.or`,
-  `tests/next/run/float_toint_trap_nan.or`, `tests/next/run/contracts_requires_violation.or`.
+  `tests/next/run/float_toint_trap_nan.or`, `tests/next/run/contracts_requires_violation.or`,
+  `tests/next/run/int_trap_conv_i16_to_i8.or`, `tests/next/run/float_toint_trap_range.or`, `tests/run/array_slice_trap_end.or`,
+  `tests/run/array_slice_trap_order.or`, `tests/run/string_substring_trap.or`, `tests/run/string_charcode_trap.or`,
+  `tests/run/string_split_empty_trap.or`, `tests/run/mod_zero_trap.or`.
 
 **EXP-23.** Division and remainder by a constant zero, and other traps, are *run-time* traps: the checker does not reject them.
 - Tests: `tests/run/div_zero_trap.or`, `tests/run/mod_zero_trap.or`.
@@ -186,12 +200,4 @@ last-use moves) is an optimisation and not observable (chapter 5).
 
 ## Gaps: rules without a test
 
-- EXP-2: no negative test that a non-literal top-level `const` initialiser is E0408 (probed with `orin2`: `const f = (a) => a;` and calls are rejected).
-- EXP-3: the order local, module, imports, prelude (and shadowing of a prelude name by a module declaration) has no test; module-level resolution is covered by chapter 6 rules.
-- EXP-6: `for ... of` over a string or a map as a negative test (E0400) does not exist.
-- EXP-8: an expression statement that is not a call (`1 + 2;`) is accepted; no test pins this.
-- EXP-15: the "arm after a catch-all is accepted" behaviour has no test.
-- EXP-16: the E0402 arity error for a variant pattern and the E0405 for a non-variant name pattern have no test of their own; the E0402 for nested patterns is only a message ("nested patterns are not supported; a variant pattern binds only names or `_`").
-- EXP-20: no conformance test fixes operand, argument and element evaluation order of plain expressions; only the OX attribute tests print the order.
-- EXP-21: assignment target before right-hand side has no test.
-- EXP-22: traps for `slice(a, b)` with `a > b` exist (`array_slice_trap_order`); there is no test for every trap listed (e.g. a failed `process.exit` flush).
+None.

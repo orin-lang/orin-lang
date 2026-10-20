@@ -109,4 +109,24 @@ int orin_platform_millis_split(int64_t ms, int64_t *sec, int64_t *nsec) {
     return 0;
 }
 
+#include "orin_platform_netscope.h"
+
+int orin_platform_net_narrow(const orin_platform_net *p, unsigned what, const char *h, size_t hl, int lo, int hi,
+                             orin_platform_net *out) {
+    if (!p || p->magic != ORIN_PLATFORM_NET_MAGIC || p->kind != ORIN_PLATFORM_NET_GRANT) return ORIN_PLATFORM_EPERM;
+    int pat = (hl == 1 && h[0] == '*') || net_text(h, hl) || (hl > 2 && h[0] == '*' && h[1] == '.' && net_text(h + 2, hl - 2));
+    if ((what != ORIN_PLATFORM_NET_LISTEN && what != ORIN_PLATFORM_NET_CONNECT) || !pat || lo < 0 || hi > 65535 || lo > hi)
+        return ORIN_PLATFORM_EINVAL;
+    const orin_platform_scope *ps = &p->sc[what - 1];
+    int in = (p->can & what) && (unsigned)lo >= ps->lo && (unsigned)hi <= ps->hi && net_cover(ps->h, ps->hl, h, hl);
+    *out = *p;
+    out->can = in ? what : 0;
+    if (in) {
+        orin_platform_scope *ns = &out->sc[what - 1];
+        ns->hl = hl, ns->lo = (unsigned)lo, ns->hi = (unsigned)hi;
+        orin_platform_mem_copy(ns->h, h, hl);
+    }
+    return 0;
+}
+
 #endif

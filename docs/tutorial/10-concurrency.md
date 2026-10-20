@@ -89,8 +89,9 @@ captures a snapshot of the variables it uses (they are moved or copied into the 
 resource such as a file or grant. A task that traps does not take the process down at once; `join` turns it into a trap of
 the joiner (`task panicked: ...`), and a panic that nobody joins is reported when the scope ends, so none is lost.
 
-**Channels.** `channel<int>(4)` makes a bounded queue with a sender `ch.tx` and a receiver `ch.rx`, both usable from any
-task. `send` blocks while the queue is full and returns `false` if the channel was closed; `recv` blocks while it is
+**Channels.** `channel<int>(4)` makes a bounded queue (the types `Sender<T>`, `Receiver<T>`, `TaskHandle<T>` and `Scope` are imported from
+`std:task` when a function signature names them) with a sender `ch.tx` and a receiver `ch.rx`, both usable from any
+task. `send` blocks while the queue is full and returns an `Err` (kind `Closed`) if the channel was closed; `recv` blocks while it is
 empty and returns `None` once the sender has called `close()` and everything has been taken. That is how the receiver
 above knows to stop.
 
@@ -99,7 +100,7 @@ above knows to stop.
 you can add or remove `.parallel()` to compare. A parallel integer `reduce` with `+` warns (W0481) because partial sums
 may overflow in a different order than the sequential fold.
 
-**More.** Timed operations (`recvTimeout`, `joinTimeout`, `sleep`), `select` over several receivers, `parallelMap`, and
+**More.** Timed operations (`recvTimeout`, `joinTimeout`, `sleep`), `select` over several receivers, `xs.parallel().map(f)` (which replaces the deprecated `parallelMap`), and
 delegating a file grant to a task are described in [concurrency.md](../concurrency.md). `std:task` is marked unstable
 (stage 0); there is no `async`/`await` yet.
 
