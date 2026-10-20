@@ -62,7 +62,7 @@ What does the compiler emit, which memory width, which C library and which host 
    `monitor_wait_until` give the thread to the next queued task (the monitor is released meanwhile and locked again
    afterwards) and return as a spurious wake-up, which the contract allows and every caller handles by re-checking in a loop;
    tasks nobody joined run when `orin_main` returns. A wait with nothing queued ends the module (`wasm64-orbit: deadlock: ...`,
-   trap, status 134); a timed wait with nothing queued returns as timed out at once (the L0 has no way to sleep). Monitors know
+   trap, status 134 like the native abort, rev. 2026-10-20: it was -1, which a host counts as a real trap; the L0 records 134 itself, so tools/wasm_run.mjs prints no `trap:` line and tools/run_tests.py still sees the `wasm64-orbit: ` prefix); a timed wait with nothing queued returns as timed out at once (the L0 has no way to sleep). Monitors know
    their owner, so a lock held by a context suspended lower on the stack is reported as that deadlock. The runtime keeps its
    per-task state (heap block, grants, files, the running task) in `__thread` objects, which one stack and one memory would
    share: the build compiles the runtime with `-D__thread=__attribute__((section("orin_tls")))` (tools/run_tests.py,
@@ -89,8 +89,9 @@ What does the compiler emit, which memory width, which C library and which host 
    always listed (a trap message goes to stderr); decision 9 adds `process/v1`, `fs/v1` and `net/v1`. An effect the target
    does not provide (`Process.Spawn`, the shell) fails the build with **E0523**; `Task.*` and `Channel.*` need no capability (decision 4), so they are listed as available and the evidence path, so a program never compiles into a
    module that would only fail at run time. An unresolved call (`Unknown.*`, e.g. calling a function value) is not an error:
-   the manifest then lists `clock/v1` and every capability that a function of the package needs (a manifest must cover every
-   import; listing one more is the safe over-approximation, and the host then requires its grant). The manifest **describes**; the host's grant authorises (Orbit rejects
+   the manifest then lists every capability that some function of the package needs, and nothing else: a closure can only
+   reach code of the program, so a capability no function reaches (no `Clock.Now` anywhere: no `clock/v1`) is not listed (a
+   manifest must cover every import; rev. 2026-10-20: the unconditional `clock/v1` is gone, `--grant log/v1` alone runs a task program). The manifest **describes**; the host's grant authorises (Orbit rejects
    a module whose imports are not all listed, and instantiates only with every listed capability granted).
 
 6. **Tests and CI.** `tools/run_tests.py --target wasm64-orbit` builds every conformance test as a module and runs it under
@@ -102,7 +103,7 @@ What does the compiler emit, which memory width, which C library and which host 
    4 task tests that need interleaving or a trapping task, decision 4).
 
 7. **Budget.** `runtime/platform/orbit/` is not part of a native binary, so it does not count against the native L0 budget
-   (ADR-0054); it has its own ceiling of **1400 code lines** (1100 until decision 9) (counted like `tools/verify_platform.sh`). 805 at acceptance with
+   (ADR-0054); it has its own ceiling of **1700 code lines** (1100 until decision 9, 1400 until decision 10) (counted like `tools/verify_platform.sh`). 805 at acceptance with
    a ceiling of 900; raised to 1100 with the large-block allocator and the task scheduler (988 lines), because both are
    needed for real programs (memory near native, `std:task`) and each is covered by its own test.
    Evidence instead of CBMC for now: the shared pure primitives keep their harnesses; the rest is covered by the conformance
@@ -241,11 +242,7 @@ What does the compiler emit, which memory width, which C library and which host 
       the Node host does not serve; it runs on Orbit), `stress_tasks` (3,000 tasks alive at once need 3 GiB of 1 MiB stacks in a 4 GiB
       memory and more threads than Orbit's ceiling of 1024: it fails with the clean "thread limit reached" trap; it passed with
       `--max-threads 4096` and 256 KiB stacks, 20,000 tasks in 11 s) and `trap_deep` (10,000 trapped tasks = 10,000 parked threads,
-      Node runs out of memory for its workers). Budget: `runtime/platform/orbit` is 1674 code lines against the ceiling of 1400 (decision 9):
-      the threaded layer is 257 lines (`orin_threads_orbit.c`), the sequential one that wasm64 keeps 205 (`orin_seq_orbit.c`, moved
-      out of `orin_platform_orbit.c`, not new), the sync header 29. The ceiling was not changed; `tools/test_wasm.sh` reports the
-      excess as its last check. Removing the sequential path would bring the layer back under (to about 1470) at the price of wasm64
-      tasks.
+      Node runs out of memory for its workers). Budget: `runtime/platform/orbit` is about 1675 code lines against the ceiling of 1400 (decision 9); the owner raised the ceiling to **1700** (`tools/test_wasm.sh`; the native budget in `verify_platform.sh` is unchanged). Why: the threaded layer is new (257 lines in `orin_threads_orbit.c`, 29 in the sync header) and wasm64 keeps the sequential path (205 lines in `orin_seq_orbit.c`, moved out of `orin_platform_orbit.c`, not new). Removing the sequential path would bring the layer back to about 1470, at the price of wasm64 tasks.
 
 ## Measurements (2026-10-17, one Linux x86_64 container, best of 3, wall time)
 

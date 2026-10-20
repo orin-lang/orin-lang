@@ -437,6 +437,14 @@ class CliTests(unittest.TestCase):
         self.assertNotIn(b"wasi_snapshot_preview1", module32)
         self.assertNotEqual(module, module32)
         self.assertNotIn(b"orbit:thread/v1", module32)  # a program without tasks imports no spawn
+        # reproducible: the module records no temporary file name, so building again gives the same bytes
+        for tgt, first in (("wasm32-orbit", module32), ("wasm64-orbit", module)):
+            for _ in range(2):
+                self.run_cli("build", "--target=" + tgt, cwd=project, env={"CC": "clang"})
+                again = (project / "build/dev/hello.wasm").read_bytes()
+                self.assertNotIn(b".tmp.", again)
+                self.assertEqual(again, first if _ == 0 else again)
+            self.assertEqual(again, first, tgt + ": two builds of one program are byte-identical")
         # wasm64: tasks run one at a time inside the one WebAssembly thread (the orin_tls section); wasm32: real threads (ADR-0055 decision 10):
         # the module imports spawn and lists thread/v1, and has no orin_tls section
         (project / "src/main.or").write_text('import { scope, spawn } from "std:task";\n'

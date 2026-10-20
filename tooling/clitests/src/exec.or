@@ -78,7 +78,7 @@ export function runAll(proc: ProcessGrant, jobs: Job[], workers: usize): Outcome
         let done: Outcome[] = [];
         while (true) {
           const next = rx.recv();
-          if (next.isNone()) {
+          if (next.isErr()) {
             break;
           }
           done.push(runJob(p, next.unwrap()));

@@ -355,18 +355,18 @@ def main():
         "hello": ["log/v1"],
         "clock": ["clock/v1", "log/v1"],
         "exit": ["log/v1"],
-        # wasm64-orbit: Task.* and Channel.* need no capability (the guest runs tasks itself, one at a time); the spawned closure is an
-        # unresolved callback (Unknown.Callback), which adds clock/v1 like any function value. wasm32-orbit: threads, see below
-        "task": ["clock/v1", "log/v1"],
-        "channel": ["clock/v1", "log/v1"],
-        "closure": ["clock/v1", "log/v1"],  # an unresolved call (Unknown.*): conservative, not an error
+        # wasm64-orbit: Task.* and Channel.* need no capability (the guest runs tasks itself, one at a time); wasm32-orbit: thread/v1, see below; the spawned closure is an
+        # unresolved callback (Unknown.Callback): it adds only what some function of the program reaches (no Clock.Now anywhere: no clock/v1)
+        "task": ["log/v1"],
+        "channel": ["log/v1"],
+        "closure": ["log/v1"],  # an unresolved call (Unknown.*): conservative, not an error
         # files, network, arguments and stdin are capabilities of the target (orbit:fs/v1, net/v1, process/v1): listed, and the L0 family
         # that implements each is #included before the manifest, so a module imports exactly what its manifest lists
         "fs": ["fs/v1", "log/v1"],
         "net": ["log/v1", "net/v1"],
         "process": ["log/v1", "process/v1"],
-        # an unresolved call may reach any function of the package: clock/v1, and the fs/v1 of the file code
-        "closure_fs": ["clock/v1", "fs/v1", "log/v1"],
+        # an unresolved call may reach any function of the package: the fs/v1 of the file code, but no clock/v1 (nothing reaches the clock)
+        "closure_fs": ["fs/v1", "log/v1"],
     }
     for name, req in want.items():
         rc, err, text = manifest_of(name)

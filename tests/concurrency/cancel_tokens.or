@@ -110,7 +110,7 @@ function captured(): void {
     let i = 0;
     while (i < 8) {
       hs.push(spawn(s, () => {
-        const mine = rx.recv().unwrapOr(false);
+        const mine = match (rx.recv()) { Ok(v) => v, Err(e) => false };
         return mine && isCancelled();
       }));
       i += 1;

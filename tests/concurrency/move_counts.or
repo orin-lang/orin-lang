@@ -61,10 +61,10 @@ function main(): void {
   let more = true;
   while (more) {
     match (ch.rx.recv()) {
-      Some(d) => {
+      Ok(d) => {
         n += d.lines.length.toInt();
       },
-      None => {
+      Err(e) => {
         more = false;
       },
     }

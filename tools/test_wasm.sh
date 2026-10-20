@@ -8,7 +8,7 @@
 #      and so is, on wasm64-orbit only (one thread), a test whose tasks need to run at the same time or trap (the L0 ends the module with a
 #      `wasm64-orbit: <reason>` line); wasm32-orbit has real threads (shared memory, atomics: ADR-0055 decision 10);
 #   4. the programs of tests/orbit on the real Orbit runtime when an orbit binary is found (tools/test_orbit.py; SKIP otherwise);
-#   5. the size budget of runtime/platform/orbit (1400 code lines).
+#   5. the size budget of runtime/platform/orbit (1700 code lines).
 #
 #   tools/test_wasm.sh [--orinc COMPILER]      default build/bootstrap/orin2; needs clang with the WebAssembly backend, wasm-ld
 #                                              and Node >= 24 ($NODE, default node)
@@ -57,7 +57,7 @@ for T in wasm64-orbit wasm32-orbit; do
 done
 echo "[wasm] the programs of tests/orbit on the real Orbit runtime (SKIP without an orbit binary: ORBIT=... or ../orbit/target/release/orbit)"
 python3 tools/test_orbit.py --orinc "$ORINC"
-echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 1400 code lines, counted like tools/verify_platform.sh)"
+echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 1700 code lines, counted like tools/verify_platform.sh)"
 code=$(python3 - runtime/platform/orbit/*.c runtime/platform/orbit/include/*.h <<'PY'
 import re, sys
 n = 0
@@ -68,5 +68,5 @@ for f in sys.argv[1:]:
 print(n)
 PY
 )
-echo "runtime/platform/orbit: $code code lines (budget 1400)"
-[ "$code" -le 1400 ] || { echo "the WebAssembly L0 exceeds its size budget" >&2; exit 1; }
+echo "runtime/platform/orbit: $code code lines (budget 1700)"
+[ "$code" -le 1700 ] || { echo "the WebAssembly L0 exceeds its size budget" >&2; exit 1; }

@@ -122,7 +122,7 @@ function round(net: NetGrant, n: int): Round {
       let seen: int = 0;
       while (seen < n) {
         const v = rx.recv();
-        if (v.isNone()) {
+        if (v.isErr()) {
           seen = n;
         } else {
           seen += 1;

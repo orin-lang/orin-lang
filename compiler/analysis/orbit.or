@@ -27,11 +27,11 @@
 //                                                       time, in its one WebAssembly thread (decision 4); a program that needs
 //                                                       two tasks to run at once ends at run time with a "wasm64-orbit:
 //                                                       deadlock" message instead of failing to build
-//   Unknown.* (a call the analysis cannot resolve,  -> no error, but "clock/v1" is required too, and so is every capability
-//   such as a call of a function value)               that any function of the package needs (the report's package effects):
-//                                                       the unresolved call can reach only code of the program, and the manifest
-//                                                       must list every capability the module imports. The import list, not the
-//                                                       effect set, bounds what the module can ask the host for
+//   Unknown.* (a call the analysis cannot resolve,  -> no error; every capability that any function of the package needs is
+//   such as a call of a function value)               required (the report's package effects): the unresolved call can reach
+//                                                       only code of the program, so a capability no function reaches (no
+//                                                       Clock.Now anywhere: no "clock/v1") cannot be reached through it either,
+//                                                       and the manifest must list every capability the module imports
 //   anything else (Process.Spawn: the shell)         -> NOT available on this target: error E0523, one diagnostic per effect,
 //                                                       located at the evidence the analysis has
 //
@@ -134,7 +134,6 @@ export function orbitPlan(c: EffContext, target: string, allPlat: bool): OrbitPl
   }
   if (unknown) {
     // an unresolved call may reach any function of the package: list what they need (an unavailable one is no error here)
-    caps.push("clock/v1");
     for (const v of rep.packageEffects) {
       const m = isUnknownOp(v.op) ? CapMap { known: false, cap: "" } : capabilityOf(v.op, target);
       if (m.known && m.cap != "" && !caps.includes(m.cap)) {
