@@ -40,7 +40,8 @@ only after an imported name or after `*`.)
   `tests/parse_edge/err0200_import_as_no_name.or`, `tests/parse_edge/err0200_import_as_twice.or`,
   `tests/parse_edge/err0200_import_star_with_names.or`, `tests/parse_edge/err0200_import_default_named.or`, `tests/parse_edge/err0200_import_no_from.or`,
   `tests/parse_edge/ok_reexport_export_forms.or`, `tests/parse_edge/err0200_reexport_no_from.or`,
-  `tests/next/run/ox_basic.or`, `tests/next/errors/ox_no_provider.or`.
+  `tests/next/run/ox_basic.or`, `tests/next/errors/ox_no_provider.or`,
+  `tests/next/errors/e0200_two_ox_providers.or`.
 
 ## 2.2 Declarations
 
@@ -86,11 +87,13 @@ accepted); anything else is an alias. Record fields end with `;` and are separat
 
 **GRM-4.** A function has a block body, an optional result type (omitted means `void`), and no default values, rest
 parameters or overloads. A trailing comma is accepted in every comma-separated list (parameters, arguments, array
-elements, record fields, variant payloads, name lists, match arms); a leading or doubled comma is E0200. A function has no
+elements, record-literal fields, variant payloads, name lists, match arms); a leading or doubled comma is E0200. A function has no
 `function` expression form: nested `function` is E0200 (use an arrow function).
 - Tests: `tests/parse_edge/err0200_fn_param_default.or`, `tests/parse_edge/err0200_fn_nested.or`,
   `tests/parse_edge/err0200_fn_expr.or`, `tests/parse_edge/err0200_fn_param_trailing_comma_ok_then_bad.or`, `tests/parse_edge/err0200_fn_no_body.or`,
-  `tests/parse_edge/err0200_fn_param_leading_comma.or`, `tests/parse_edge/ok_return_forms.or`.
+  `tests/parse_edge/err0200_fn_param_leading_comma.or`, `tests/parse_edge/ok_return_forms.or`,
+  `tests/next/run/trailing_commas_all_lists.or`, `tests/parse_edge/ok_items.or` (import name list), `tests/next/errors/e0200_array_doubled_comma.or`,
+  `tests/next/errors/e0200_argument_doubled_comma.or`.
 
 **GRM-5.** A type parameter takes a list of bounds joined with `&` (`T extends I`, `T extends Ord & Hash`); the list is written once, after
 `extends`, and each bound is an identifier. A bound list is allowed on a generic function, on a generic class and on a generic method; on a
@@ -104,7 +107,7 @@ or method may still be named `static`). A field has a type and an optional initi
 `constructor(...)` is recognised by its name without modifiers. Inheritance (`extends` on a class) parses but is E0408
 in the checker; an interface may not have fields (E0408), bodies (E0408), generic methods (E0460, ADR-0040) or `extends` (E0408).
 - Tests: `tests/next/run/class_private_fields.or`, `tests/next/run/class_static_methods.or`,
-  `tests/next/run/class_param_properties.or`, `tests/next/errors/e0408_class_extends.or`,
+  `tests/next/run/class_param_properties.or`, `tests/next/run/class_modifier_names_as_members.or`, `tests/next/errors/e0408_static_field.or`, `tests/next/errors/e0408_class_extends.or`,
   `tests/next/errors/e0408_interface_field.or`, `tests/next/errors/e0408_interface_default_method.or`,
   `tests/next/errors/e0408_interface_generic.or`, `tests/next/errors/e0408_interface_extends.or`.
 
@@ -233,7 +236,7 @@ backtracking, so `f(a < b, c > (d))` is a generic call (ADR-0007).
 
 **GRM-16.** `new C(args)` and `new C<T>(args)` create a class instance or a `Map`; `this` is an expression inside a class.
 `new` followed by anything but an identifier is E0200.
-- Tests: `tests/next/run/class_stack.or`, `tests/next/run/map_basic_string_int.or`, `tests/next/run/genclass_basic.or`.
+- Tests: `tests/next/run/class_stack.or`, `tests/next/run/map_basic_string_int.or`, `tests/next/run/genclass_basic.or`, `tests/next/errors/e0200_new_non_identifier.or`.
 
 ## 2.6 Match and patterns
 
@@ -272,7 +275,4 @@ attributes and is not self-closing; `{}` is an empty expression child. Violation
 
 ## Gaps: rules without a test
 
-- GRM-4: no test shows a trailing comma accepted in a declaration parameter list (only the doubled comma is rejected, `err0200_fn_param_trailing_comma_ok_then_bad`); no test pins trailing commas in the other lists either (the formatter output, which uses them, is exercised by `tests/fmt/`).
-- GRM-16: no parse-only test for `new` followed by a non-identifier.
-- GRM-6: a field or method named `static` / `public` / `private` (the "only when an identifier follows" rule) has no test.
-- GRM-2: the "one provider per file" rule has no test (only the missing provider, `ox_no_provider`).
+None.

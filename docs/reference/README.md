@@ -48,16 +48,16 @@ Places where a guide, ADR or spec text disagrees with what the compiler does. Th
    unions, `Option`, `Result`, arrays and classes with the methods; types with a float component are excluded (E0475, and `==`
    on them is E0410). See chapter 3.
 2. **`Map` keys (resolved in the guide).** ADR-0018 once limited keys to `int`, `usize`, `bool`, `string`; the compiler accepts any `Hash` key (E0475 otherwise), and ADR-0018 now says so.
-3. **Lexical list of the bootstrap subset** allows only `0x` hex and omits `&`, `...`, `==>` and `@` from the punctuation; the lexer
-   also accepts `0X` and leading zeros in decimals. Chapter 1 lists the real set.
+3. **Lexical list of the bootstrap subset (resolved in the guide).** `docs/bootstrap-subset.md` once allowed only `0x` hex and omitted `&`, `==>` and `@` from the
+   punctuation, although the lexer accepts `0X`, leading zeros in decimals and floats. The guide's section 1 now states the real set; chapter 1 is the full list.
 4. **Annotations.** `docs/contracts.md` says any other `@Name` is E0408 and that user annotations are post-1.0. User-defined
    annotations, `@Sealed` and `@Processor` are implemented (ADR-0046, ADR-0044); E0408 remains for an unknown name.
 5. **ADR-0047 status.** The ADR is marked proposed, but its phases 1 to 3 (workspace manifest, CLI, library and runtime moves) are
    in the tree. Chapter 6 describes what is implemented.
 6. **Privacy.** Resolved (ADR-0056 6.9): an exported declaration whose signature mentions a type of the same file that is not
    exported is E0306 (chapter 6 MOD-7).
-7. **Orin-B wording in messages.** The E0402 message no longer says "in Orin-B"; the diagnostic table in
-   `docs/bootstrap-subset.md` still describes E0408 as "feature not supported in Orin-B".
+7. **Orin-B wording in messages (resolved in the guide).** The E0402 message no longer says "in Orin-B", and the diagnostic table in
+   `docs/bootstrap-subset.md` now describes E0408 as a construct the language does not support, as the compiler's messages do.
 8. **`tests/parse_edge`** names (`err0100_bad_float`, `err0200_fn_arrow_expr`) are historical; the files no longer produce
    those codes, and the corpus asserts nothing by name.
 9. **Generic methods (resolved).** ADR-0040 is implemented; `docs/concurrency.md` and `docs/std.md` no longer explain API shapes by

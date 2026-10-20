@@ -1,0 +1,15 @@
+// error: E0300
+// The scope of a constructor @Requires is its parameters; `this` is not available in it.
+class Window {
+  n: int;
+
+  @Requires(this.n > 0)
+  constructor(n: int) {
+    this.n = n;
+  }
+}
+
+function main(): void {
+  const w = new Window(5);
+  console.log(w.n.toString());
+}

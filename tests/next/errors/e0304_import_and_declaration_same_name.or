@@ -1,0 +1,11 @@
+// error: E0304
+// EXP-3: a module declaration and an import of the same name conflict; neither hides the other.
+import { empty } from "std:bytes";
+
+function empty(): int {
+  return 1;
+}
+
+function main(): void {
+  console.log(empty().toString());
+}

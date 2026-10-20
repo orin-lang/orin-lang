@@ -1,0 +1,47 @@
+// EXP-20: operands, call arguments, array elements, record-literal fields (in written order), template parts and
+// receivers are evaluated left to right; the condition of `?:` before its branch; `&&`/`||` short-circuit.
+type P = { a: int; b: int; c: int; };
+function t(n: int): int {
+  console.log(`eval ${n}`);
+  return n;
+}
+class Acc {
+  base: int;
+  constructor(base: int) {
+    this.base = base;
+  }
+
+  add(a: int, b: int): int {
+    return this.base + a + b;
+  }
+}
+
+function mk(n: int): Acc {
+  console.log("eval receiver");
+  return new Acc(n);
+}
+
+function sum3(a: int, b: int, c: int): int { return a * 100 + b * 10 + c; }
+function main(): void {
+  console.log("binary");
+  const r1 = t(1) + t(2) * t(3);
+  console.log("call");
+  const r2 = sum3(t(1), t(2), t(3));
+  console.log("array");
+  const arr = [t(1), t(2), t(3)];
+  console.log("record");
+  const p = P { c: t(1), a: t(2), b: t(3) };
+  console.log("conditional");
+  const q = t(0) == 1 ? t(7) : t(8);
+  console.log("logical");
+  const s = t(1) > 5 && t(2) > 0 || t(3) > 0;
+  console.log("left-assoc");
+  const u = t(9) - t(4) - t(2);
+  console.log("comparison");
+  const cmp = t(1) < t(2);
+  console.log("template");
+  const tl = `${t(1)}-${t(2)}`;
+  console.log("receiver");
+  const rv = mk(t(0)).add(t(1), t(2));
+  console.log(`${tl} ${rv} ${r1} ${r2} ${arr.length} ${p.a}${p.b}${p.c} ${q} ${s} ${u} ${cmp}`);
+}

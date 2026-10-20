@@ -43,7 +43,7 @@ export function ask(
     body: body,
     reply: reply.tx,
   });
-  if (!sent) {
+  if (sent.isErr()) {
     return errorAnswer(503, "service is shutting down");
   }
   const got = reply.rx.recv();

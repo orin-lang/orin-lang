@@ -1,0 +1,8 @@
+// error: E0200
+// LEX-3/LEX-17: `&` is a token but exists only between type-parameter bounds; elsewhere it is a syntax error.
+function main(): void {
+  const a = 1;
+  const b = 2;
+  const c = a & b;
+  console.log(c.toString());
+}

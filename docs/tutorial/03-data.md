@@ -86,7 +86,8 @@ abc -> error: not a number: abc
 
 ## What is in it
 
-**Records** are named bundles of fields: `type Point = { x: int; y: int; };`. You build one with
+**Records** are named bundles of fields (a record type always has a name: there is no anonymous `{ x: int }` type and no
+bare `{ x: 1 }` literal; declare `type Point = ...` first): `type Point = { x: int; y: int; };`. You build one with
 `Point { x: 1, y: 2 }`; `{ ...p, y: 5 }` copies `p` and changes one field. Records are values: `q` is a new value, `p`
 is untouched. `==` compares records field by field (it works for records of integers, strings, booleans and similar; a record
 with a `float` field has no `==`).
@@ -103,7 +104,10 @@ the empty case; `match` does it, or `unwrapOr(-1)` supplies a default. `unwrap()
 into a `Result<int, string>` with a message. Postfix `?` means "if this is an `Err`, return it from the current
 function right here": `squareArea` reads the side with `parseSide(text)?` and continues only on success. `?` works on
 `Result` in a function that returns a `Result` with the same error type. A function that returns `Result<void, E>` returns
-`Ok()` on success.
+`Ok()` on success. A closure that returns `Err(..)` or `Ok(..)` needs its result type written
+(`(x: int): Result<int, string> => ...`), because the other half cannot be inferred (E0407). `Option` has `isSome`, `isNone`, `unwrap` and
+`unwrapOr`, `Result` has `isOk`, `isErr`, `unwrap` and `unwrapErr` (no `unwrapOr`); there is no `map`, `andThen`, `okOr` or `mapErr`
+yet, so use `match`.
 
 A **trap** is different from an error: it is a bug (overflow, index out of range, `unwrap` of `None`), it stops the program
 with status 101 and cannot be caught.

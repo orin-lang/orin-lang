@@ -1,0 +1,1 @@
+- A float literal that rounds to infinity is now always E0100 (309-digit integer parts, zero integer parts with a large exponent, values just above the largest float).

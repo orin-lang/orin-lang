@@ -1,0 +1,6 @@
+// MOD-14: a bare-name dependency import resolves to the dependency's src/module.or (its internal module keeps the privacy rules).
+import { greet } from "greeter";
+
+function main(): void {
+  console.log(greet(20).toString());
+}

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
+#include <sys/resource.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -193,6 +194,96 @@ static void test_directories(void) {
     snprintf(path, sizeof path, "%s/missing", directory);
     CHECK(orin_platform_dir_list(path, strlen(path), directory_entry, &e) == ENOENT && e.count == 0);
     CHECK(orin_platform_dir_list(directory, strlen(directory) - 1, directory_entry, &e) == ENOENT && e.count == 0);
+}
+
+/* rename / remove / rmdir / atomic write (C4 primitives) */
+static int slurp(const char *path, char *out, size_t cap) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+    size_t n = fread(out, 1, cap, f);
+    fclose(f);
+    return (int)n;
+}
+static int dir_has_tmp(const char *dir) { /* a leftover "*.orin-tmp-*" file? */
+    char cmd[600];
+    snprintf(cmd, sizeof cmd, "ls '%s' | grep -q orin-tmp", dir);
+    return system(cmd) == 0;
+}
+static void test_file_mutation(void) {
+    char d[512], a[560], b[560], c[600], buf[64];
+    snprintf(d, sizeof d, "%s/mut", tmpdir);
+    CHECK(mkdir(d, 0700) == 0);
+    snprintf(a, sizeof a, "%s/a", d);
+    snprintf(b, sizeof b, "%s/b", d);
+    snprintf(c, sizeof c, "%s/sub", d);
+#define L(x) x, strlen(x)
+    /* rename: moves, replaces an existing target, errors leave things alone */
+    CHECK(orin_platform_file_write(L(a), "one", 3) == 0 && orin_platform_file_write(L(b), "two", 3) == 0);
+    CHECK(orin_platform_file_rename(L(a), L(b)) == 0);
+    CHECK(orin_platform_file_exists(L(a)) == 0 && slurp(b, buf, sizeof buf) == 3 && memcmp(buf, "one", 3) == 0);
+    CHECK(orin_platform_file_rename(L(a), L(b)) == ENOENT); /* source gone */
+    CHECK(slurp(b, buf, sizeof buf) == 3);
+    CHECK(orin_platform_file_rename("a\0b", 3, L(b)) == ORIN_PLATFORM_EINVAL);
+    CHECK(orin_platform_file_rename(L(b), "a\0b", 3) == ORIN_PLATFORM_EINVAL && orin_platform_file_exists(L(b)) == 1);
+    CHECK(orin_platform_file_rename("", 0, L(b)) == ENOENT);
+    /* rename of a directory, and a directory over a non-empty directory */
+    CHECK(mkdir(c, 0700) == 0);
+    snprintf(a, sizeof a, "%s/sub2", d);
+    CHECK(orin_platform_file_rename(L(c), L(a)) == 0 && orin_platform_file_exists(L(c)) == 0);
+    CHECK(orin_platform_file_rename(L(b), L(a)) == EISDIR); /* file over directory */
+    /* remove (unlink): file yes, directory no, missing no, link not target */
+    CHECK(orin_platform_file_remove(L(b)) == 0 && orin_platform_file_exists(L(b)) == 0);
+    CHECK(orin_platform_file_remove(L(b)) == ENOENT);
+    int e = orin_platform_file_remove(L(a));
+    CHECK(e == EISDIR || e == EPERM);
+    CHECK(orin_platform_file_remove("a\0b", 3) == ORIN_PLATFORM_EINVAL);
+    CHECK(orin_platform_file_write(L(b), "t", 1) == 0);
+    snprintf(c, sizeof c, "%s/link", d);
+    CHECK(symlink(b, c) == 0);
+    CHECK(orin_platform_file_remove(L(c)) == 0 && orin_platform_file_exists(L(b)) == 1 && orin_platform_file_exists(L(c)) == 0);
+    /* rmdir: empty yes, non-empty no, file no, missing no */
+    snprintf(c, sizeof c, "%s/inner", a);
+    CHECK(mkdir(c, 0700) == 0);
+    CHECK(orin_platform_dir_remove(L(a)) == ENOTEMPTY);
+    CHECK(orin_platform_dir_remove(L(c)) == 0 && orin_platform_dir_remove(L(c)) == ENOENT);
+    CHECK(orin_platform_dir_remove(L(a)) == 0 && orin_platform_file_exists(L(a)) == 0);
+    CHECK(orin_platform_dir_remove(L(b)) == ENOTDIR);
+    CHECK(orin_platform_dir_remove("a\0b", 3) == ORIN_PLATFORM_EINVAL);
+    /* atomic write: creates, replaces, leaves no temporary behind, empty data, binary data */
+    CHECK(orin_platform_file_write_atomic(L(b), "new contents", 12) == 0);
+    CHECK(slurp(b, buf, sizeof buf) == 12 && memcmp(buf, "new contents", 12) == 0);
+    CHECK(orin_platform_file_write_atomic(L(b), "", 0) == 0 && slurp(b, buf, sizeof buf) == 0);
+    CHECK(orin_platform_file_write_atomic(L(b), "x\0y", 3) == 0 && slurp(b, buf, sizeof buf) == 3 && buf[1] == 0 && buf[2] == 'y');
+    CHECK(!dir_has_tmp(d));
+    struct stat st;
+    CHECK(stat(b, &st) == 0 && (st.st_mode & 0600) == 0600);
+    /* failures: the old contents survive, nothing is left behind */
+    snprintf(c, sizeof c, "%s/missing/x", d);
+    CHECK(orin_platform_file_write_atomic(L(c), "z", 1) == ENOENT);
+    CHECK(orin_platform_file_write_atomic("a\0b", 3, "z", 1) == ORIN_PLATFORM_EINVAL);
+    CHECK(mkdir(a, 0700) == 0);
+    CHECK(orin_platform_file_write_atomic(L(a), "z", 1) != 0 && orin_platform_dir_remove(L(a)) == 0); /* a directory is not replaced by a file */
+    CHECK(!dir_has_tmp(d));
+    if (geteuid() != 0) { /* a read-only directory: the temporary cannot be created, the target stays */
+        CHECK(chmod(d, 0500) == 0);
+        CHECK(orin_platform_file_write_atomic(L(b), "never", 5) == EACCES);
+        CHECK(chmod(d, 0700) == 0);
+        CHECK(slurp(b, buf, sizeof buf) == 3);
+    }
+    /* a symbolic link at the target is replaced, not followed */
+    snprintf(a, sizeof a, "%s/target", d);
+    snprintf(c, sizeof c, "%s/lnk", d);
+    CHECK(orin_platform_file_write(L(a), "keep", 4) == 0 && symlink(a, c) == 0);
+    CHECK(orin_platform_file_write_atomic(L(c), "fresh", 5) == 0);
+    CHECK(slurp(a, buf, sizeof buf) == 4 && memcmp(buf, "keep", 4) == 0);
+    CHECK(lstat(c, &st) == 0 && S_ISREG(st.st_mode) && slurp(c, buf, sizeof buf) == 5);
+    /* a relative path without a directory part writes into the working directory */
+    char cwd[512];
+    CHECK(getcwd(cwd, sizeof cwd) != NULL && chdir(d) == 0);
+    CHECK(orin_platform_file_write_atomic(L("rel.txt"), "r", 1) == 0 && slurp("rel.txt", buf, sizeof buf) == 1);
+    CHECK(orin_platform_file_remove(L("rel.txt")) == 0);
+    CHECK(chdir(cwd) == 0);
+#undef L
 }
 
 static void test_streams(void) {
@@ -943,6 +1034,24 @@ static void test_wake(void) {
     CHECK(orin_platform_tcp_accept(&ln, 30, 1, &junk, peer, sizeof peer, &pp) == ORIN_PLATFORM_NET_TIMEOUT);
     CHECK(orin_platform_stream_recv(&cs, area, 16, 30, &n) == ORIN_PLATFORM_NET_TIMEOUT);
     CHECK(orin_platform_wake_close(u) == 0);
+
+    /* a set token wins over a resource failure: with no descriptor left for a wake descriptor that was never made (a child source
+     * never polled before), a set ancestor still ends the wait with NET_CANCELLED, never EMFILE (what a task would report as Os) */
+    {
+        int64_t par = orin_platform_wake_open(), kid = orin_platform_wake_open();
+        CHECK(par > 0 && kid > 0 && orin_platform_wake_signal(par) == 1);
+        struct rlimit old, low;
+        int probe = dup(0);
+        CHECK(probe >= 0 && getrlimit(RLIMIT_NOFILE, &old) == 0);
+        low = old, low.rlim_cur = (rlim_t)probe; /* descriptor number `probe` and above cannot be made */
+        close(probe);
+        CHECK(setrlimit(RLIMIT_NOFILE, &low) == 0);
+        CHECK(orin_platform_stream_recv(&cs, area, 16, 1000, &n) == ORIN_PLATFORM_NET_CANCELLED && n == 0);
+        CHECK(orin_platform_stream_send(&cs, "x", 1, 1000, &n) == ORIN_PLATFORM_NET_CANCELLED && n == 0);
+        CHECK(orin_platform_tcp_accept(&ln, 1000, 1, &junk, peer, sizeof peer, &pp) == ORIN_PLATFORM_NET_CANCELLED);
+        CHECK(setrlimit(RLIMIT_NOFILE, &old) == 0);
+        CHECK(orin_platform_wake_close(kid) == 0 && orin_platform_wake_close(par) == 0);
+    }
     CHECK(orin_platform_net_close(&cs) == 0 && orin_platform_net_close(&as) == 0 && orin_platform_net_close(&ln) == 0);
     CHECK(open_fds() == fds); /* the eventfds are closed with their tokens, and no socket leaked */
 }
@@ -955,6 +1064,7 @@ int main(void) {
     test_fmt();
     test_files();
     test_directories();
+    test_file_mutation();
     test_streams();
     test_process_and_output();
     test_stdin();

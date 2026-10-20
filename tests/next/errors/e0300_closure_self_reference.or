@@ -1,5 +1,5 @@
 // error: E0300
+// OWN-3: a closure captures a snapshot, so it cannot refer to itself; recursion needs a top-level function.
 function main(): void {
-  const fact = (n: int): int => n <= 1 ? 1 : n * fact(n - 1);
-  console.log(fact(5).toString());
+  const f = () => f();
 }

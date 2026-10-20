@@ -118,7 +118,7 @@ function run(sc: Scope, ln: Listener, net: NetGrant): void {
     match (a) {
       Ok(acc) => {
         moved += 1;
-        if (!ch.tx.send(acc)) {
+        if (ch.tx.send(acc).isErr()) {
           dropAccepted(acc);
         }
       },

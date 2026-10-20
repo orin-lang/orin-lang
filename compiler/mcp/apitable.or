@@ -778,7 +778,7 @@ function stdTable(): Api[] {
         "as withFile",
         "O(1) + body",
         "allocates Result",
-        "useFile(fs, \"a.txt\", Write, f => { f.writeLine(\"hi\"); })",
+        "withFile(fs, \"a.txt\", Write, f => { f.writeLine(\"hi\"); })",
       ),
     ),
     mutating(
@@ -813,7 +813,7 @@ function stdTable(): Api[] {
       "a grant that reaches only paths inside dir (absolute, normalised, symbolic links resolved); never widens: a dir outside the parent's scope reaches nothing (also withUnder<T>)",
       "O(1) + body",
       "none",
-      "useUnder(fs, \"data\", sub => { read(sub); })",
+      "withUnder(fs, \"data\", sub => { read(sub); })",
     ),
     api(
       "std:fs.useReadOnly",
@@ -821,7 +821,7 @@ function stdTable(): Api[] {
       "a grant that cannot create, write or truncate (also withReadOnly<T>)",
       "O(1) + body",
       "none",
-      "useReadOnly(fs, ro => { read(ro); })",
+      "withReadOnly(fs, ro => { read(ro); })",
     ),
     api(
       "std:fs.readFile",

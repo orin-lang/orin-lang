@@ -1,0 +1,6 @@
+// error: E0302
+import { twice } from "./dep/src/inner/module";
+
+function main(): void {
+  console.log(twice(1).toString());
+}

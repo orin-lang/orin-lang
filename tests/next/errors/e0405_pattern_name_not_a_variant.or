@@ -1,0 +1,13 @@
+// error: E0405
+// EXP-16: a bare name in pattern position must be a variant of the scrutinee's type.
+type U = A | B(int);
+
+function main(): void {
+  const u: U = B(2);
+  const r = match (u) {
+    A => 1,
+    C => 2,
+    B(v) => v,
+  };
+  console.log(r.toString());
+}

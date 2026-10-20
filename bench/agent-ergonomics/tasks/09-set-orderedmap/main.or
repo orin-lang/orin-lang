@@ -1,0 +1,42 @@
+// Set and OrderedMap from std:collections: unique tags, set algebra, and a sorted index.
+import { Set, OrderedMap } from "std:collections";
+
+function main(): void {
+  let a = new Set<string>();
+  a.add("red");
+  a.add("green");
+  a.add("blue");
+  console.log("added red again: " + a.add("red").toString());
+  let b = new Set<string>();
+  b.add("green");
+  b.add("yellow");
+
+  console.log("size " + a.size().toString() + ", has blue " + a.has("blue").toString());
+  const both = a.intersection(b);
+  const either = a.union(b);
+  const onlyA = a.difference(b);
+  console.log("both " + both.toArray().sort((x, y) => x < y ? -1 : x > y ? 1 : 0).join(","));
+  console.log("either " + either.size().toString());
+  console.log("onlyA " + onlyA.toArray().sort((x, y) => x < y ? -1 : x > y ? 1 : 0).join(","));
+  console.log("removed green: " + a.remove("green").toString());
+
+  // OrderedMap keeps keys sorted whatever the insertion order.
+  let ages = new OrderedMap<string, int>(16);
+  ages.set("mallory", 41);
+  ages.set("alice", 30);
+  ages.set("trent", 52);
+  ages.set("bob", 25);
+  ages.set("alice", 31);
+  console.log("people " + ages.size().toString());
+  for (const e of ages.entries()) {
+    console.log(e.key + " " + e.value.toString());
+  }
+  console.log("first " + ages.firstKey().unwrap());
+  console.log("last " + ages.lastKey().unwrap());
+  console.log("floor(c) " + ages.floorKey("c").unwrap());
+  console.log("ceil(c) " + ages.ceilKey("c").unwrap());
+  console.log("bob " + ages.get("bob").unwrapOr(-1).toString());
+  console.log("zed " + ages.get("zed").unwrapOr(-1).toString());
+  console.log("removed bob: " + ages.remove("bob").unwrap().toString());
+  console.log("keys " + ages.keys().join(","));
+}

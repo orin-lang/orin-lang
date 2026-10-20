@@ -1,0 +1,11 @@
+// error: E0200
+// TYP-33: there are no getters.
+class C {
+  get x(): int {
+    return 1;
+  }
+}
+
+function main(): void {
+  console.log("x");
+}

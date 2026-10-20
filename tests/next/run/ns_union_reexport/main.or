@@ -1,0 +1,14 @@
+// A union type re-exported from a third module and reached through a namespace import: the type and its variants.
+import * as m from "./b";
+
+function side(s: m.Shape): int {
+  return match (s) {
+    m.Circle(r) => r * 3,
+    m.Square(w) => w * w,
+  };
+}
+
+function main(): void {
+  console.log(side(m.Circle(2)).toString());
+  console.log(side(m.Square(5)).toString());
+}

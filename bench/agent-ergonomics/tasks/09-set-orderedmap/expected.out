@@ -1,0 +1,19 @@
+added red again: false
+size 3, has blue true
+both green
+either 4
+onlyA blue,red
+removed green: true
+people 4
+alice 31
+bob 25
+mallory 41
+trent 52
+first alice
+last trent
+floor(c) bob
+ceil(c) mallory
+bob 25
+zed -1
+removed bob: 25
+keys alice,mallory,trent

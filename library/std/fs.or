@@ -3,7 +3,7 @@
 // UNSTABLE (ADR-0016 two-stage freeze): std I/O stays unstable until the project owner confirms the freeze. Every
 // function that touches the file system takes the FILE-SYSTEM GRANT (`FsGrant`, ADR-0027) as its first argument:
 // `readFile(fs, path)`, `withFile(fs, path, mode, body)`. A grant comes from `main(host: Host)` through std:host
-// (`useFs(host, fs => ...)`) and can be narrowed with `withUnder` / `withReadOnly` below; the scope shape and the `File`
+// (`withFs(host, fs => ...)`) and can be narrowed with `withUnder` / `withReadOnly` below; the scope shape and the `File`
 // methods did not change. The language rules for `File` and for grants are not unstable: see below.
 //
 // `File` is a RESOURCE HANDLE, not a value (spec 06): it can be passed to functions (borrowed) but not stored in a
@@ -19,9 +19,10 @@
 // simple: `readLine(): Option<string>`, `write(s): void`); the scope function reports the first one as
 // `Err(FsError)` when it closes the file. A failed read looks like end of file to `body`.
 //
-// Why two flavours: a generic result `T` cannot be `void`; `withFile` returns the body's value, `useFile`
-// takes a body that returns nothing. Both exist for one file and for two files (`withFiles`, `useFiles`), which is how
-// you stream from one file to another: a handle cannot be captured by a nested scope's closure.
+// One function per scope (ADR-0048 section 6): `withFile` returns the body's value and accepts a body that returns
+// nothing (T = void); the `use*` names (`useFile`, `useFiles`, `useUnder`, `useReadOnly`) are deprecated wrappers.
+// There is one for a file and one for two files (`withFiles`), which is how you stream from one file to another: a
+// handle cannot be captured by a nested scope's closure.
 //
 // Failure (ADR-0048 section 3): every function that can fail for an outside reason returns `Result<_, FsError>`; the
 // error has a `kind` (NotFound, PermissionDenied, Denied, ...), the failed operation `op`, the `path` and the `reason`
@@ -33,6 +34,11 @@
 // byte order, physical subdirectories with a trailing `/`; directory symlinks are not followed; a readable empty
 // directory yields `Ok([])`; a partial listing is never returned).
 //
+// Entry functions (they act on the NAME, so a symbolic link is renamed, removed or replaced itself, never its target):
+// rename(fs, source, target): Result<void, FsError>, removeFile(fs, path): Result<void, FsError>, removeDir(fs, path):
+// Result<void, FsError> (empty directories only), writeFileAtomic(fs, path, data): Result<void, FsError> (a reader or a
+// crash sees the old contents or all of the new ones). All four are writes: a read-only grant refuses them.
+//
 // Narrowing (ADR-0027): `withUnder(fs, dir, body)` runs `body` with a grant that only reaches paths inside `dir`
 // (compared after making both absolute and removing "." / ".." / repeated "/" -- and, for existing path prefixes,
 // after resolving symbolic links, so a link that leaves the scope does not work); `withReadOnly(fs, body)` with a
@@ -41,7 +47,7 @@
 // other (a scope parameter, no capture, no storing).
 
 import {
-  File, FsGrant, fsReadFile, fsWriteFile, fsExists, fsListDir, fileOpen, fileIsOpen, fileOpenError, fileClose, grantUnder,
+  File, FsGrant, fsReadFile, fsWriteFile, fsExists, fsListDir, fsRename, fsRemoveFile, fsRemoveDir, fsWriteFileAtomic, fileOpen, fileIsOpen, fileOpenError, fileClose, grantUnder,
   grantReadOnly, grantRevoke
 } from "std:fsraw";
 
@@ -50,13 +56,15 @@ export { File, FsGrant } from "std:fsraw";
 // Why an operation failed. NotFound, PermissionDenied, IsDirectory, NotDirectory and AlreadyExists are the operating
 // system's answers; Denied is the host policy (ORIN_DENY names `fs`), OutsideScope a path outside a narrowed grant
 // (`withUnder`) or one that cannot be resolved inside it, ReadOnly a write through `withReadOnly`, WrongMode a read on
-// a file opened for writing or the reverse, TooManyFiles the limit of 256 open files, Io every other system error.
+// a file opened for writing or the reverse, TooManyFiles the limit of 256 open files, NotEmpty a `removeDir` of a directory
+// that still has entries, Io every other system error.
 export type FsErrorKind =
   NotFound
   | PermissionDenied
   | IsDirectory
   | NotDirectory
   | AlreadyExists
+  | NotEmpty
   | Denied
   | OutsideScope
   | ReadOnly
@@ -65,14 +73,14 @@ export type FsErrorKind =
   | Io;
 
 // What was being attempted when the error happened.
-export type FsOp = OpRead | OpWrite | OpOpen | OpList | OpStat | OpClose;
+export type FsOp = OpRead | OpWrite | OpOpen | OpList | OpStat | OpClose | OpRename | OpRemove;
 
 // An error of this module. `path` is the path as the caller wrote it, `reason` the system's or the policy's explanation
 // (diagnostic text, not for matching: match on `kind`). Render it with `fsErrorMessage`.
 export type FsError = { kind: FsErrorKind; op: FsOp; path: string; reason: string; };
 
 // fsErrorMessage(e: FsError): string -- "cannot read 'a.txt': No such file or directory" (verbs: read, write, open, list,
-// check; a failure found when a file is closed reads "I/O error on 'p': reason"). Never empty. O(path + reason).
+// check, rename, remove; a failure found when a file is closed reads "I/O error on 'p': reason"). Never empty. O(path + reason).
 export function fsErrorMessage(e: FsError): string {
   return match (e.op) {
     OpClose => "I/O error on '" + e.path + "': " + e.reason,
@@ -87,7 +95,9 @@ function opVerb(op: FsOp): string {
     OpOpen => "open",
     OpList => "list",
     OpStat => "check",
-    OpClose => "close"
+    OpClose => "close",
+    OpRename => "rename",
+    OpRemove => "remove"
   };
 }
 
@@ -116,6 +126,9 @@ function kindOfReason(reason: string): FsErrorKind {
   }
   if (reason == "File exists") {
     return AlreadyExists;
+  }
+  if (reason == "Directory not empty") {
+    return NotEmpty;
   }
   if (reason == "Bad file descriptor") {
     return WrongMode;
@@ -202,6 +215,55 @@ export function listDir(fs: FsGrant, path: string): Result<string[], FsError> {
   };
 }
 
+// rename(fs, source, target): Result<void, FsError>
+// Renames `source` to `target`; an existing `target` is replaced atomically (POSIX rename). Both paths must lie inside the grant's
+// scope and the grant must allow writes; `source` is a link itself when it is a symbolic link. Err (the path is always
+// `source`): NotFound, PermissionDenied, IsDirectory, NotDirectory, NotEmpty (a non-empty directory at `target`), Denied,
+// OutsideScope, ReadOnly or Io (also for a rename across file systems). O(1) system calls.
+export function rename(fs: FsGrant, source: string, target: string): Result<void, FsError> {
+  const r = fsRename(fs, source, target);
+  if (r.isErr()) {
+    return Err(fromRaw(OpRename, source, r.unwrapErr()));
+  }
+  return Ok();
+}
+
+// removeFile(fs, path): Result<void, FsError>
+// Removes a file or a symbolic link (the link, not its target). A directory is an Err (IsDirectory or PermissionDenied,
+// depending on the system); use removeDir. Err: NotFound, PermissionDenied, IsDirectory, NotDirectory, Denied,
+// OutsideScope, ReadOnly or Io. O(1) system calls.
+export function removeFile(fs: FsGrant, path: string): Result<void, FsError> {
+  const r = fsRemoveFile(fs, path);
+  if (r.isErr()) {
+    return Err(fromRaw(OpRemove, path, r.unwrapErr()));
+  }
+  return Ok();
+}
+
+// removeDir(fs, path): Result<void, FsError>
+// Removes an EMPTY directory; nothing is removed recursively. Err: NotEmpty, NotFound, NotDirectory, PermissionDenied,
+// Denied, OutsideScope, ReadOnly or Io. O(1) system calls.
+export function removeDir(fs: FsGrant, path: string): Result<void, FsError> {
+  const r = fsRemoveDir(fs, path);
+  if (r.isErr()) {
+    return Err(fromRaw(OpRemove, path, r.unwrapErr()));
+  }
+  return Ok();
+}
+
+// writeFileAtomic(fs, path, data): Result<void, FsError>
+// Writes `data` to a temporary file in the directory of `path`, flushes it to disk and renames it over `path`, so a reader
+// or a crash sees either the old contents or all of `data`. Unlike writeFile, a symbolic link at `path` is replaced, not
+// followed. On Err `path` is untouched. Err: NotFound (missing directory), PermissionDenied, IsDirectory, Denied,
+// OutsideScope, ReadOnly or Io. O(data size).
+export function writeFileAtomic(fs: FsGrant, path: string, data: string): Result<void, FsError> {
+  const r = fsWriteFileAtomic(fs, path, data);
+  if (r.isErr()) {
+    return Err(fromRaw(OpWrite, path, r.unwrapErr()));
+  }
+  return Ok();
+}
+
 // How a file is opened: Read (the file must exist), Write (create or truncate), Append (create if missing,
 // every write goes to the end). A file opened with Read cannot be written and vice versa (the failed operation is
 // reported as an `Err` of kind WrongMode when the scope ends).
@@ -258,19 +320,9 @@ export function withFile<T>(fs: FsGrant, path: string, mode: FileMode, body: (fi
 }
 
 // useFile(fs, path, mode, body): Result<void, FsError> -- `withFile` for a body that returns nothing.
+@Deprecated("use withFile(fs, path, mode, body) with a void body (ADR-0048)")
 export function useFile(fs: FsGrant, path: string, mode: FileMode, body: (file: File) => void): Result<void, FsError> {
-  const h = fileOpen(fs, path, modeCode(mode));
-  if (!fileIsOpen(h)) {
-    const err = openError(path, h);
-    fileClose(h);
-    return Err(err);
-  }
-  body(h);
-  const e = fileClose(h);
-  return match (e) {
-    Some(m) => Err(closeError(path, m)),
-    None => Ok()
-  };
+  return withFile(fs, path, mode, body);
 }
 
 // withFiles<T>(fs, pathA, modeA, pathB, modeB, body): Result<T, FsError>
@@ -302,29 +354,11 @@ export function withFiles<T>(
 }
 
 // useFiles(fs, pathA, modeA, pathB, modeB, body): Result<void, FsError> -- `withFiles` for a body that returns nothing.
+@Deprecated("use withFiles(fs, pathA, modeA, pathB, modeB, body) with a void body (ADR-0048)")
 export function useFiles(
   fs: FsGrant, pathA: string, modeA: FileMode, pathB: string, modeB: FileMode, body: (a: File, b: File) => void
 ): Result<void, FsError> {
-  const a = fileOpen(fs, pathA, modeCode(modeA));
-  if (!fileIsOpen(a)) {
-    const err = openError(pathA, a);
-    fileClose(a);
-    return Err(err);
-  }
-  const b = fileOpen(fs, pathB, modeCode(modeB));
-  if (!fileIsOpen(b)) {
-    const err = openError(pathB, b);
-    fileClose(b);
-    fileClose(a);
-    return Err(err);
-  }
-  body(a, b);
-  const eb = fileClose(b);
-  const ea = fileClose(a);
-  return match (firstClose(pathA, ea, pathB, eb)) {
-    Some(err) => Err(err),
-    None => Ok()
-  };
+  return withFiles(fs, pathA, modeA, pathB, modeB, body);
 }
 
 // withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T
@@ -339,10 +373,9 @@ export function withUnder<T>(fs: FsGrant, dir: string, body: (sub: FsGrant) => T
 }
 
 // useUnder(fs, dir, body: (sub: FsGrant) => void): void -- `withUnder` for a body that returns nothing.
+@Deprecated("use withUnder(fs, dir, body) with a void body (ADR-0048)")
 export function useUnder(fs: FsGrant, dir: string, body: (sub: FsGrant) => void): void {
-  const g = grantUnder(fs, dir);
-  body(g);
-  grantRevoke(g);
+  withUnder(fs, dir, body);
 }
 
 // withReadOnly<T>(fs, body: (ro: FsGrant) => T): T
@@ -356,10 +389,9 @@ export function withReadOnly<T>(fs: FsGrant, body: (ro: FsGrant) => T): T {
 }
 
 // useReadOnly(fs, body: (ro: FsGrant) => void): void -- `withReadOnly` for a body that returns nothing.
+@Deprecated("use withReadOnly(fs, body) with a void body (ADR-0048)")
 export function useReadOnly(fs: FsGrant, body: (ro: FsGrant) => void): void {
-  const g = grantReadOnly(fs);
-  body(g);
-  grantRevoke(g);
+  withReadOnly(fs, body);
 }
 
 // withFileFs<T>(fs, path, mode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>

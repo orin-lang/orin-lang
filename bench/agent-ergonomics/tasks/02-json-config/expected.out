@@ -1,0 +1,6 @@
+ok svc port=8080 debug=true tags=a,b
+invalid: /port: integer out of range: expected integer in inclusive range, found out-of-range integer
+invalid: /port: missing field: expected field present, found missing
+invalid: /extra: unknown field: expected allowed field, found unknown field
+invalid: /name: wrong type: expected string, found number
+parse error: line 1, column 20: invalid JSON syntax

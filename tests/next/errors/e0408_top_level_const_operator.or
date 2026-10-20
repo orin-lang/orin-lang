@@ -1,0 +1,7 @@
+// error: E0408
+// EXP-2: the initialiser of a top-level const must be a literal; an operator expression is rejected.
+const x = 1 + 2;
+
+function main(): void {
+  console.log(x.toString());
+}

@@ -30,8 +30,8 @@ The examples below use the namespace form for bytes, encoding, html, path, json,
 | `std:html` | Orin, `library/std/html.or` | `Html` (`@Sealed`), `escape`, `safeUrl`, `escapeUrl`, `renderAll`, `trustHtml`, `fromText`, `fragment`, `render`, `renderDocument`: HTML escaping and the URL-scheme rule; the OX provider `ox()` (`import ox from "std:html";`, ADR-0044; **experimental**, with OX, see stability.md); below, "std:html" |
 | `std:ox` | Orin, `library/std/ox.or` (types only) | `Markup<R>`, `Components<R>`, `AttrRule`, `Escape`: the protocol an OX provider's `ox()` returns (ADR-0044, docs/ox.md; **experimental**); below, "std:ox" |
 | `std:meta` | Orin, `library/std/meta.or` (re-exports `metacore.or`, `metajson.or`) | **experimental, ADR-0046 slice S3:** the pure processor interface: `Input` (annotated declarations, types, constants), the `Output` builder tree (`MDecl`/`MStmt`/`MExpr`/`MType`), `fresh`/`NameGen` hygiene and the stable JSON encoding of both; **experimental** (listed in [stability.md](stability.md)); the compiler already runs processors written against it (`orin expand`, `.gen` companion modules, ADR-0046 S4-S6); [API](std-meta.md) |
-| `std:taskcore` | Orin, `library/std/taskcore.or` | the pure bookkeeping of `std:task` (`Ring` = one channel buffer, `Ledger` = one scope's task table), invariants and contracts, tested and mutated without threads; import `std:task` |
-| `std:task` | Orin, `library/std/task.or` over L0 thread / monitor primitives and a small temporary C interface (`std:fsraw`, internal) | **Gate 1 API frozen at the std freeze, anything beyond it experimental** (stability.md; today still stage 0, ADR-0017 Addendum A): `scope`, `spawn`, `TaskHandle.join`, bounded channels, grant delegation, `parallelMap`, the work-stealing fork/join pool `forkJoin` / `forkJoinUntil` / `parallelism`; see docs/concurrency.md |
+| `std:task/internal` | Orin, `library/std/task_internal.or` | the pure bookkeeping of `std:task` (`Ring` = one channel buffer, `Ledger` = one scope's task table), invariants and contracts, tested and mutated without threads; import `std:task` |
+| `std:task` | Orin, `library/std/task.or` over L0 thread / monitor primitives and a small temporary C interface (`std:fsraw`, internal) | **Gate 1 API frozen at the std freeze, anything beyond it experimental** (stability.md; today still stage 0, ADR-0017 Addendum A; follows ADR-0048): `scope`, `Scope.spawn`, `TaskHandle.join`, bounded channels (`Sender.send` returns `Result<void, TaskError>`; the handle fields of `Sender`, `Receiver`, `Scope` and `TaskHandle` are private), grant delegation, the work-stealing fork/join pool `forkJoin` / `forkJoinUntil` / `parallelism`; `parallelMap` is deprecated for `xs.parallel().map(f)`; every item carries a signature-first doc comment in the source; see docs/concurrency.md |
 | `parallel()` on arrays | Orin prelude (`library/collections/parallel.or`, loaded only for a file that calls it) over `std:task`'s pool | parallel array pipelines (ADR-0039): `map`, `filter`, `reduce`, `some`, `every`, `find`, `findIndex`, `toArray`; below, "Parallel pipelines" |
 | `std:test` | Orin, `library/std/test.or` | done (assertions for `@Test`, ADR-0024) |
 | `std:math` | Orin, `library/collections/math.or` (to move to `library/std/`) | done (ADR-0018) |
@@ -64,11 +64,19 @@ to every std I/O function as the first argument:
 ```
 withHost(host, (fs, proc, stdio, clock) => ...)   // all four root grants of the host policy; returns the body's value (T may be void)
 withFs(host, fs => ...)  withProcess(host, proc => ...)  withStdio(host, stdio => ...)  withClock(host, clock => ...)
-useUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/ (also withUnder<T>); never widens
-useReadOnly(fs, ro => ...)         // cannot create / write / truncate
+withUnder(fs, "data", sub => ...)   // narrowing: only paths inside data/; never widens
+withReadOnly(fs, ro => ...)         // cannot create / write / truncate
 withArgsOnly(proc, p => ...)       // `args` but no `shell`; returns the body's value (T may be void)
 // useHost, useFs, useProcess, useStdio, useClock, useNet and useArgsOnly are deprecated wrappers (ADR-0048 section 6)
 ```
+
+Reading and writing standard input and the arguments (a grant first, `import { StdioGrant, readLine, readBytes, writeStdout } from "std:io"`,
+`import { args, exit } from "std:process"`): `readLine(stdio): Option<string>` (next line without `\n`/`\r\n`, `None` at end of input),
+`readBytes(stdio, n: usize): Option<string>`, `writeStdout(stdio, s): void` (no newline; shares the buffer with `console.log`),
+`args(proc): string[]` (without the program name), `exit(code: int): void` (no grant). A closure cannot capture a grant **or the `Host`**
+(E0452), so nest by passing grants as arguments, not by calling `withFs(host, ..)` inside another callback: take everything at
+once with `withHost(host, (fs, proc, stdio, clock) => value)`. A closure that returns `Err(..)` from `withHost` needs its
+result type written: `(fs, proc, stdio, clock): Result<void, string> => ...`.
 
 Families (ADR-0027): `FsGrant` (`std:fs`), `ProcessGrant` (`std:process`: `args`, `shell`), `StdioGrant` (`std:io`),
 `ClockGrant` (`std:time`: `nowMillis`), `NetGrant` (`std:net`, ADR-0033; `withNet(host, ...)`). **Ambient, no grant:**
@@ -87,9 +95,16 @@ Whole-file functions (ADR-0048): `readFile(fs, path): Result<string, FsError>`, 
 `exists(fs, path): Result<bool, FsError>` (`Err` when the grant refuses the query; `Ok(false)` for an absent path),
 `listDir(fs, path): Result<string[], FsError>` (entries in byte order, subdirectories with a trailing `/`).
 
+Entry functions (freeze C4) act on the name, so a symbolic link is renamed, removed or replaced itself, never its target;
+all four are writes and a read-only grant refuses them: `rename(fs, source, target): Result<void, FsError>` (replaces an
+existing `target` atomically), `removeFile(fs, path)` (a file or link, never a directory), `removeDir(fs, path)` (empty
+directories only, `NotEmpty` otherwise), `writeFileAtomic(fs, path, data)` (temporary file, fsync, rename: a reader or a crash
+sees the old contents or all of the new ones; `path` is untouched on `Err`).
+
 `FsError` is a record `{ kind: FsErrorKind, op: FsOp, path: string, reason: string }`. `kind` is one of `NotFound`,
-`PermissionDenied`, `IsDirectory`, `NotDirectory`, `AlreadyExists`, `Denied` (host policy), `OutsideScope`, `ReadOnly`, `WrongMode`,
-`TooManyFiles`, `Io`; `op` says which operation failed (`OpRead`, `OpWrite`, `OpOpen`, `OpList`, `OpStat`, `OpClose`);
+`PermissionDenied`, `IsDirectory`, `NotDirectory`, `AlreadyExists`, `NotEmpty`, `Denied` (host policy), `OutsideScope`, `ReadOnly`,
+`WrongMode`, `TooManyFiles`, `Io`; `op` says which operation failed (`OpRead`, `OpWrite`, `OpOpen`, `OpList`, `OpStat`, `OpClose`,
+`OpRename`, `OpRemove`);
 `reason` is the system's text. `fsErrorMessage(e): string` renders it ("cannot read 'p': No such file or directory").
 
 Streaming through **resource handles** (ADR-0025, spec 06). `File` is a handle, not a value: it can only be a
@@ -99,12 +114,11 @@ the callback and closes the file on every path:
 ```
 type FileMode = Read | Write | Append
 withFile<T>(fs, path, mode, body: (file: File) => T): Result<T, FsError>
-useFile(fs, path, mode, body: (file: File) => void): Result<void, FsError>      // body returns nothing
 withFiles<T>(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => T): Result<T, FsError>
-useFiles(fs, pathA, modeA, pathB, modeB, body: (a: File, b: File) => void): Result<void, FsError>
 withFileFs<T>(fs, path, mode, body: (file: File, fs: FsGrant) => T): Result<T, FsError>   // the body gets the grant again (nesting)
-withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      useUnder(fs, dir, body)        // narrowing
-withReadOnly<T>(fs, body: (ro: FsGrant) => T): T         useReadOnly(fs, body)
+withUnder<T>(fs, dir, body: (sub: FsGrant) => T): T      // narrowing
+withReadOnly<T>(fs, body: (ro: FsGrant) => T): T
+// T may be void. useFile / useFiles / useUnder / useReadOnly are deprecated wrappers (ADR-0048): use withX with a void body.
 
 File.readLine(): Option<string>      // without "\n" / "\r\n"; None at end of file
 File.read(n: usize): Option<string>  // up to n bytes; None only at end of file (n > 0); read(0) = Some("")
@@ -127,7 +141,7 @@ const n = withFile(fs, "log.txt", Read, f => {
   while (f.readLine().isSome()) { lines += 1; }
   return lines;
 });
-useFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
+withFiles(fs, "in.txt", Read, "out.txt", Write, (a, b) => { while (true) { const l = a.readLine(); if (l.isNone()) { return; } b.writeLine(l.unwrap()); } });
 ```
 
 ## std:path (POSIX, lexical)
@@ -718,6 +732,7 @@ function main(host: Host): void {
 | `withNet(host, body)` (`useNet` deprecated) (`std:host`) | the root `NetGrant` (may listen and connect anywhere the host policy allows) |
 | `useListen / withListen(net, addr, port, body)` | narrowed grant: listen on exactly `addr:port` (an address literal; port 0 = any) |
 | `useConnect / withConnect(net, hostPattern, portLo, portHi, body)` | narrowed grant: connect to / resolve names matching `"*"`, `"*.sfx"` or an exact text, on those ports |
+| `useListenerNet(net, addr, port, backlog, body: (Listener, NetGrant) => ..)` / `useConnectionBeside(net, host, port, timeout, ln, body: (Stream, Listener) => ..)` | one process as server and client: connect first (the backlog holds it), then `useAccepted(ln2, ..)` inside the client body; port 0 picks a free port, `portOf(ln)` reads it |
 | `useListener / withListener(net, addr, port, backlog, body: (Listener) => ..)` | bind (SO_REUSEADDR), run body, close; `Err(NetError)` |
 | `useAccepted / withAccepted(ln, timeout: Duration, body: (Stream, Peer) => ..)` | accept (TCP_NODELAY), run body, close the stream; `Err(Timeout)` (`isTimeout`) |
 | `useConnection / withConnection(net, host, port, timeout: Duration, body: (Stream) => ..)` | connect, run body, close |
@@ -937,7 +952,7 @@ above; a pool lives for one call (worker threads are started per operation, abou
 * `Graph<T>` has no edge weights and needs a caller-supplied tag.
 * Diagnostics print std types with their unit name (`$stdlib/graph.GraphId<int>`).
 * `std:clock` is importable but internal; so is `std:fsraw` (the raw open/close and grant primitives behind `std:fs` and `std:host`; only library code may import it).
-* `std:collections/internal` and `std:bytes/internal` (files `collections_internal.or`, `bytes_internal.or`) hold the contract helpers (`allTrue`, `isStrictlyIncreasing`, `isMinHeap4`, the B-tree shape and order checks, `allBytes`, ...) and the generated B-tree node types behind the public modules (ADR-0048 rule 7.3). They are not API and can change in any release; user code does not import them. `std:taskcore`, `std:metacore` and `std:metajson` are internal in the same way (use `std:task` and `std:meta`). Importing any of them from a file outside the std library is warning W0493 (the std library itself imports them without a warning).
+* `std:collections/internal` and `std:bytes/internal` (files `collections_internal.or`, `bytes_internal.or`) hold the contract helpers (`allTrue`, `isStrictlyIncreasing`, `isMinHeap4`, the B-tree shape and order checks, `allBytes`, ...) and the generated B-tree node types behind the public modules (ADR-0048 rule 7.3). They are not API and can change in any release; user code does not import them. `std:task/internal`, `std:metacore` and `std:metajson` are internal in the same way (use `std:task` and `std:meta`). Importing any of them from a file outside the std library is warning W0493 (the std library itself imports them without a warning).
 * `std:fs` streaming: text/byte-string API without seek, no directory operations, at most 256 open files.
 
 ## Bounded shell execution (unstable)

@@ -1,0 +1,7 @@
+// error: E0400
+// TYP-20: `void` is not a record field type.
+type R = { v: void; };
+
+function main(): void {
+  console.log("x");
+}

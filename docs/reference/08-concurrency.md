@@ -67,9 +67,9 @@ of tasks. Order between different channels is not defined.
 Tests: tests/next/errors/e0482_channel_zero.or, tests/std/expect_trap/task_capacity_zero.or, tests/next/run/task_channel_pingpong.or,
 tests/next/run/task_pipeline.or, tests/concurrency/stress_messages.or.
 
-**TSK-10. Send and receive.** `send(v): bool` blocks while the channel is full; `true` if handed over, `false` if the channel is
-closed (the value is dropped). `recv(): Option<T>` blocks while empty; `None` once the channel is closed by the sender and
-drained, or closed by `rx.close()` (which also drops buffered values and makes senders get `false`). `close()` ends a stream.
+**TSK-10. Send and receive.** `send(v): Result<void, TaskError>` blocks while the channel is full; `Ok()` if handed over, `Err({kind: Closed})` if the
+channel is closed (the value is dropped). `recv(): Option<T>` blocks while empty; `None` once the channel is closed by the sender and
+drained, or closed by `rx.close()` (which also drops buffered values and makes senders get `Err(Closed)`). `close()` ends a stream.
 Both ends closed releases the channel; a later use traps.
 Tests: tests/next/run/task_channel_pingpong.or, tests/next/run/task_pipeline.or, tests/std/task_test.or,
 tests/std/expect_trap/task_channel_use_after_release.or.
@@ -132,7 +132,7 @@ Tests: tests/net/interrupt.or, tests/std/net_test.or.
 
 ## 8.5 Data-parallel helpers and `parallel()` (ADR-0039)
 
-**TSK-16. `parallelMap`.** `parallelMap(xs, f, parts)` equals `xs.map(f)`, computed by `parts` tasks over contiguous chunks,
+**TSK-16. `parallelMap`.** `parallelMap(xs, f, parts)` (deprecated: use `xs.parallel().map(f)`) equals `xs.map(f)`, computed by `parts` tasks over contiguous chunks,
 results in order.
 Tests: tests/next/run/task_parallel_map.or.
 

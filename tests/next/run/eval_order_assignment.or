@@ -1,0 +1,24 @@
+// EXP-21: in an assignment the sub-expressions of the place (array and index) are evaluated before the right-hand side,
+// also for a compound assignment and for a nested index.
+function t(n: int): int {
+  console.log(`eval ${n}`);
+  return n;
+}
+function tu(n: usize): usize {
+  console.log(`eval ${n}`);
+  return n;
+}
+function main(): void {
+  let xs = [0, 0, 0, 0];
+  console.log("index");
+  xs[tu(2)] = t(7);
+  console.log("compound");
+  xs[tu(1)] += t(5);
+  console.log("nested");
+  let grid = [[0, 0], [0, 0]];
+  grid[tu(1)][tu(0)] = t(4);
+  const f = (a: int, b: int) => a - b;
+  console.log("closure");
+  console.log(`${f(t(5), t(3))}`);
+  console.log(`${xs[2]} ${xs[1]} ${grid[1][0]}`);
+}

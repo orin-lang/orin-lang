@@ -1,0 +1,21 @@
+// EXP-3: a local name hides a module declaration; a module declaration or an import hides a prelude name.
+import { parseInt } from "./lib";
+
+function who(): string {
+  return "module";
+}
+
+function parseFloat(s: string): string {
+  return "module:" + s;
+}
+
+function main(): void {
+  console.log(who());
+  {
+    const who = "local";
+    console.log(who);
+  }
+  console.log(who());
+  console.log(parseInt("12"));
+  console.log(parseFloat("1.5"));
+}

@@ -1,0 +1,41 @@
+// A CLI using capabilities: `10 FILE` prints the file with line numbers through the stdio grant.
+import { Host, withHost } from "std:host";
+import { FsGrant, readFile, fsErrorMessage } from "std:fs";
+import { args, exit } from "std:process";
+import { StdioGrant, writeStdout } from "std:io";
+
+function numbered(text: string): string {
+  let out = "";
+  let n = 0;
+  for (const line of text.split("\n")) {
+    n += 1;
+    if (line.length == 0 && n > 1) {
+      continue;
+    }
+    out += n.toString() + ": " + line + "\n";
+  }
+  return out;
+}
+
+function show(fs: FsGrant, stdio: StdioGrant, path: string): Result<void, string> {
+  const text = readFile(fs, path);
+  if (text.isErr()) {
+    return Err(fsErrorMessage(text.unwrapErr()));
+  }
+  writeStdout(stdio, numbered(text.unwrap()));
+  return Ok();
+}
+
+function main(host: Host): void {
+  const result = withHost(host, (fs, proc, stdio, clock): Result<void, string> => {
+    const argv = args(proc);
+    if (argv.length < 1) {
+      return Err("usage: 10 FILE");
+    }
+    return show(fs, stdio, argv[0]);
+  });
+  if (result.isErr()) {
+    console.error("error: " + result.unwrapErr());
+    exit(1);
+  }
+}
