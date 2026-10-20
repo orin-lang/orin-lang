@@ -1318,10 +1318,10 @@ function platAndFnAddrNeedALiteralFromTheTable(host: Host): void {
     fs => {
       assertEqString(rtCodeOf(fs, "plat(3, 0, 0, 0)"), "ok", "a literal in the table");
       assertEqString(rtCodeOf(fs, "plat(THREAD_ID, 0, 0, 0)"), "ok", "a named constant is its literal");
-      assertEqString(rtCodeOf(fs, "plat(19, 1, 2, 3)"), "ok", "the last function of the table");
+      assertEqString(rtCodeOf(fs, "plat(21, 1, 2, 3)"), "ok", "the last function of the table");
       assertEqString(rtCodeOf(fs, "plat(k, 0, 0, 0)"), "E0404", "a computed k is a compile error");
       assertEqString(rtCodeOf(fs, "plat(1 + 2, 0, 0, 0)"), "E0404", "an expression is not a literal");
-      assertEqString(rtCodeOf(fs, "plat(20, 0, 0, 0)"), "E0404", "k beyond the table");
+      assertEqString(rtCodeOf(fs, "plat(22, 0, 0, 0)"), "E0404", "k beyond the table");
       assertEqString(rtCodeOf(fs, "plat(3, 0, 0)"), "E0404", "four arguments");
       assertEqString(rtCodeOf(fs, "fnAddr(55)"), "ok", "the probe entry has a void(void *) wrapper");
       assertEqString(rtCodeOf(fs, "fnAddr(k)"), "E0404", "a computed entry");

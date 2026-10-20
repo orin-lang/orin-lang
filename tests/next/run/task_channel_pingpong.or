@@ -10,10 +10,10 @@ function main(): void {
       let more = true;
       while (more) {
         match (ping.rx.recv()) {
-          Some(v) => {
+          Ok(v) => {
             pong.tx.send(v + 1);
           },
-          None => {
+          Err(e) => {
             more = false;
           },
         }
@@ -25,10 +25,10 @@ function main(): void {
     while (round < 1000) {
       ping.tx.send(v);
       match (pong.rx.recv()) {
-        Some(r) => {
+        Ok(r) => {
           v = r + 1;
         },
-        None => {
+        Err(e) => {
           console.log("unexpected close");
         },
       }
@@ -36,10 +36,10 @@ function main(): void {
     }
     ping.tx.close();
     match (pong.rx.recv()) {
-      Some(_) => {
+      Ok(_) => {
         console.log("unexpected value");
       },
-      None => {
+      Err(e) => {
         console.log("pong closed");
       },
     }

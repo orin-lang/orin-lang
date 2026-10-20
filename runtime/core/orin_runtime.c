@@ -1508,9 +1508,10 @@ typedef struct {
     uint64_t trapped;   /* 1 when the task ended on a trap */
     uint64_t done_mon;  /* monitor whose word 1 becomes 1 when the task ends; 0 = none */
     char msg[TASK_MSG + 1]; /* the trap message */
+    uint64_t cleanup[16];   /* @512 the fields of the trap-safe cleanup (parent, scope token, kill, rank, flags, wait list; task.or), all 0 here */
 } RtTask;
-_Static_assert(offsetof(RtTask, trapped) == 8 && offsetof(RtTask, done_mon) == 16 && offsetof(RtTask, msg) == 24 && sizeof(RtTask) == 512,
-               "RtTask: tok @0, trapped @8, done_mon @16, message @24, 512 bytes (runtime/core/task.or)");
+_Static_assert(offsetof(RtTask, trapped) == 8 && offsetof(RtTask, done_mon) == 16 && offsetof(RtTask, msg) == 24 && offsetof(RtTask, cleanup) == 512 && sizeof(RtTask) == 640,
+               "RtTask: tok @0, trapped @8, done_mon @16, message @24, cleanup @512, 640 bytes (runtime/core/task.or)");
 
 /* The hooks of the heap retire (task.or `heapRetire`; core operation `hook`: HK_REVOKE_GRANTS, HK_CLOSE_FILES, HK_FREE_NETBUF). */
 static void revoke_all_grants(void) {

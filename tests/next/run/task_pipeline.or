@@ -20,10 +20,10 @@ function main(): void {
       let more = true;
       while (more) {
         match (raw.rx.recv()) {
-          Some(v) => {
+          Ok(v) => {
             cooked.tx.send(Item { n: v * v, label: "item-" + v.toString() });
           },
-          None => {
+          Err(e) => {
             more = false;
           },
         }
@@ -35,13 +35,13 @@ function main(): void {
     let more = true;
     while (more) {
       match (cooked.rx.recv()) {
-        Some(it) => {
+        Ok(it) => {
           sum += it.n;
           if (it.label.startsWith("item-")) {
             labels += 1;
           }
         },
-        None => {
+        Err(e) => {
           more = false;
         },
       }

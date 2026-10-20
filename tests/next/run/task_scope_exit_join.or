@@ -31,11 +31,11 @@ function main(): void {
   let more = true;
   while (more) {
     match (out.rx.recv()) {
-      Some(v) => {
+      Ok(v) => {
         n += 1;
         sum += v;
       },
-      None => {
+      Err(e) => {
         more = false;
       },
     }
