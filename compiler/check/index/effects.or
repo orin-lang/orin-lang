@@ -103,7 +103,7 @@ export function ioOpOfLib(name: string): string {
   }
   // std:task (ADR-0017): starting a task is a CONTROL event; the grant column says which authority is delegated to it;
   // a send / receive on a channel is an OUTPUT / INPUT event between tasks
-  if (n == "$stdlib/task.spawn" || n == "$stdlib/task.spawnDo" || n == "$stdlib/task.parallelMap") {
+  if (n == "$stdlib/task.spawn" || n == "$stdlib/task.spawnDo" || n == "$stdlib/task.parallelMap" || n == "$stdlib/task.forkJoin" || n == "$stdlib/task.forkJoinLent" || n == "$stdlib/task.forkJoinUntil") {
     return "Task.Spawn|CONTROL|ambient";
   }
   if (n == "$stdlib/task.spawnFs") {

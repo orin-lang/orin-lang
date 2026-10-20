@@ -440,9 +440,16 @@ native_build() {
   [ "$backend" != llvm ] || sources+=("$RT/orin_runtime_llvm.c")
   if [ "$wasm" = true ]; then
     # ADR-0055: a freestanding wasm64 or wasm32 module over the Orbit host ABI; its own L0 and mini libc, no WASI, entry `orin_main`.
-    sources=("$RT/orin_runtime.c" "$PF/orbit/orin_platform_orbit.c" "$PF/orbit/orin_libc_orbit.c" "$PF/orbit/orin_float_orbit.c" "$PF/orbit/orin_builtins_orbit.c")
-    flags=("--target=${wasm_target%-orbit}-unknown-unknown" -mbulk-memory -ffreestanding -nostdlib '-D__thread=__attribute__((section("orin_tls")))' -I "$PF/orbit/include" -I "$RT")
+    sources=("$RT/orin_runtime.c" "$PF/orbit/orin_platform_orbit.c" "$PF/orbit/orin_threads_orbit.c" "$PF/orbit/orin_seq_orbit.c" "$PF/orbit/orin_libc_orbit.c" "$PF/orbit/orin_float_orbit.c" "$PF/orbit/orin_builtins_orbit.c")
+    flags=("--target=${wasm_target%-orbit}-unknown-unknown" -mbulk-memory -ffreestanding -nostdlib -I "$PF/orbit/include" -I "$RT")
     link=(-Wl,--no-entry -Wl,--stack-first -Wl,-z,stack-size=1048576)
+    if [ "$wasm_target" = wasm32-orbit ]; then
+      # decision 9: real threads: atomics, real __thread, an imported shared memory (max 4 GiB = 65536 pages; the host may give less)
+      flags+=(-matomics)
+      link+=(-Wl,--shared-memory -Wl,--import-memory -Wl,--max-memory=4294967296)
+    else
+      flags+=('-D__thread=__attribute__((section("orin_tls")))') # wasm64: one thread, tasks run one at a time (decision 4)
+    fi
   fi
   $verbose && printf 'Compiling with %s %s\n' "$CC" "$ccflags" >&2
   if ! ${CC} "$ccflags" -w "${flags[@]}" "$generated" "${sources[@]}" "${link[@]}" -o "$emit" > "$tmp/cc.log" 2>&1; then

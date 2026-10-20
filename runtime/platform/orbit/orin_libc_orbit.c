@@ -10,11 +10,12 @@
  *  - Large blocks are a multiple of 16 bytes, kept on one doubly linked free list (best fit, split when the remainder is
  *    itself large) and merged with free neighbours through the previous-size tag. The block ending at the heap top grows
  *    in place by extending g_top, and freeing it lowers g_top, so a growing array costs its own size, not 3x.
- * Memory is never returned to the host (an instance's memory only grows). One thread (see orin_platform_orbit.c), so no
- * locking. */
+ * Memory is never returned to the host (an instance's memory only grows). On wasm32-orbit (threads) one lock serialises
+ * malloc / free / realloc (orin_sync.h); wasm64-orbit has one thread and no lock. */
 #include <stddef.h>
 #include <stdint.h>
 
+#include "include/orin_sync.h"
 #include "include/stdlib.h"
 #include "include/string.h"
 
@@ -102,7 +103,8 @@ static void trim(unsigned char *b, word need) {
     free_large(b + need);
 }
 
-void *malloc(size_t n) {
+static uint32_t g_lock;
+static void *malloc_locked(size_t n) {
     if (n > MAX_SIZE - HDR) return NULL;
     unsigned char *b;
     if (n + HDR <= SMALL) {
@@ -137,7 +139,7 @@ void *malloc(size_t n) {
     return b + HDR;
 }
 
-void free(void *p) {
+static void free_locked(void *p) {
     if (!p) return;
     unsigned char *b = (unsigned char *)p - HDR;
     if (W(b)[0] > SMALL) {
@@ -149,8 +151,8 @@ void free(void *p) {
     g_free[c] = p;
 }
 
-void *realloc(void *p, size_t n) {
-    if (!p) return malloc(n);
+static void *realloc_locked(void *p, size_t n) {
+    if (!p) return malloc_locked(n);
     unsigned char *b = (unsigned char *)p - HDR;
     word s = W(b)[0];
     if (n <= s - HDR) {
@@ -174,10 +176,28 @@ void *realloc(void *p, size_t n) {
             return p;
         }
     }
-    void *q = malloc(n);
+    void *q = malloc_locked(n);
     if (!q) return NULL; /* p stays valid and unchanged */
     memcpy(q, p, s - HDR);
-    free(p);
+    free_locked(p);
+    return q;
+}
+
+void *malloc(size_t n) {
+    orbit_lock(&g_lock);
+    void *p = malloc_locked(n);
+    orbit_unlock(&g_lock);
+    return p;
+}
+void free(void *p) {
+    orbit_lock(&g_lock);
+    free_locked(p);
+    orbit_unlock(&g_lock);
+}
+void *realloc(void *p, size_t n) {
+    orbit_lock(&g_lock);
+    void *q = realloc_locked(p, n);
+    orbit_unlock(&g_lock);
     return q;
 }
 

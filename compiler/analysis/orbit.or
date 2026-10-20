@@ -15,10 +15,13 @@
 //   Process.Exit, Process.Args, Stdio.Read,
 //   Host.Acquire                                     -> no capability: handled inside the guest (exit traps after recording
 //                                                       the status, the arguments are just ["main"], stdin is empty)
-//   Task.*, Channel.*                                -> no capability: the guest runs the tasks itself, one at a time, in its
-//                                                       one WebAssembly thread (ADR-0055); a program that needs two tasks
-//                                                       to run at once ends at run time with a "wasm64-orbit: deadlock"
-//                                                       message instead of failing to build
+//   Task.*, Channel.*                                wasm32-orbit: "thread/v1" (real threads, decision 9; the module imports
+//                                                       `orbit:thread/v1 spawn`, and its timed waits use the clock, so
+//                                                       "clock/v1" is required too)
+//                                                    wasm64-orbit: no capability: the guest runs the tasks itself, one at a
+//                                                       time, in its one WebAssembly thread (ADR-0055 decision 4); a program
+//                                                       that needs two tasks to run at once ends at run time with a
+//                                                       "wasm64-orbit: deadlock" message instead of failing to build
 //   Unknown.* (a call the analysis cannot resolve,  -> no error, but "clock/v1" is required too: the guest can import only
 //   such as a call of a function value)               log/v1 and clock/v1, so requiring both is the safe over-approximation
 //                                                       (a manifest must list every capability the module imports). The
@@ -51,6 +54,10 @@ const ORBIT_PRODUCER: string = "orin";
 // "" for an effect that needs no capability, else the capability. `known` is false for an effect the target lacks.
 type CapMap = { known: bool; cap: string; };
 
+function isTaskOp(op: string): bool {
+  return op.startsWith("Task.") || op.startsWith("Channel.");
+}
+
 function capabilityOf(op: string): CapMap {
   if (op == "Console.Write" || op == "Stdio.Write") {
     return CapMap { known: true, cap: "log/v1" };
@@ -58,8 +65,7 @@ function capabilityOf(op: string): CapMap {
   if (op == "Clock.Now") {
     return CapMap { known: true, cap: "clock/v1" };
   }
-  if (op == "Process.Exit" || op == "Process.Args" || op == "Stdio.Read" || op == "Host.Acquire"
-      || op.startsWith("Task.") || op.startsWith("Channel.")) {
+  if (op == "Process.Exit" || op == "Process.Args" || op == "Stdio.Read" || op == "Host.Acquire" || isTaskOp(op)) {
     return CapMap { known: true, cap: "" };
   }
   return CapMap { known: false, cap: "" };
@@ -70,14 +76,20 @@ export type OrbitPlan = {
   errors: Diagnostic[];    // E0523, one per distinct unavailable effect
 };
 
-export function orbitPlan(c: EffContext, target: string): OrbitPlan {
-  let clock = false;
+// `allPlat`: the program calls L0 functions by table index (std:coreprobe), so every import the target has is possible.
+export function orbitPlan(c: EffContext, target: string, allPlat: bool): OrbitPlan {
+  let clock = allPlat;
+  let thread = allPlat && target == ORBIT_TARGET32;
   let errors: Diagnostic[] = [];
   let seen: string[] = [];
   const rep = buildReport(c);
   for (const v of rep.entryEffects) {
     const m = isUnknownOp(v.op) ? CapMap { known: true, cap: "clock/v1" } : capabilityOf(v.op);
     if (m.known) {
+      if (target == ORBIT_TARGET32 && isTaskOp(v.op)) {
+        thread = true;
+        clock = true;
+      }
       if (m.cap == "clock/v1") {
         clock = true;
       }
@@ -95,8 +107,15 @@ export function orbitPlan(c: EffContext, target: string): OrbitPlan {
     d.notes = pathLines(v, "");
     errors.push(d);
   }
-  // sorted: the only capabilities are clock/v1 and log/v1 (no string ordering: the seed compiler lacks `<` on strings)
-  const requires: string[] = clock ? ["clock/v1", "log/v1"] : ["log/v1"];
+  // sorted: clock/v1, log/v1, thread/v1 (no string ordering: the seed compiler lacks `<` on strings)
+  let requires: string[] = [];
+  if (clock) {
+    requires.push("clock/v1");
+  }
+  requires.push("log/v1");
+  if (thread) {
+    requires.push("thread/v1");
+  }
   return OrbitPlan { requires: requires, errors: errors };
 }
 

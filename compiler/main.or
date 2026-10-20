@@ -758,7 +758,14 @@ function runBuildCommand(
   if (isCompile && wasm) {
     const shipped = hasTests(program) ? eraseTests(program) : program;
     const ci = checkWithIndex(shipped, loaded.sm);
-    const plan = orbitPlan(effectsContext(shipped, ci.index, loaded.sm), o.target);
+    // std:coreprobe reaches every L0 function through `plat` by table index: the effect analysis cannot see them
+    let probe = false;
+    for (const u of shipped.units) {
+      if (u.path == "$rt/coreprobe.or") {
+        probe = true;
+      }
+    }
+    const plan = orbitPlan(effectsContext(shipped, ci.index, loaded.sm), o.target, probe);
     if (plan.errors.length > 0) {
       report(loaded.sm, plan.errors, json, ui);
       return;

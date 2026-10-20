@@ -4,7 +4,8 @@
 #   2. its compiler support routines (orin_builtins_orbit.c) against the native __int128 arithmetic and libm round;
 #   3. the conformance suites built as WebAssembly modules and run under Node with the Orbit import contract
 #      (tools/run_tests.py --target wasm64-orbit / wasm32-orbit, tools/wasm_run.mjs), once per width; a test needing an effect the target lacks is SKIP,
-#      and so is a test whose tasks need to run at the same time or trap (the L0 ends the module with a `wasm{32,64}-orbit: <reason>` line);
+#      and so is, on wasm64-orbit only (one thread), a test whose tasks need to run at the same time or trap (the L0 ends the module with a
+#      `wasm64-orbit: <reason>` line); wasm32-orbit has real threads (shared memory, atomics: ADR-0055 decision 9);
 #   4. the size budget of runtime/platform/orbit (1100 code lines).
 #
 #   tools/test_wasm.sh [--orinc COMPILER]      default build/bootstrap/orin2; needs clang with the WebAssembly backend, wasm-ld
@@ -36,13 +37,15 @@ for W in wasm32 wasm64; do
     runtime/platform/orbit/tests/alloc_test_wasm.c -Wl,--no-entry -Wl,--export=run -o build/wasm/alloc_test_$W.wasm
   "$NODE" tools/wasm_alloc_run.mjs build/wasm/alloc_test_$W.wasm
 done
-for W in wasm32 wasm64; do
-  echo "[wasm] every __thread object of the runtime lands in the section orin_tls ($W; the L0 switches tasks by copying that block)"
-  clang --target=$W-unknown-unknown -mbulk-memory -ffreestanding -nostdlib -O2 -w -Iruntime/platform/orbit/include -Iruntime/core \
-    '-D__thread=__attribute__((section("orin_tls")))' -S runtime/core/orin_runtime.c -o build/wasm/runtime-$W.s
-  grep -q 'orin_tls' build/wasm/runtime-$W.s || { echo "test_wasm: the runtime has no orin_tls section ($W)" >&2; exit 1; }
-  ! grep -q '\.t\(bss\|data\)\|thread_local' build/wasm/runtime-$W.s || { echo "test_wasm: the runtime has thread-local data outside orin_tls ($W)" >&2; exit 1; }
-done
+echo "[wasm] wasm64: every __thread object of the runtime lands in the section orin_tls (the sequential L0 switches tasks by copying that block)"
+clang --target=wasm64-unknown-unknown -mbulk-memory -ffreestanding -nostdlib -O2 -w -Iruntime/platform/orbit/include -Iruntime/core \
+  '-D__thread=__attribute__((section("orin_tls")))' -S runtime/core/orin_runtime.c -o build/wasm/runtime-wasm64.s
+grep -q 'orin_tls' build/wasm/runtime-wasm64.s || { echo "test_wasm: the runtime has no orin_tls section (wasm64)" >&2; exit 1; }
+! grep -q '\.t\(bss\|data\)\|thread_local' build/wasm/runtime-wasm64.s || { echo "test_wasm: the runtime has thread-local data outside orin_tls (wasm64)" >&2; exit 1; }
+echo "[wasm] wasm32: the runtime's __thread objects are real thread-local data (-matomics), no orin_tls section"
+clang --target=wasm32-unknown-unknown -mbulk-memory -matomics -ffreestanding -nostdlib -O2 -w -Iruntime/platform/orbit/include -Iruntime/core \
+  -S runtime/core/orin_runtime.c -o build/wasm/runtime-wasm32.s
+grep -q '\.tbss\|\.tdata' build/wasm/runtime-wasm32.s && ! grep -q 'orin_tls' build/wasm/runtime-wasm32.s || { echo "test_wasm: wasm32 runtime thread-local data is wrong" >&2; exit 1; }
 echo "[wasm] the RtTask layout orin_platform_thread_exit reads (trapped at 8, msg at 24; fixed-width fields, so the same on both widths) still matches runtime/core/orin_runtime.c"
 grep -Pzq 'uint64_t tok;[^\n]*\n\s*uint64_t trapped;[^\n]*\n\s*uint64_t done_mon;[^\n]*\n\s*char msg\[TASK_MSG \+ 1\];' runtime/core/orin_runtime.c ||
   { echo "test_wasm: RtTask changed: adapt orin_platform_thread_exit in runtime/platform/orbit/orin_platform_orbit.c" >&2; exit 1; }

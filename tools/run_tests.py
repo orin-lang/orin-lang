@@ -37,8 +37,12 @@ WASM_TARGETS = (WASM64, WASM32)
 # that state by copying one block. Putting every __thread object into the section orin_tls makes it one contiguous block with the
 # linker symbols __start_orin_tls / __stop_orin_tls (ADR-0055; no atomics, no wasm-ld TLS, which is broken for non-shared memory).
 WASM_TLS = '-D__thread=__attribute__((section("orin_tls")))'
-WASM_CFLAGS = ["-mbulk-memory", "-ffreestanding", "-nostdlib", WASM_TLS]  # plus --target=wasm{32,64}-unknown-unknown (wasm_triple)
-WASM_LINK = ["-Wl,--no-entry", "-Wl,--stack-first", "-Wl,-z,stack-size=1048576"]
+# wasm32-orbit has real threads (ADR-0055 decision 9): atomics, real __thread, an imported shared memory (max 4 GiB = 65536 pages)
+WASM_CFLAGS = {WASM64: ["-mbulk-memory", "-ffreestanding", "-nostdlib", WASM_TLS],  # plus --target=wasm{32,64}-unknown-unknown (wasm_triple)
+               WASM32: ["-mbulk-memory", "-matomics", "-ffreestanding", "-nostdlib"]}
+WASM_LINK_BASE = ["-Wl,--no-entry", "-Wl,--stack-first", "-Wl,-z,stack-size=1048576"]
+WASM_LINK = {WASM64: WASM_LINK_BASE,
+             WASM32: WASM_LINK_BASE + ["-Wl,--shared-memory", "-Wl,--import-memory", "-Wl,--max-memory=4294967296"]}
 WASM_LIMIT = re.compile(r"^wasm(?:32|64)-orbit: ")  # prefix of the line the WebAssembly L0 prints when it hits a limit of running tasks one at a time
 WASM_UNAVAILABLE = "target does not provide"  # the compile error for such an effect: "which the <target> target does not provide"
 COMPILE_TIMEOUT = 120
@@ -131,7 +135,7 @@ def runtime_sources(backend, target="native"):
 def cc_base(args):
     """The C compiler command and flags a test executable is built with (without the inputs)."""
     if args.target in WASM_TARGETS:
-        return [args.cc if args.cc != "cc" else "clang", "-O2", "-w", wasm_triple(args.target), *WASM_CFLAGS, *rt_inc("orbit")]
+        return [args.cc if args.cc != "cc" else "clang", "-O2", "-w", wasm_triple(args.target), *WASM_CFLAGS[args.target], *rt_inc("orbit")]
     if args.backend == "llvm":
         cc = [args.cc if args.cc != "cc" else "clang", "-O2", "-w", *rt_inc()]
     else:
@@ -238,7 +242,7 @@ def run_test(args, label, test):
         if got_warns != want_warns:
             return tag, False, "warnings differ: expected %s, got %s; stderr head:\n%s" % (want_warns, got_warns, head(err))
 
-    link = WASM_LINK if args.target in WASM_TARGETS else ["-lm"]
+    link = WASM_LINK[args.target] if args.target in WASM_TARGETS else ["-lm"]
     cc = cc_base(args) + [c_out] + (args.rt_objs or runtime_sources(args.backend, args.target)) + link + ["-o", exe]
     rc, _, err = run_cmd(cc, COMPILE_TIMEOUT)
     if rc != 0:

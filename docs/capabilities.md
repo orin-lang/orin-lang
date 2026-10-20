@@ -267,7 +267,7 @@ tests in `tools/protocol.sh mcp`, and `tools/test_capabilities.sh` (the inferred
 
 ## The Orbit capability manifest (`--target=wasm64-orbit`, `--target=wasm32-orbit`)
 
-`orin compile <entry.or> -o out.c --target=wasm64-orbit` (or `wasm32-orbit`: the same C and the same manifest; C backend only; with `--backend=llvm`, `--stats-sites` or `--split` it is a
+`orin compile <entry.or> -o out.c --target=wasm64-orbit` (or `wasm32-orbit`: the same C, the manifest differs only for tasks; C backend only; with `--backend=llvm`, `--stats-sites` or `--split` it is a
 usage error, exit 2; `--target=native` is the default and changes nothing) appends a manifest for the Orbit WebAssembly runtime to
 the generated C, as the very last lines: a custom section `orbit.manifest` whose payload is the UTF-8 JSON
 `{"abi":1,"requires":[...],"producer":"orin"}` (host ABI section 6). It describes requirements and never authorises.
@@ -280,10 +280,11 @@ the generated C, as the very last lines: a custom section `orbit.manifest` whose
 | `Clock.Now` | `clock/v1` |
 | `Process.Exit`, `Process.Args`, `Stdio.Read`, `Host.Acquire` | none (handled in the guest: exit traps after recording the status, args are `["main"]`, stdin is empty) |
 | `Unknown.*` (an unresolved call, e.g. of a function value) | no error; `clock/v1` is required as well (the safe over-approximation: the guest can import only `log/v1` and `clock/v1`) |
-| `Task.*`, `Channel.*` | none (the guest runs tasks itself, one at a time, see [wasm.md](wasm.md)); a program that spawns a task also lists `clock/v1`, because the spawned closure is an unresolved callback (`Unknown.Callback`, next row) |
+| `Task.*`, `Channel.*` on `wasm32-orbit` | `thread/v1` (real threads: the module imports `orbit:thread/v1 spawn`, see [wasm.md](wasm.md)) and `clock/v1` (timed waits convert a deadline with the clock) |
+| `Task.*`, `Channel.*` on `wasm64-orbit` | none (the guest runs tasks itself, one at a time); a program that spawns a task also lists `clock/v1`, because the spawned closure is an unresolved callback (`Unknown.Callback`, previous row) |
 | anything else (`Fs.*`, `Process.Spawn`, `Net.*`, `Stream.*`) | not available: error E0523 |
 
-`log/v1` is always required (a runtime trap prints its message to stderr, which maps to the log capability); the list is sorted
+`.parallel()` and the other `std:task` fork-join functions count as `Task.Spawn`. A program that reaches L0 functions by table index (`std:coreprobe`, the self-test) lists every capability the target has. `log/v1` is always required (a runtime trap prints its message to stderr, which maps to the log capability); the list is sorted
 without duplicates. E0523 is reported once per unavailable effect, located at the evidence the analysis has
 (``error[E0523]: `main` needs Fs.ReadFile, which the wasm64-orbit target does not provide`` — the message names the target that was asked for, `wasm32-orbit` likewise). Implementation:
 `compiler/analysis/orbit.or`; tests: `tools/test_effects.py` (section 5).
