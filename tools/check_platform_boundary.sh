@@ -79,8 +79,8 @@ def plat_lint():
     src = open("compiler/hir/coreops.or", encoding="utf-8").read()
     m = re.search(r"function platNames\(\): string\[\] \{\s*return \[(.*?)\];", src, re.S)
     names = re.findall(r'"([a-z_]+)"', m.group(1)) if m else []
-    if len(names) != 20:
-        print("compiler/hir/coreops.or: the plat table has %d names, expected 20" % len(names))
+    if len(names) != 22:
+        print("compiler/hir/coreops.or: the plat table has %d names, expected 22" % len(names))
         return 1
     header = strip(open("runtime/platform/orin_platform.h", encoding="utf-8").read())
     bad_attr = re.compile(r"\b(static\s+inline|inline|const|pure|readnone|readonly|argmemonly)\b|__attribute__\s*\(\(\s*(const|pure)\b")
