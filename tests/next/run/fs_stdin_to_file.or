@@ -1,15 +1,15 @@
 // stdin (std:io) into a file through the scope API, then back out again; and a large file round trip.
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { FsGrant } from "std:fs";
 import { StdioGrant } from "std:io";
 import { readLine } from "std:io";
-import { withFile, useFile, Read, Write, Append, File } from "std:fs";
+import { withFile, Read, Write, Append, File } from "std:fs";
 
 const PATH: string = "build/tests/fs_stdin_to_file.txt";
 const BIG: string = "build/tests/fs_stdin_big.txt";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => { run(fs, stdio); });
+  withHost(host, (fs, proc, stdio, clock) => { run(fs, stdio); });
 }
 function run(fs: FsGrant, stdio: StdioGrant): void {
   // a closure cannot capture the stdio grant (ADR-0027), so stdin is read before the file scope starts
@@ -21,7 +21,7 @@ function run(fs: FsGrant, stdio: StdioGrant): void {
     }
     lines.push(l.unwrap());
   }
-  const stored = useFile(fs, PATH, Write, f => {
+  const stored = withFile(fs, PATH, Write, f => {
     let n: int = 0;
     for (const line of lines) {
       n += 1;
@@ -34,7 +34,7 @@ function run(fs: FsGrant, stdio: StdioGrant): void {
   console.log(text);
 
   // a large file: 100000 lines, written in one scope, counted in another, partly read in a third
-  useFile(fs, BIG, Write, f => {
+  withFile(fs, BIG, Write, f => {
     let i: int = 0;
     while (i < 100000) {
       f.writeLine("row " + i.toString());

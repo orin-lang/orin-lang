@@ -1,0 +1,18 @@
+// OX-16: a computed value of a URL attribute keeps a relative URL and the schemes http, https, mailto and tel (compared ASCII
+// case-insensitively); every other scheme (javascript, data, vbscript, file, ftp, blob, unknown ones) and any scheme spelled with a
+// leading space, a control character or an embedded TAB becomes about:invalid#orin-unsafe-url.
+import { render } from "std:html";
+import ox from "std:html";
+
+function main(): void {
+  const urls = [
+    "/a/b?x=1", "rel/path", "#frag", "?q=1", "x/y:z",
+    "http://x.org", "HTTPS://x.org", "MailTo:a@b.c", "tel:+123",
+    "javascript:alert(1)", "JAVASCRIPT:alert(1)", " javascript:x", "java\tscript:x", String.fromCharCode(1) + "javascript:x",
+    "data:text/html,x", "vbscript:x", "file:///etc/passwd", "ftp://x.org", "blob:x", "custom-scheme:x", "httpx://x.org",
+  ];
+  for (const u of urls) {
+    console.log(render(<a href={u}>x</a>));
+  }
+  console.log(render(<form action={urls[9]}><img src={urls[9]} /><a title={urls[9]}>x</a></form>));
+}

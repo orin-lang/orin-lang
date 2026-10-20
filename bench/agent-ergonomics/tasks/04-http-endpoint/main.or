@@ -1,0 +1,80 @@
+// A tiny HTTP JSON endpoint over std:http + std:net, exercised once over the loopback in one process.
+import { Host, useNet } from "std:host";
+import { milliseconds } from "std:time";
+import { fromString, Bytes } from "std:bytes";
+import {
+  Request, Response, ResponseParts, RequestParser, ResponseParser, Headers, NeedMore, Done, Failed,
+  Http11, ToOther, defaultLimits, methodName, standardStatus, serializeRequest, serializeResponse,
+  RequestParts, Get, httpErrorMessage,
+} from "std:http";
+import { Stream, useListenerNet, useConnectionBeside, useAccepted, portOf, recv, sendAll } from "std:net";
+
+type Answer = { code: int; body: string; };
+
+// Pure routing: no I/O, so it can be tested without a socket.
+function route(method: string, target: string): Answer {
+  if (method == "GET" && target == "/health") {
+    return Answer { code: 200, body: "{\"status\":\"ok\"}" };
+  }
+  if (method == "GET" && target.startsWith("/hello/")) {
+    const who = target.substring(7, target.length);
+    return Answer { code: 200, body: "{\"hello\":\"" + who + "\"}" };
+  }
+  return Answer { code: 404, body: "{\"error\":\"not found\"}" };
+}
+
+function respond(s: Stream, code: int, body: string): void {
+  const payload = fromString(body);
+  const headers = new Headers(["Content-Type", "Content-Length"], ["application/json", payload.length().toString()]);
+  const resp = new Response(standardStatus(code), Http11, headers, payload, new Headers([], []), false);
+  sendAll(s, serializeResponse(resp), milliseconds(1000));
+}
+
+function serveOne(s: Stream): void {
+  let parser = new RequestParser(defaultLimits());
+  while (true) {
+    const r = recv(s, 4096, milliseconds(1000));
+    if (r.isErr()) {
+      return;
+    }
+    match (parser.feed(r.unwrap())) {
+      NeedMore => {},
+      Done(req, used) => {
+        const a = route(methodName(req.method()), req.target());
+        respond(s, a.code, a.body);
+        return;
+      },
+      Failed(e) => {
+        respond(s, 400, "{\"error\":\"" + httpErrorMessage(e) + "\"}");
+        return;
+      },
+    }
+  }
+}
+
+function fetch(c: Stream, target: string): string {
+  const req = new Request(Get, target, Http11, new Headers(["Host"], ["localhost"]), fromString(""), new Headers([], []));
+  sendAll(c, serializeRequest(req), milliseconds(1000));
+  return "sent " + target;
+}
+
+function main(host: Host): void {
+  useNet(host, net => {
+    useListenerNet(net, "127.0.0.1", 0, 8, (ln, n) => {
+      const port = portOf(ln);
+      useConnectionBeside(n, "127.0.0.1", port, milliseconds(1000), ln, (c, ln2) => {
+        console.log(fetch(c, "/hello/orin"));
+        useAccepted(ln2, milliseconds(1000), (s, peer) => { serveOne(s); });
+        const r = recv(c, 4096, milliseconds(1000));
+        let rp = new ResponseParser(defaultLimits(), ToOther);
+        match (rp.feed(r.unwrap())) {
+          Done(resp, used) => { console.log(resp.status().code().toString() + " " + resp.body().toRawString()); },
+          NeedMore => { console.log("need more"); },
+          Failed(e) => { console.log(httpErrorMessage(e)); },
+        }
+      });
+    });
+  });
+  console.log(route("GET", "/health").body);
+  console.log(route("POST", "/x").code.toString());
+}

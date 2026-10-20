@@ -1,8 +1,8 @@
 // ORIN_DENY=fs: `exists` reports the denial as an Err (the program keeps running)
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { exists, fsErrorMessage } from "std:fs";
 function main(host: Host): void {
-  useFs(host, fs => {
+  withFs(host, fs => {
     console.log("before");
     const r = exists(fs, "tests/next/deny/fs_exists.or");
     console.log("exists: " + (r.isOk() ? r.unwrap().toString() : fsErrorMessage(r.unwrapErr())));

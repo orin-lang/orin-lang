@@ -1,0 +1,18 @@
+// warns: none
+// EXP-15: an arm after a catch-all is accepted without a warning and is never selected.
+type U = A | B(int);
+
+function main(): void {
+  const u: U = B(7);
+  const r = match (u) {
+    A => 1,
+    _ => 2,
+    B(v) => v,
+  };
+  console.log(r.toString());
+  const q = match (3) {
+    _ => "any",
+    3 => "three",
+  };
+  console.log(q);
+}

@@ -1,8 +1,8 @@
 // The runtime keeps at most 256 files open; the 257th open fails with an Err (EMFILE) and everything that was
 // opened is closed again on the way out.
-import { Host, useFs } from "std:host";
+import { Host, withFs } from "std:host";
 import { FsGrant } from "std:fs";
-import { withFile, withFileFs, useFile, Read, Write, File } from "std:fs";
+import { withFile, withFileFs, Read, Write, File } from "std:fs";
 
 const PATH: string = "build/tests/fs_many_files.txt";
 
@@ -19,10 +19,10 @@ function nest(fs: FsGrant, depth: int, opened: int): int {
 }
 
 function main(host: Host): void {
-  useFs(host, fs => { run(fs); });
+  withFs(host, fs => { run(fs); });
 }
 function run(fs: FsGrant): void {
-  useFile(fs, PATH, Write, f => { f.writeLine("x"); }).unwrap();
+  withFile(fs, PATH, Write, f => { f.writeLine("x"); }).unwrap();
   console.log("nest 10: " + nest(fs, 10, 0).toString());
   console.log("nest 256: " + nest(fs, 256, 0).toString());
   console.log("nest 300: " + nest(fs, 300, 0).toString());

@@ -60,6 +60,7 @@ export type Prog = {
   tab: Tab; fns: Fn[]; fnIx: Map<string, usize>; fnCount: Map<string, usize>; classes: Cls[]; clsIx: Map<string, usize>;
   consts: ConstInfo[]; mutNames: Map<string, bool>;
   vscope: Map<string, string>;   // scopeKey(unit, name) -> key of a function or constant (scope.or)
+  bigFns: string[];              // names of the functions with a contract clause that mentions a large bound (lenBoundWanted)
   sites: Map<string, bool>;      // private methods whose call sites prove the class invariants (`invariant-site` obligations)
   verified: Map<string, bool>;   // `function key|kind|line|clause` of results already VERIFIED by an earlier run: not proved again
 };
@@ -444,12 +445,12 @@ export function wfOf(g0: Gen, cx: Cx, term: string, vt: VT, depth: usize): Resul
     VStr => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      return Ok(WF { g: g, f: "(and (>= (slen " + term + ") 0) (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))" });
+      return Ok(WF { g: g, f: "(and " + strLenOk(cx, term) + " (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))" });
     },
     VArr(e) => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      let parts: string[] = ["(>= " + arrLen(so.s, term) + " 0)"];
+      let parts: string[] = [arrLenOk(cx, so.s, term)];
       // The elements are constrained only for fixed-width integers (a `u8` array is in 0..255): a quantified
       // well-formedness over every element of every nested array makes the queries slow and rarely matters.
       const narrow = match (e) {
@@ -557,12 +558,12 @@ export function tfOf(g0: Gen, cx: Cx, vt: VT, term: string): Result<TFR, string>
     VStr => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      out.push(tfChk("(and (>= (slen " + term + ") 0) (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))"));
+      out.push(tfChk("(and " + strLenOk(cx, term) + " (=> (= (slen " + term + ") 0) (= (sid " + term + ") 0)))"));
     },
     VArr(_) => {
       const so = sortS(g, cx, vt)?;
       g = so.g;
-      out.push(tfChk("(>= " + arrLen(so.s, term) + " 0)"));
+      out.push(tfChk(arrLenOk(cx, so.s, term)));
     },
     VMap(_, _) => {
       const so = sortS(g, cx, vt)?;
@@ -597,6 +598,89 @@ export function freshFree(g0: Gen, cx: Cx, vt: VT): Result<Fresh, string> {
 }
 
 // ----------------------------------------------------------------------------------------- term builders
+
+// The largest length of a real array, `1 << 40` (the runtime traps "array too large" above it: arrayNew and growItems,
+// runtime/core/object.or and array.or) and of a real string, `1 << 48` (strAlloc traps "string too large"): a length is
+// in 0..max. The upper bound is a premise only in a function whose source speaks of a large bound (a number of ten
+// digits or more, `<<`, `^` or `**`, or a call of a function whose contract does; see `lenBoundWanted`): elsewhere it cannot matter, and the extra premise made some
+// unrelated proofs (Scope.bind of compiler/check/fnctx.or) fall to the solver's incompleteness.
+export const ARR_LEN_MAX: string = "1099511627776";
+export const STR_LEN_MAX: string = "281474976710656";
+
+// Does the source of the function (its annotations and body) mention a large bound?
+export function lenBoundWanted(cx: Cx): bool {
+  const t = cx.f.text;
+  const sp = cx.f.span;
+  if (t.length == 0 || sp.end > t.length || sp.start > sp.end) {
+    return false;
+  }
+  // the annotations above the declaration: back over the lines that start with `@` or continue one
+  let a = sp.start;
+  let steps: usize = 0;
+  while (a > 0 && steps < 40) {
+    let k = a - 1;
+    while (k > 0 && t.charCodeAt(k - 1) != 10) {
+      k -= 1;
+    }
+    const c0 = t.charCodeAt(k);
+    const c1 = k + 1 < t.length ? t.charCodeAt(k + 1) : 0;
+    const c2 = k + 2 < t.length ? t.charCodeAt(k + 2) : 0;
+    const isAnno = c0 == 64 || (c0 == 32 && (c1 == 64 || (c1 == 32 && (c2 == 64 || c2 == 32))));
+    if (!isAnno) {
+      break;
+    }
+    a = k;
+    steps += 1;
+  }
+  if (hasBigBound(t, a, sp.end)) {
+    return true;
+  }
+  // a call of a function whose contract speaks of one (its precondition is about the lengths read here)
+  const region = t.substring(a, sp.end);
+  for (const n of cx.p.bigFns) {
+    if (region.includes(n + "(")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Does `t[a..b)` contain a number of ten digits or more, `<<`, `^` or `**`?
+export function hasBigBound(t: string, a: usize, b: usize): bool {
+  let run: usize = 0;
+  let i = a;
+  while (i < b && i < t.length) {
+    const c = t.charCodeAt(i);
+    if (c >= 48 && c <= 57) {
+      run += 1;
+      if (run >= 10) {
+        return true;
+      }
+    } else {
+      run = 0;
+      const d = i + 1 < b && i + 1 < t.length ? t.charCodeAt(i + 1) : 0;
+      if (c == 94 || (c == 60 && d == 60) || (c == 42 && d == 42)) {
+        return true;
+      }
+    }
+    i += 1;
+  }
+  return false;
+}
+
+export function arrLenOk(cx: Cx, sn: string, t: string): string {
+  if (!lenBoundWanted(cx)) {
+    return "(>= " + arrLen(sn, t) + " 0)";
+  }
+  return "(and (>= " + arrLen(sn, t) + " 0) (<= " + arrLen(sn, t) + " " + ARR_LEN_MAX + "))";
+}
+
+export function strLenOk(cx: Cx, t: string): string {
+  if (!lenBoundWanted(cx)) {
+    return "(>= (slen " + t + ") 0)";
+  }
+  return "(and (>= (slen " + t + ") 0) (<= (slen " + t + ") " + STR_LEN_MAX + "))";
+}
 
 export function arrLen(sn: string, t: string): string {
   return "(" + sn + "n " + t + ")";

@@ -1,0 +1,9 @@
+// error: E0401
+// TYP-14: a function parameter is immutable: assigning an element of it is rejected.
+function g(a: int[]): void {
+  a[0] = 5;
+}
+
+function main(): void {
+  g([1, 2]);
+}

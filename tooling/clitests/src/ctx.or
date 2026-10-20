@@ -4,7 +4,7 @@
 // receiver and the checks are spread over many helper functions that only receive the context, so the context is
 // immutable and its state (the check log) lives in a file, like the module globals of the Python scripts.
 
-import { FsGrant, readFile, useFile, Append, exists } from "std:fs";
+import { FsGrant, readFile, withFile, Append, exists } from "std:fs";
 import { ProcessGrant } from "std:process";
 import { shell } from "std:io";
 import { shq, strip } from "./text";
@@ -54,7 +54,7 @@ export class Ctx {
 
   // check(cond, what): the `check` of test_osig.py. Prints `FAIL: <what>` and logs the outcome.
   check(fs: FsGrant, cond: bool, what: string): void {
-    useFile(fs, this.dir + "/log", Append, f => { f.write(cond ? "ok\n" : "FAIL\n"); });
+    withFile(fs, this.dir + "/log", Append, f => { f.write(cond ? "ok\n" : "FAIL\n"); });
     if (!cond) {
       console.log("FAIL: " + what);
     }

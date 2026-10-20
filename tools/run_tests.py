@@ -11,7 +11,10 @@ Suites: `default` = tests/run + tests/errors (the Orin-B contract, every compile
 
 `--target wasm64-orbit|wasm32-orbit` (ADR-0055) builds every test as a WebAssembly module (C backend, clang with the WebAssembly backend
 as --cc, default clang) and runs it with tools/wasm_run.mjs under Node >= 24 ($NODE, default node). A test whose program
-needs an effect the target does not provide fails to compile (that diagnostic) and is counted as SKIP, not as a failure.
+needs an effect the target does not provide (the shell) fails to compile (that diagnostic) and is counted as SKIP, not as a failure,
+and so is one whose module imports a capability wasm_run.mjs does not serve (network).
+`--orbit PATH` (or $ORBIT) runs the modules on the real Orbit runtime instead (`orbit run`), granting what each manifest lists:
+fs/v1 as a writable mount of the repository (cwd = the mount), process/v1 with stdin, net/v1 for loopback listening and any connect.
 
 See tests/README.md for the test formats.
 """
@@ -37,13 +40,14 @@ WASM_TARGETS = (WASM64, WASM32)
 # that state by copying one block. Putting every __thread object into the section orin_tls makes it one contiguous block with the
 # linker symbols __start_orin_tls / __stop_orin_tls (ADR-0055; no atomics, no wasm-ld TLS, which is broken for non-shared memory).
 WASM_TLS = '-D__thread=__attribute__((section("orin_tls")))'
-# wasm32-orbit has real threads (ADR-0055 decision 9): atomics, real __thread, an imported shared memory (max 4 GiB = 65536 pages)
+# wasm32-orbit has real threads (ADR-0055 decision 10): atomics, real __thread, an imported shared memory (max 4 GiB = 65536 pages)
 WASM_CFLAGS = {WASM64: ["-mbulk-memory", "-ffreestanding", "-nostdlib", WASM_TLS],  # plus --target=wasm{32,64}-unknown-unknown (wasm_triple)
                WASM32: ["-mbulk-memory", "-matomics", "-ffreestanding", "-nostdlib"]}
 WASM_LINK_BASE = ["-Wl,--no-entry", "-Wl,--stack-first", "-Wl,-z,stack-size=1048576"]
 WASM_LINK = {WASM64: WASM_LINK_BASE,
              WASM32: WASM_LINK_BASE + ["-Wl,--shared-memory", "-Wl,--import-memory", "-Wl,--max-memory=4294967296"]}
 WASM_LIMIT = re.compile(r"^wasm(?:32|64)-orbit: ")  # prefix of the line the WebAssembly L0 prints when it hits a limit of running tasks one at a time
+WASM_CAPS = re.compile(rb'"requires":\[([^\]]*)\]')  # the manifest JSON in the module's custom section
 WASM_UNAVAILABLE = "target does not provide"  # the compile error for such an effect: "which the <target> target does not provide"
 COMPILE_TIMEOUT = 120
 
@@ -176,6 +180,49 @@ def runtime_objects(args):
     return objs
 
 
+# Tests that cannot pass on Orbit before it has threads (orbit:thread/v1): a client task and the server must run at the same time, but
+# the one WebAssembly thread blocks in accept (or recv) and runs a queued task only when it waits on a monitor or joins it.
+ORBIT_SERIAL = {
+    "next/run/net_accepted_served_twice": "the client task cannot run while the only thread waits in accept",
+    "next/run/net_task_move": "client and server tasks must run at the same time",
+}
+
+
+def orbit_command(args, wasm):
+    """`orbit run` with the grants the module's manifest lists (host-abi.md: nothing is granted by default)."""
+    with open(os.path.join(ROOT, wasm), "rb") as f:
+        m = WASM_CAPS.search(f.read())
+    caps = set(re.findall(rb'[a-z]+/v\d+', m.group(1))) if m else set()
+    cmd = [args.orbit, "run", os.path.join(ROOT, wasm), "--grant", "log/v1", "--max-memory", str(3 << 30)]
+    for cap in sorted(c.decode() for c in caps):
+        if cap == "clock/v1":
+            cmd += ["--grant", cap]
+        elif cap == "process/v1":
+            cmd += ["--grant", "process:stdin"]
+        elif cap == "fs/v1":
+            cmd += ["--grant", "fs:/work=%s:rw" % ROOT, "--cwd", "/work", "--fs-max-handles", "1024"]
+        elif cap == "net/v1":
+            cmd += ["--grant", "net:listen=127.0.0.1:0-65535", "--grant", "net:connect=*:0-65535"]
+    return cmd
+
+
+ORBIT_LOG = re.compile(r"^\[(\w+)\] [^ ]+: (.*)$")
+
+
+def orbit_streams(err):
+    """Orbit writes the guest's console output as log records on its stderr: info is stdout, error is stderr (the L0's mapping)."""
+    out, errs = [], []
+    for line in err.split("\n"):
+        m = ORBIT_LOG.match(line)
+        if m and m.group(1) == "info":
+            out.append(m.group(2) + "\n")
+        elif m and m.group(1) == "error":
+            errs.append(m.group(2))
+        elif line:
+            errs.append(line)  # the host's own messages (traps, exit)
+    return "".join(out), "\n".join(errs) + "\n"
+
+
 def run_test(args, label, test):
     # label is "run", "errors", "next/run" or "next/errors"
     name, entry, exp = test
@@ -257,10 +304,19 @@ def run_test(args, label, test):
     if os.path.isfile(in_path):
         with open(in_path, "rb") as f:
             stdin_data = f.read()
-    if args.target in WASM_TARGETS and stdin_data is not None:
-        return tag, None, "reads stdin, which %s does not provide" % args.target
-    run = [os.environ.get("NODE", "node"), os.path.join(ROOT, "tools", "wasm_run.mjs")] if args.target in WASM_TARGETS else []
-    rc, out, err = run_cmd(run + [os.path.join(ROOT, exe)], RUN_TIMEOUT, env=env, stdin_data=stdin_data)
+    if args.target in WASM_TARGETS and args.orbit and tag in ORBIT_SERIAL:
+        return tag, None, ORBIT_SERIAL[tag]
+    if args.target in WASM_TARGETS and args.orbit:
+        rc, out, err = run_cmd(orbit_command(args, exe), RUN_TIMEOUT, env=env, stdin_data=stdin_data)
+        if rc is not None:
+            out, err = orbit_streams(err)
+    else:
+        run = [os.environ.get("NODE", "node"), os.path.join(ROOT, "tools", "wasm_run.mjs")] if args.target in WASM_TARGETS else []
+        tail = ["--mount", "/work=%s:rw" % ROOT, "--cwd", "/work", "--fs-max-handles", "1024", "--stdin"] if run else []  # the grants of orbit_command, for the host of tools/
+        rc, out, err = run_cmd(run + [os.path.join(ROOT, exe)] + tail, RUN_TIMEOUT, env=env, stdin_data=stdin_data)
+        m = re.search(r"unknown import (orbit:[a-z]+/v\d+)", err)
+        if args.target in WASM_TARGETS and rc == 2 and m:
+            return tag, None, "needs %s, which tools/wasm_run.mjs does not serve (run on Orbit: --orbit PATH)" % m.group(1)
     if rc is None:
         return tag, False, "executable timed out after %d s" % RUN_TIMEOUT
     problems = []
@@ -301,6 +357,8 @@ def main():
                     help="c: emit C (default); llvm: emit LLVM IR and build with clang")
     ap.add_argument("--target", choices=["native", *WASM_TARGETS], default="native",
                     help="native (default), wasm64-orbit or wasm32-orbit: WebAssembly modules run with tools/wasm_run.mjs (ADR-0055)")
+    ap.add_argument("--orbit", default=os.environ.get("ORBIT"),
+                    help="with a wasm target: the orbit binary to run the modules on (default $ORBIT); without it tools/wasm_run.mjs runs them")
     ap.add_argument("--assert-facts", action="store_true",
                     help="compile with `--assert-facts`: every forwarded load is checked against its slot at run time (exit 70)")
     args = ap.parse_args()

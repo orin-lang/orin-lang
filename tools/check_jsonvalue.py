@@ -124,7 +124,7 @@ def oracle_cases():
     return entries
 
 
-BENCHMARK = '''import { Host, useProcess } from "std:host";
+BENCHMARK = '''import { Host, withProcess } from "std:host";
 import { args } from "std:process";
 import { assert, assertEqString, assertEqUsize } from "std:test";
 import { JsonReadOptions, JsonDuplicatePolicy, parseDocument, writeDocument, defaultLimits } from "std:json";
@@ -169,7 +169,7 @@ function measure(n: usize, mode: string): void {
   console.log(checksum.toString());
 }
 function main(host: Host): void {
-  useProcess(host, proc => { const a=args(proc); measure(parseInt(a[0]).unwrap().toUsize(),a[1]); });
+  withProcess(host, proc => { const a=args(proc); measure(parseInt(a[0]).unwrap().toUsize(),a[1]); });
 }
 '''
 

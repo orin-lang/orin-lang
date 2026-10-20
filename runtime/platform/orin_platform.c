@@ -27,7 +27,7 @@ _Static_assert(ORIN_PLATFORM_EINVAL == EINVAL, "EINVAL value");
 _Static_assert(ORIN_PLATFORM_ENOMEM == ENOMEM, "ENOMEM value");
 _Static_assert(ORIN_PLATFORM_EBUSY == EBUSY, "EBUSY value");
 
-#include "orin_platform_pure.h" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split */
+#include "orin_platform_pure.h" /* mem_find, fmt, policy_parse, path_normalize / _within, millis_split, net_ok / net_scope / net_narrow */
 
 /* ---------------------------------------------------------------- process */
 
@@ -350,6 +350,89 @@ int orin_platform_dir_list(const char *path, size_t plen, void (*each)(void *ctx
         each(ctx, n, strlen(n), S_ISDIR(st.st_mode));
     }
     if (closedir(d) && !err) err = errno;
+    return err;
+}
+
+int orin_platform_file_rename(const char *from, size_t flen, const char *to, size_t tlen) {
+    int err = 0;
+    char *a = path_copy(from, flen, &err);
+    if (!a) return err;
+    char *b = path_copy(to, tlen, &err);
+    if (!b) {
+        orin_platform_free(a);
+        return err;
+    }
+    errno = 0;
+    int r = rename(a, b);
+    err = r ? (errno ? errno : EIO) : 0;
+    orin_platform_free(a);
+    orin_platform_free(b);
+    return err;
+}
+
+int orin_platform_file_remove(const char *path, size_t plen) {
+    int err = 0;
+    char *p = path_copy(path, plen, &err);
+    if (!p) return err;
+    errno = 0;
+    err = unlink(p) ? (errno ? errno : EIO) : 0;
+    orin_platform_free(p);
+    return err;
+}
+
+int orin_platform_dir_remove(const char *path, size_t plen) {
+    int err = 0;
+    char *p = path_copy(path, plen, &err);
+    if (!p) return err;
+    errno = 0;
+    err = rmdir(p) ? (errno ? errno : EIO) : 0;
+    orin_platform_free(p);
+    return err;
+}
+
+/* Atomic replace: the data goes to "<path>.orin-tmp-<pid>-<n>" (created exclusively in the target's directory, so the rename
+ * cannot cross a file system), is fsync'ed, and is renamed over the target; the directory is fsync'ed best effort. */
+int orin_platform_file_write_atomic(const char *path, size_t plen, const char *data, size_t dlen) {
+    static unsigned long counter;
+    int err = 0;
+    char *p = path_copy(path, plen, &err);
+    if (!p) return err;
+    char *t = (char *)orin_platform_alloc(plen + 48);
+    if (!t) {
+        orin_platform_free(p);
+        return ORIN_PLATFORM_ENOMEM;
+    }
+    int fd = -1;
+    for (int attempt = 0; attempt < 100 && fd < 0; attempt++) {
+        snprintf(t, plen + 48, "%s.orin-tmp-%ld-%lu", p, (long)getpid(), __atomic_fetch_add(&counter, 1, __ATOMIC_RELAXED));
+        errno = 0;
+        fd = open(t, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
+        if (fd < 0 && errno != EEXIST) break;
+    }
+    if (fd < 0) err = errno ? errno : EIO;
+    for (size_t off = 0; fd >= 0 && !err && off < dlen;) {
+        ssize_t k = write(fd, data + off, dlen - off);
+        if (k > 0) off += (size_t)k;
+        else if (k < 0 && errno != EINTR) err = errno;
+        else if (k == 0) err = EIO;
+    }
+    if (fd >= 0 && !err && fsync(fd)) err = errno ? errno : EIO;
+    if (fd >= 0 && close(fd) && !err) err = errno ? errno : EIO;
+    if (fd >= 0 && !err && rename(t, p)) err = errno ? errno : EIO;
+    if (fd >= 0 && err) unlink(t);
+    if (!err) {
+        size_t cut = plen;
+        while (cut > 0 && p[cut - 1] != '/') cut--;
+        if (cut > 1) cut--; /* the directory without its trailing slash; "/" stays */
+        if (cut > 0) p[cut] = 0;
+        int dfd = open(cut > 0 ? p : ".", O_RDONLY | O_CLOEXEC);
+        if (dfd >= 0) {
+            (void)fsync(dfd);
+            (void)close(dfd);
+        }
+    }
+    orin_platform_free(t);
+    orin_platform_free(p);
     return err;
 }
 
@@ -729,60 +812,6 @@ int64_t orin_platform_monotonic_millis(void) {
     return (int64_t)ts.tv_sec * 1000 + (int64_t)(ts.tv_nsec / 1000000);
 }
 
-static int net_ok(const orin_platform_net *h, unsigned kind) { /* identity, liveness and policy: 0 or EPERM */
-    int live = h && h->magic == ORIN_PLATFORM_NET_MAGIC && h->kind == kind && !h->deny;
-    return live && (kind == ORIN_PLATFORM_NET_GRANT ? h->can != 0 : h->fd >= 0) ? 0 : ORIN_PLATFORM_EPERM;
-}
-
-static int ieq(const char *a, const char *b, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        char x = a[i], y = b[i];
-        if (x >= 'A' && x <= 'Z') x = (char)(x + 32);
-        if (y >= 'A' && y <= 'Z') y = (char)(y + 32);
-        if (x != y) return 0;
-    }
-    return 1;
-}
-
-/* Does pattern p cover s? s is a name or itself a "*.sfx" pattern (then every name s covers must be covered). */
-static int net_cover(const char *p, size_t pl, const char *s, size_t sl) {
-    int sw = sl >= 2 && s[0] == '*' && s[1] == '.';
-    if (pl == 1 && p[0] == '*') return 1;
-    if (pl >= 2 && p[0] == '*' && p[1] == '.')
-        return (sw ? sl - 1 >= pl - 1 : sl > pl - 1) && ieq(s + sl - (pl - 1), p + 1, pl - 1);
-    return !sw && pl == sl && ieq(p, s, pl);
-}
-
-static int net_text(const char *h, size_t hl) { /* a usable host text: 1..63 bytes, no NUL, no '*' */
-    for (size_t i = 0; i < hl; i++)
-        if (h[i] == 0 || h[i] == '*') return 0;
-    return hl >= 1 && hl <= 63;
-}
-
-static int net_scope(const orin_platform_net *g, unsigned what, const char *h, size_t hl, int port) {
-    const orin_platform_scope *s = &g->sc[what - 1];
-    return (g->can & what) && net_text(h, hl) && port >= 0 && (unsigned)port >= s->lo && (unsigned)port <= s->hi &&
-           net_cover(s->h, s->hl, h, hl);
-}
-
-int orin_platform_net_narrow(const orin_platform_net *p, unsigned what, const char *h, size_t hl, int lo, int hi,
-                             orin_platform_net *out) {
-    if (!p || p->magic != ORIN_PLATFORM_NET_MAGIC || p->kind != ORIN_PLATFORM_NET_GRANT) return ORIN_PLATFORM_EPERM;
-    int pat = (hl == 1 && h[0] == '*') || net_text(h, hl) || (hl > 2 && h[0] == '*' && h[1] == '.' && net_text(h + 2, hl - 2));
-    if ((what != ORIN_PLATFORM_NET_LISTEN && what != ORIN_PLATFORM_NET_CONNECT) || !pat || lo < 0 || hi > 65535 || lo > hi)
-        return ORIN_PLATFORM_EINVAL;
-    const orin_platform_scope *ps = &p->sc[what - 1];
-    int in = (p->can & what) && (unsigned)lo >= ps->lo && (unsigned)hi <= ps->hi && net_cover(ps->h, ps->hl, h, hl);
-    *out = *p;
-    out->can = in ? what : 0;
-    if (in) {
-        orin_platform_scope *ns = &out->sc[what - 1];
-        ns->hl = hl, ns->lo = (unsigned)lo, ns->hi = (unsigned)hi;
-        orin_platform_mem_copy(ns->h, h, hl);
-    }
-    return 0;
-}
-
 /* A fresh record for socket fd: non-blocking, close-on-exec, no SIGPIPE. fd < 0 or a failure: the errno (fd closed). */
 static int net_make(int fd, unsigned kind, int opt, orin_platform_net *out) {
     int one = 1, fl;
@@ -844,15 +873,19 @@ static int wake_fd(Wake *w) { /* under g_wk: the readable end, created on first 
     return w->rd;
 }
 
-/* under g_wk: 1 when the token or an ancestor is set, else 0; with fds the readable ends of the chain go to fds[0..*n-1], -1 on EMFILE */
+/* under g_wk: 1 when the token or an ancestor is set, else 0; with fds (and nothing set) the readable ends of the chain go to
+ * fds[0..*n-1], -1 on EMFILE. A set token is reported first, before any descriptor is made: the whole chain is read, so running out
+ * of descriptors at a child can never hide a cancelled ancestor (a wait would report EMFILE, an Os error, for a cancelled task). */
 static int wake_walk(int64_t h, int *fds, int *n) {
     int set = 0;
-    for (Wake *w; (w = wake_ref(h)) != NULL; h = w->parent) {
-        set |= w->set;
-        if (fds && (fds[*n] = wake_fd(w)) < 0) return -1;
-        if (fds) ++*n;
+    Wake *w;
+    for (int64_t g = h; (w = wake_ref(g)) != NULL; g = w->parent) set |= w->set;
+    if (set || !fds) return set;
+    for (; (w = wake_ref(h)) != NULL; h = w->parent) {
+        if ((fds[*n] = wake_fd(w)) < 0) return -1;
+        ++*n;
     }
-    return set;
+    return 0;
 }
 
 int64_t orin_platform_wake_open(void) {
@@ -935,7 +968,10 @@ static int net_wait(int fd, short ev, int ms) {
     }
     for (int i = 0; i < n; i++) p[i + 1].fd = wf[i], p[i + 1].events = POLLIN, p[i + 1].revents = 0;
     while ((r = poll(p, (nfds_t)(n + 1), ms)) < 0 && errno == EINTR) {}
-    if (r < 0) return errno;
+    if (r < 0) { /* poll itself failed (EAGAIN/ENOMEM under load on some systems): cancellation still takes precedence over the errno */
+        int e = errno;
+        return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : e;
+    }
     return net_cancelled() ? ORIN_PLATFORM_NET_CANCELLED : r == 0 ? ORIN_PLATFORM_NET_TIMEOUT : 0;
 }
 

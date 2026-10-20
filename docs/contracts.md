@@ -112,6 +112,9 @@ invariants):
   `isNormalized`, a self-call, or an invariant that calls a public method of its class terminate. The functions
   called that way run their own bodies as ordinary code (their inner calls are checked as usual);
 - a violation prints the report below on stderr and exits with status 101 (same convention as other traps).
+- **loop `@Invariant` and `@Decreases` are not checked at run time**, by design: they are type-checked on every build and checked
+  statically by `orin verify --contracts` (section "Loops"); with `--check-contracts` a false loop invariant or a measure that does not
+  decrease changes nothing (`tests/next/run/contracts_loop_clauses_unchecked.or`).
 
 ### Violation reports (ADR-0031 A1, A2; ADR-0029)
 
@@ -364,6 +367,19 @@ assumption at the read: a `u8` is in 0..255, a length or a map size is not negat
 length 0. (A datatype is free: it also contains negative lengths, so these are facts about values, never axioms over all
 values.)
 
+Lengths have an upper bound too: an array has at most 2^40 elements and a string at most 2^48 bytes, because the runtime
+traps (`array too large` in `arrayNew` and `growItems`, `string too large` in `strAlloc`, `runtime/core/object.or` and
+`array.or`) before it creates a larger one; every array and string is made by these functions (`concat`, `slice`, growth by
+`push` included), and the length never exceeds the capacity. So `xs.length < 2^62` is proved and `xs.length < 1000` is not. The
+upper bound is a premise only in a function whose source (annotations and body) mentions a large bound (a number of ten digits
+or more, `<<`, `^` or `**`): elsewhere it cannot matter, and the extra premise made unrelated proofs fall to the solver's
+incompleteness.
+
+A value of a *record* type with `@Invariant` clauses that is read from a field, an element, an `Option` payload or a match
+binding satisfies them (a record cannot violate its invariant: it is checked at every literal, field write and function
+result, ADR-0031 A3), as a parameter does. So `diag("E0200", t.span, m)` proves `t.span.start <= t.span.end`. Classes are
+not covered: their invariants hold only outside the class's own methods.
+
 A call is replaced by the callee's contract: its `@Requires` (with well-definedness) is an obligation at the call site
 (`call-precondition`, REFUTED = `FIX_CODE` for the caller), its `@Ensures` is assumed for the result under the `@Requires`
 (and, for a public method, the class invariants of the receiver). A function the purity analysis (ADR-0031 A4) finds pure is an
@@ -449,7 +465,7 @@ analysis cannot read (a call it cannot resolve) has the whole object as its fram
 
 ### Loops
 
-- A user `@Invariant(e)` before `while` / `for` (syntax of ADR-0012; not checked at run time yet) is proved on entry and for one
+- A user `@Invariant(e)` before `while` / `for` (syntax of ADR-0012; never checked at run time, only statically) is proved on entry and for one
   iteration (`loop-invariant` results), then assumed after the loop together with the negated condition.
 - A counting loop `while (i < N)` (or `<=`) whose body only does `i += 1` once per iteration, with `N` not changed by the body,
   gets `i0 <= i <= max(i0, N)` for free; it is proved like a user invariant but not reported by itself.

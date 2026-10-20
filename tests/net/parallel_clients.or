@@ -2,7 +2,7 @@
 // port (spawnNet), each sends one POST /echo with its own body over its own connection and checks the answer.
 // Usage: parallel_clients <port> <N> <bodyBytes>
 // Prints "parallel: N ok" when every task got status 200 with exactly its own body, else a line per failure and "parallel: FAIL".
-import { Host, withProcess, useNet } from "std:host";
+import { Host, withProcess, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { args } from "std:process";
 import { Bytes, bytesFromString } from "std:bytes";
@@ -80,7 +80,7 @@ function main(host: Host): void {
   const port = parseInt(argv[0]).unwrapOr(0);
   const count = parseInt(argv[1]).unwrapOr(1);
   const size = parseInt(argv[2]).unwrapOr(100);
-  useNet(host, net => {
+  withNet(host, net => {
     useConnect(net, "127.0.0.1", port, port, c => {
       scopeNetDo(c, (sc: Scope, g: NetGrant) => {
         let hs: TaskHandle<string>[] = [];

@@ -26,7 +26,7 @@ public value records, not opaque provenance proofs: explicit construction is pos
 deterministic tests, and callers are responsible for the origin of explicitly constructed values.
 All helpers reject negative instant fields, including a negative deadline field.
 
-`monotonicNow` requires a live `ClockGrant`, from `useClock` or `useHost`. It returns
+`monotonicNow` requires a live `ClockGrant`, from `withClock` or `withHost`. It returns
 `Err(TimeError { kind: ClockUnavailable })` when the native read fails, has invalid fields or cannot
 fit nonnegative i64 milliseconds. It never substitutes a wall clock, zero or a stale observation.
 Denied, forged, wrong-family and revoked grants retain the existing trap behavior; permission
@@ -44,11 +44,11 @@ keep their original trapping overflow behavior; an overflow while building a dur
 these helpers and is not converted to a `TimeError`.
 
 ```typescript
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { monotonicNow, deadlineAfter, milliseconds, isExpired } from "std:time";
 
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     const start = monotonicNow(clock).unwrap();
     const deadline = deadlineAfter(start, milliseconds(250)).unwrap();
     const now = monotonicNow(clock).unwrap();

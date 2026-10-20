@@ -1,4 +1,4 @@
-/* Synchronisation of the WebAssembly L0 (ADR-0055 decision 9): a futex-style mutex over memory.atomic.wait32 / notify.
+/* Synchronisation of the WebAssembly L0 (ADR-0055 decision 10): a futex-style mutex over memory.atomic.wait32 / notify.
  * wasm32-orbit is built with -matomics (real threads); wasm64-orbit has one thread, so the lock is nothing. */
 #ifndef ORIN_ORBIT_SYNC_H
 #define ORIN_ORBIT_SYNC_H

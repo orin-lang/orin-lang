@@ -1,0 +1,6 @@
+// error: E0100
+// LEX-14: a literal with a zero integer part and a large exponent is out of range.
+function main(): void {
+  const x = 0.5e310;
+  console.log(x.toString());
+}

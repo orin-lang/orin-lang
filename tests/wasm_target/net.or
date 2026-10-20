@@ -1,0 +1,5 @@
+import { Host, withNet } from "std:host";
+import { resolve } from "std:net";
+function main(host: Host): void {
+  withNet(host, net => { console.log(resolve(net, "localhost").isOk().toString()); });
+}

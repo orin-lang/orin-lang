@@ -1,0 +1,15 @@
+index
+eval 2
+eval 7
+compound
+eval 1
+eval 5
+nested
+eval 1
+eval 0
+eval 4
+closure
+eval 5
+eval 3
+2
+7 5 4

@@ -15,7 +15,8 @@ string literal and is one of: a relative path `./x`, `../x` (resolved against th
 a standard module `std:name`; or a dependency name (MOD-14). There is no wildcard that brings all names into scope and no default
 import. Importing a name that the target does not export (or that is private) is E0300.
 - Tests: `tests/run/modules_basic`, `tests/errors/e0300_not_exported`, `tests/parse_edge/ok_import_alias.or`, `tests/parse_edge/ok_import_namespace.or`,
-  `tests/next/errors/e0300_import_generic_not_exported`, `tests/next/errors/e0300_source_private_not_exported`.
+  `tests/next/errors/e0300_import_generic_not_exported`, `tests/next/errors/e0300_source_private_not_exported`,
+  `tests/next/run/reexport_third_module` (a name exported by `export { x } from` of a third module).
 
 **MOD-2a.** **Aliases** (ADR-0048 addendum). `import { exists as fileExists, empty as emptyBytes } from "path";` binds the export under the new name, for
 types and values alike (the variants of an imported union keep their own names). `export { a as b } from "path";` re-exports under another name. The
@@ -34,11 +35,12 @@ something else, a local, parameter, closure parameter, function, type or import 
   `tests/next/errors/e0304_namespace_shadowed_by_closure_param.or`, `tests/next/errors/e0304_namespace_shadowed_by_function.or`,
   `tests/next/errors/e0304_namespace_shadowed_by_import.or`, `tests/next/errors/e0400_namespace_as_value.or`, `tests/next/errors/e0400_namespace_passed.or`,
   `tests/next/errors/e0400_namespace_printed.or`, `tests/next/errors/e0400_namespace_compared.or`, `tests/next/errors/e0400_namespace_called.or`,
-  `tests/next/errors/e0200_import_star_without_as.or`.
+  `tests/next/errors/e0200_import_star_without_as.or`,
+  `tests/next/run/ns_union_reexport` (a union type re-exported from a third module, reached as `m.T`, `m.Variant(..)` and the pattern `m.Variant(x)`).
 
 **MOD-3.** A path that resolves to no file is E0301 (`cannot find module`). A path starting with `$` is reserved for the embedded preludes and is not an
 importable path from source (it is reported as an unreadable file, E0301).
-- Tests: `tests/errors/e0301_module_not_found.or`, `tests/next/errors/e0301_unknown_std_module.or`.
+- Tests: `tests/errors/e0301_module_not_found.or`, `tests/next/errors/e0301_unknown_std_module.or`, `tests/next/errors/e0301_dollar_path.or`.
 
 **MOD-4.** **Module boundary.** A file outside a module's directory may import only the module itself (its `module.or`), never a file inside it
 (E0302). Files inside the directory import each other freely.
@@ -49,7 +51,8 @@ importable path from source (it is reported as an unreadable file, E0301).
 
 **MOD-6.** Names of one file's scope (its own declarations and its imported names) must be unique: a duplicate function, type, constant, variant or imported name,
 or an import that collides with a local declaration, is E0304. A union type's variants are module-level constructors, so two union types of one file cannot share a variant name.
-- Tests: `tests/errors/e0304_duplicate_function.or`, `tests/errors/e0304_duplicate_variant.or`, `tests/parse_edge/ok_unions.or`.
+- Tests: `tests/errors/e0304_duplicate_function.or`, `tests/errors/e0304_duplicate_variant.or`, `tests/parse_edge/ok_unions.or`,
+  `tests/next/errors/e0304_import_collides_with_declaration.or` (an import against a local declaration), `tests/next/errors/e0304_two_imports_same_name` (two imports of one name from different modules; importing the same entity twice is accepted).
 
 **MOD-7.** `export { a, B } from "path";` re-exports names without importing them into the file's own scope. Importing or re-exporting a union type also brings all its
 variants into scope (ADR-0004). An exported function, type, constant or interface whose signature or field types mention a type declared in the same file without `export` is rejected with E0306 on the private name (ADR-0056 6.9); export the type or keep the declaration private. Private fields of a class, private methods and the fields of an `@Sealed` type are exempt (importers cannot construct or change a sealed value).
@@ -64,7 +67,7 @@ variants into scope (ADR-0004). An exported function, type, constant or interfac
 
 **MOD-9.** `std:name` imports a module of the standard library. The importable names are: `std:fs`, `std:process`, `std:io`, `std:math`, `std:path`, `std:json`,
 `std:jsonnumber`, `std:jsonvalue`, `std:jsondecode`, `std:time`, `std:graph`, `std:test`, `std:host`, `std:bytes`, `std:encoding`, `std:utf8`, `std:url`, `std:collections`,
-`std:http`, `std:seq`, `std:task`, `std:taskcore`, `std:net`, `std:text`, `std:html`, `std:ox`, `std:meta`, `std:metacore`, `std:metajson`. Any other `std:` name is E0301 and the
+`std:http`, `std:seq`, `std:task`, `std:task/internal`, `std:net`, `std:text`, `std:html`, `std:ox`, `std:meta`, `std:metacore`, `std:metajson`. Any other `std:` name is E0301 and the
 message lists these. Most modules are Orin source embedded in the compiler (`library/std/*.or`); `std:process` and `std:io` are C runtime built-ins and `std:fs` is Orin over C primitives. The modules that perform
 I/O are **unstable** until the I/O freeze (docs/std.md); `std:math` (`library/collections/math.or`) is float-only.
 - Tests: `tests/next/errors/e0301_unknown_std_module.or`, `tests/next/errors/std_unknown_module.or`, `tests/next/run/std_path_join.or`, `tests/next/run/std_json_parse_basic.or`,
@@ -80,8 +83,8 @@ I/O are **unstable** until the I/O freeze (docs/std.md); `std:math` (`library/co
 unused prelude functions be pruned): `library/core/` (`$std`: string search/split/trim/join, `parseInt`, integer and bool `toString`), `library/collections/` (`$array`: the array methods `map filter find findIndex some every reduce
 forEach sort indexOf includes`, `Map` and `MapEntry`, the derivation helpers of `Eq`/`Ord`/`Hash`), and the runtime root. The language-level surface of the prelude is: the types `int i8 .. usize float f32 bool string void
 Option Result Map MapEntry`, the constructors `Some None Ok Err`, the interfaces `Eq Ord Hash`, `console.log`, `console.error`, `String.fromCharCode`, `parseInt`, `parseFloat`, `parseI8 .. parseUsize`, and the built-in
-methods of chapter 3. The prelude is part of the language: it is checked with the program and its generic functions are instantiated like user code. A user declaration may reuse a prelude name in its own scope.
-- Tests: `tests/run/std_prelude_edges.or`, `tests/run/option_methods.or`, `tests/next/run/array_methods_in_generics.or`, `tests/next/run/map_basic_string_int.or`, `tests/next/run/eqord_map_keys.or`.
+methods of chapter 3. The prelude is part of the language: it is checked with the program and its generic functions are instantiated like user code. A user declaration may reuse a prelude name in its own scope. The list above is a summary: the exact set of names is whatever the prelude sources export, and no rule pins it beyond the names the tests below use.
+- Tests: `tests/next/run/prelude_name_reuse.or` (prelude names without import; a user `parseFloat` and `MapEntry`), `tests/run/std_prelude_edges.or`, `tests/run/option_methods.or`, `tests/next/run/array_methods_in_generics.or`, `tests/next/run/map_basic_string_int.or`, `tests/next/run/eqord_map_keys.or`.
 
 ## 6.4 Packages (`orin.toml`)
 
@@ -118,7 +121,8 @@ router = { git = "https://example.org/router", tag = "v0.2.0" }
 **MOD-12.** `[package]` requires `name`; `version` and `entry` are optional. A key outside the documented set, a wrong value type, a missing `[package]`, an `[architecture]` flag set to
 `false` is E0503; a TOML syntax error (including an unterminated array) is E0500.
 - Tests: `tests/next/errors/e0500_manifest_syntax`, `tests/next/errors/e0500_manifest_unterminated_array`, `tests/next/errors/e0503_manifest_unknown_key`,
-  `tests/next/errors/e0503_manifest_architecture_off`, `tests/next/packages/shop`.
+  `tests/next/errors/e0503_manifest_architecture_off`, `tests/next/packages/shop`, `tests/next/run/package_default_entry` and
+  `tests/next/errors/e0502_default_entry_src_root` (no `entry`: the src root is `src`), `tools/test_packages.sh` with `tests/next/packages/minimal` (version defaults to `0.0.0`, entry to `src/main.or`).
 
 **MOD-13.** `[modules.x] allowed_dependencies = [..]` restricts which modules the files of module `x` may import: an import of any other module of the package is E0501. A
 name that is not a module of the package (no directory, no `module.or`) in `[modules.x]`, `allowed_dependencies` or `[effects.x]` is E0502. The package's module graph is acyclic
@@ -128,7 +132,8 @@ name that is not a module of the package (no directory, no `module.or`) in `[mod
 
 **MOD-14.** A `[dependencies]` entry (`name = { path = "../x" }` or `{ git = "..", tag|rev = ".." }`; `[dev-dependencies]` for tests) makes `import { f } from "name";` resolve to the dependency's
 `src/module.or`; its internal modules keep the privacy rules of MOD-4. Dependencies are source code, not a sandbox. Resolution is recorded in `orin.lock` (a build never updates it; `orin update` does).
-- Tests: `tests/workspace_cli/ok/app` (a package with a path dependency), `tests/processors/dep_trusted`, `tests/processors/dep_untrusted`.
+- Tests: `tests/workspace_cli/ok/app` (a package with a path dependency), `tests/processors/dep_trusted`, `tests/processors/dep_untrusted`, `tests/next/run/package_dependency_import` (bare-name import through the conformance runner),
+  `tests/next/errors/e0302_dependency_private_file` (a relative path into the dependency's internal file), `tests/next/errors/e0301_dependency_subpath` (only the bare name resolves; `name/sub` does not).
 
 ## 6.5 Workspaces (`orin-workspace.toml`)
 
@@ -139,7 +144,7 @@ or overlapping layout (nested workspace, nested member, an `exclude` matching no
 - Tests: `tests/workspace/ok/single`, `tests/workspace/ok/glob_order`, `tests/workspace/ok/topo_order`, `tests/workspace/ok/exclude`, `tests/workspace/ok/default_members`,
   `tests/workspace/fail/syntax`, `tests/workspace/fail/missing_members`, `tests/workspace/fail/absolute_path`, `tests/workspace/fail/dotdot_path`,
   `tests/workspace/fail/duplicate_name`, `tests/workspace/fail/duplicate_path`, `tests/workspace/fail/nested_workspace`, `tests/workspace/fail/exclude_matches_nothing`,
-  `tests/workspace/fail/path_dep_non_member`, `tests/workspace/fail/dependency_cycle`, `tests/workspace/fail/stale_lockfile`, `tests/workspace_cli/ok`.
+  `tests/workspace/fail/path_dep_non_member`, `tests/workspace/fail/dependency_cycle`, `tests/workspace/fail/stale_lockfile`, `tests/workspace/fail/members_not_array` (E0504), `tests/workspace/fail/default_not_member` (E0507), `tests/workspace_cli/ok`.
 
 ## 6.6 Repository layout (ADR-0047)
 
@@ -147,15 +152,8 @@ or overlapping layout (nested workspace, nested member, an `exclude` matching no
 `library/core/`, `library/collections/` and `library/std/` (the embedded preludes and the `std:*` modules), `tooling/` (Orin-written tools), `tests/`, `docs/`, `formal/`, `bootstrap/` (the seed). The
 public `std:*` import names, the virtual prelude roots (`$std`, `$array`, `$stdlib`) and the C ABI are independent of this layout. ADR-0047 itself is still marked "proposed"; phases 1 to 3 (workspace manifest,
 workspace CLI, library/runtime moves) are in the tree.
-- Tests: none (a description of the repository; `tools/bootstrap.sh` checks that the embedded preludes are current, `tools/embed_prelude.py --check`).
+- Not a testable rule, a description of the repository (no test; `tools/bootstrap.sh` checks that the embedded preludes are current, `tools/embed_prelude.py --check`).
 
 ## Gaps: rules without a test
 
-- MOD-2: no test shows an import of a name that is exported by `export { x } from` of a third module (only the union case, `modules_reexport_union`). MOD-2a/2b: a union type exported through a namespace is covered only for a local module.
-- MOD-3: the `$`-path rejection has no test.
-- MOD-6: no test for an import colliding with a local declaration or with another import (E0304 probed with `orin2`).
-- MOD-11: the exact list of prelude names is the union of the prelude sources; no test pins it, and "a user declaration may reuse a prelude name" has no test.
-- MOD-12: `version` and `entry` defaults have no direct test (`tests/next/packages/shop` uses the default entry).
-- MOD-14: bare-name dependency imports are exercised only through `tests/processors/` and the workspace CLI journeys (`tools/test_cli.py`), not through the conformance runner; there is no negative test for a dependency's private file.
-- MOD-15: E0504 for `members` of the wrong type is covered (`members_not_array`); E0507 for `default-members` that is not a member is `default_not_member`.
-- MOD-16: description of the repository; no conformance test applies.
+None.

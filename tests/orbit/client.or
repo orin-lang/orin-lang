@@ -1,0 +1,68 @@
+// An outgoing TCP client and DNS on std:net (L0: orbit:net/v1). Arguments: <port of an echo server on 127.0.0.1> <a port nothing
+// listens on>. It connects, exchanges a message, asks the server to quit, resolves "localhost", and shows the three ways a connect
+// can be refused: by the host grant (Denied), by the L0 narrowing of a grant (Denied) and by the peer (connection refused).
+// Run: orbit run client.wasm --grant log/v1 --grant clock/v1 --grant net:connect=127.0.0.1:<port>-<closed> --grant net:connect=localhost:1-65535
+//      --app-arg <port> --app-arg <closed>
+import { Host, withProcess, withNet } from "std:host";
+import { args } from "std:process";
+import { milliseconds } from "std:time";
+import { bytesFromString } from "std:bytes";
+import { NetGrant, Stream, NetError, withConnect, withConnection, recv, sendAll, resolve, isDenied, netErrorMessage } from "std:net";
+
+function intArg(xs: string[], i: usize): int {
+  return match (parseInt(xs[i])) {
+    Some(v) => v,
+    None => 0
+  };
+}
+
+function exchange(net: NetGrant, port: int, text: string): string {
+  const r = withConnection(net, "127.0.0.1", port, milliseconds(2000), (s: Stream) => {
+    sendAll(s, bytesFromString(text), milliseconds(2000));
+    const got = recv(s, 64, milliseconds(2000));
+    return match (got) {
+      Ok(b) => b.toRawString(),
+      Err(e) => "no reply: " + netErrorMessage(e)
+    };
+  });
+  return match (r) {
+    Ok(t) => t,
+    Err(e) => "connect failed: " + netErrorMessage(e)
+  };
+}
+
+function attempt(net: NetGrant, host: string, port: int): string {
+  const r = withConnection(net, host, port, milliseconds(1000), (s: Stream) => 0);
+  return match (r) {
+    Ok(v) => "connected",
+    Err(e) => isDenied(e) ? "denied" : "failed: " + netErrorMessage(e) + " (code " + e.code.toString() + ")"
+  };
+}
+
+function main(host: Host): void {
+  const argv = withProcess(host, p => args(p));
+  const port = intArg(argv, 0);
+  const closed = intArg(argv, 1);
+  withNet(host, net => {
+    console.log("echo: " + exchange(net, port, "hello over tcp"));
+    console.log("echo again: " + exchange(net, port, "second connection"));
+    const names = resolve(net, "localhost");
+    match (names) {
+      Ok(list) => {
+        let loopback = false;
+        for (const a of list) {
+          loopback = loopback || a == "127.0.0.1" || a == "::1";
+        }
+        console.log("localhost resolves to loopback: " + loopback.toString());
+      },
+      Err(e) => { console.log("resolve failed: " + netErrorMessage(e)); }
+    }
+    const nx = resolve(net, "no-such-host.invalid");
+    console.log("no-such-host.invalid: " + (nx.isErr() ? "error " + netErrorMessage(nx.unwrapErr()) : "resolved"));
+    console.log("closed port: " + attempt(net, "127.0.0.1", closed));
+    console.log("outside the host grant: " + attempt(net, "127.0.0.1", 1));
+    console.log("narrowed to the echo port, other port: " + withConnect(net, "127.0.0.1", port, port, c => attempt(c, "127.0.0.1", closed)));
+    console.log("narrowed to the echo port, same port: " + withConnect(net, "127.0.0.1", port, port, c => attempt(c, "127.0.0.1", port)));
+    console.log("quit: " + exchange(net, port, "quit"));
+  });
+}

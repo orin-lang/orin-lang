@@ -23,7 +23,7 @@ An **effect** is a compiler-owned primitive operation (the closed list of ADR-00
 |---|---|---|---|
 | `Fs.ReadFile`, `Fs.Stat`, `Fs.Read` (a `File` read) | INPUT | `FsGrant` | `readFile`, `exists`, `file.read*` |
 | `Fs.WriteFile`, `Fs.Write` (a `File` write / flush) | OUTPUT | `FsGrant` | `writeFile`, `file.write*` |
-| `Fs.Open`, `Fs.Narrow` | CONTROL | `FsGrant` | `withFile` / `useFile`, `withUnder` / `withReadOnly` |
+| `Fs.Open`, `Fs.Narrow` | CONTROL | `FsGrant` | `withFile`, `withUnder` / `withReadOnly` |
 | `Process.Args` | INPUT | `ProcessGrant` | `args` |
 | `Process.Spawn`, `Process.Narrow` | CONTROL | `ProcessGrant` | `shell`, `withArgsOnly` |
 | `Process.Exit` | CONTROL | ambient | `exit` |
@@ -278,13 +278,21 @@ the generated C, as the very last lines: a custom section `orbit.manifest` whose
 |---|---|
 | `Console.Write`, `Stdio.Write` | `log/v1` |
 | `Clock.Now` | `clock/v1` |
-| `Process.Exit`, `Process.Args`, `Stdio.Read`, `Host.Acquire` | none (handled in the guest: exit traps after recording the status, args are `["main"]`, stdin is empty) |
-| `Unknown.*` (an unresolved call, e.g. of a function value) | no error; `clock/v1` is required as well (the safe over-approximation: the guest can import only `log/v1` and `clock/v1`) |
+| `Process.Args`, `Stdio.Read` | `process/v1` (arguments, stdin) |
+| `Fs.ReadFile`, `Fs.WriteFile`, `Fs.Stat`, `Fs.Open`, `Fs.Read`, `Fs.Write` | `fs/v1` |
+| `Net.Bind`, `Net.Accept`, `Net.Connect`, `Stream.Read`, `Stream.Write` | `net/v1` |
+| `Fs.Narrow`, `Net.Narrow`, `Process.Narrow` | none (narrowing a grant is a check inside the guest) |
+| `Process.Exit`, `Host.Acquire` | none (handled in the guest: exit traps after recording the status) |
+| `Unknown.*` (an unresolved call, e.g. of a function value) | no error; `clock/v1` is required as well, and so is every capability that any function of the package needs (the report's package effects): the unresolved call can reach only code of the program, and the manifest must list every capability the module imports |
 | `Task.*`, `Channel.*` on `wasm32-orbit` | `thread/v1` (real threads: the module imports `orbit:thread/v1 spawn`, see [wasm.md](wasm.md)) and `clock/v1` (timed waits convert a deadline with the clock) |
 | `Task.*`, `Channel.*` on `wasm64-orbit` | none (the guest runs tasks itself, one at a time); a program that spawns a task also lists `clock/v1`, because the spawned closure is an unresolved callback (`Unknown.Callback`, previous row) |
-| anything else (`Fs.*`, `Process.Spawn`, `Net.*`, `Stream.*`) | not available: error E0523 |
+| anything else (`Process.Spawn`: `shell`, `shellTimeout`) | not available: error E0523 |
+
+Each of `process/v1`, `fs/v1` and `net/v1` also makes the generated C `#include` the L0 family that implements it
+(`orbit_proc.h`, `orbit_fs.h`, `orbit_net.h`, from `runtime/platform/orbit/include`) right before the manifest, so the module imports
+exactly the capabilities it lists and a program that does not use them needs no grant for them (a listed capability must be granted).
 
 `.parallel()` and the other `std:task` fork-join functions count as `Task.Spawn`. A program that reaches L0 functions by table index (`std:coreprobe`, the self-test) lists every capability the target has. `log/v1` is always required (a runtime trap prints its message to stderr, which maps to the log capability); the list is sorted
 without duplicates. E0523 is reported once per unavailable effect, located at the evidence the analysis has
-(``error[E0523]: `main` needs Fs.ReadFile, which the wasm64-orbit target does not provide`` — the message names the target that was asked for, `wasm32-orbit` likewise). Implementation:
+(``error[E0523]: `main` needs Process.Spawn, which the wasm64-orbit target does not provide`` — the message names the target that was asked for, `wasm32-orbit` likewise). Implementation:
 `compiler/analysis/orbit.or`; tests: `tools/test_effects.py` (section 5).

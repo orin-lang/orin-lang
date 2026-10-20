@@ -1,0 +1,12 @@
+// An unresolved call (Unknown.*) in a program that also uses a file: the manifest lists clock/v1 and, because the call may reach any
+// function of the package, the fs/v1 of the file code (compiler/analysis/orbit.or).
+import { Host, withFs } from "std:host";
+import { exists } from "std:fs";
+function apply(f: (x: int) => int, v: int): int {
+  return f(v);
+}
+function main(host: Host): void {
+  withFs(host, fs => { console.log(exists(fs, "/data").isOk().toString()); });
+  const dbl = (x: int) => x * 2;
+  console.log(apply(dbl, 21).toString());
+}

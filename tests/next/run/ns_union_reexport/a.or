@@ -1,0 +1,1 @@
+export type Shape = Circle(int) | Square(int);

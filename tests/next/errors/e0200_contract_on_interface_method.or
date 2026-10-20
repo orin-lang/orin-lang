@@ -1,0 +1,9 @@
+// error: E0200
+interface Scale {
+  @Requires(x > 0)
+  grow(x: int): int;
+}
+
+function main(): void {
+  console.log("x");
+}

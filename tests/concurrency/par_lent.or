@@ -2,7 +2,8 @@
 // read without a copy; the results are built by the workers and never refer into the lent graph. The output must not depend on
 // the number of workers or ORIN_THREADS (tools/test_parallel.sh runs this with ORIN_THREADS = 1 .. 8, under ThreadSanitizer and
 // ASan, and checks that no object is live at exit).
-import { forkJoinLent, forkJoin, parallelism, copiedCount } from "std:task";
+import { forkJoinLent, forkJoin, parallelism } from "std:task";
+import { copiedCount } from "std:task/internal";
 
 type Tag = { name: string; weight: int; };
 type Inner = { a: int; xs: int[]; };

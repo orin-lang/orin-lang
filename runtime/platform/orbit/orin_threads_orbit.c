@@ -1,4 +1,4 @@
-/* wasm32-orbit: real threads for the WebAssembly L0 (ADR-0055 decision 9), in the wasi-threads model.
+/* wasm32-orbit: real threads for the WebAssembly L0 (ADR-0055 decision 10), in the wasi-threads model.
  *
  * The module imports its memory as SHARED memory (wasm-ld --shared-memory --import-memory) and one function to start a thread:
  * `orbit:thread/v1 spawn(arg: i64) -> i64` (the thread id > 0, or a negative status). The host instantiates the same module again

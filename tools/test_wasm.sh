@@ -3,10 +3,12 @@
 #   1. the float formatting / parsing of the WebAssembly L0 against glibc (tools/test_wasm_float.sh);
 #   2. its compiler support routines (orin_builtins_orbit.c) against the native __int128 arithmetic and libm round;
 #   3. the conformance suites built as WebAssembly modules and run under Node with the Orbit import contract
-#      (tools/run_tests.py --target wasm64-orbit / wasm32-orbit, tools/wasm_run.mjs), once per width; a test needing an effect the target lacks is SKIP,
+#      (tools/run_tests.py --target wasm64-orbit / wasm32-orbit, tools/wasm_run.mjs: log, clock, process and fs), once per width; a test needing an effect
+#      the target lacks (the shell) or a capability the Node host does not serve (net) is SKIP,
 #      and so is, on wasm64-orbit only (one thread), a test whose tasks need to run at the same time or trap (the L0 ends the module with a
-#      `wasm64-orbit: <reason>` line); wasm32-orbit has real threads (shared memory, atomics: ADR-0055 decision 9);
-#   4. the size budget of runtime/platform/orbit (1100 code lines).
+#      `wasm64-orbit: <reason>` line); wasm32-orbit has real threads (shared memory, atomics: ADR-0055 decision 10);
+#   4. the programs of tests/orbit on the real Orbit runtime when an orbit binary is found (tools/test_orbit.py; SKIP otherwise);
+#   5. the size budget of runtime/platform/orbit (1400 code lines).
 #
 #   tools/test_wasm.sh [--orinc COMPILER]      default build/bootstrap/orin2; needs clang with the WebAssembly backend, wasm-ld
 #                                              and Node >= 24 ($NODE, default node)
@@ -53,7 +55,9 @@ for T in wasm64-orbit wasm32-orbit; do
   echo "[wasm] conformance suites as $T modules"
   python3 tools/run_tests.py --orinc "$ORINC" --target $T --suite all
 done
-echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 1100 code lines, counted like tools/verify_platform.sh)"
+echo "[wasm] the programs of tests/orbit on the real Orbit runtime (SKIP without an orbit binary: ORBIT=... or ../orbit/target/release/orbit)"
+python3 tools/test_orbit.py --orinc "$ORINC"
+echo "[wasm] size budget of runtime/platform/orbit (ADR-0055: <= 1400 code lines, counted like tools/verify_platform.sh)"
 code=$(python3 - runtime/platform/orbit/*.c runtime/platform/orbit/include/*.h <<'PY'
 import re, sys
 n = 0
@@ -64,5 +68,5 @@ for f in sys.argv[1:]:
 print(n)
 PY
 )
-echo "runtime/platform/orbit: $code code lines (budget 1100)"
-[ "$code" -le 1100 ] || { echo "the WebAssembly L0 exceeds its size budget" >&2; exit 1; }
+echo "runtime/platform/orbit: $code code lines (budget 1400)"
+[ "$code" -le 1400 ] || { echo "the WebAssembly L0 exceeds its size budget" >&2; exit 1; }

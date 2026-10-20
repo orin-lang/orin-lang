@@ -68,11 +68,11 @@ def main():
     run([native], expected=101, stderr="capability denied: clock monotonicMillis", env={**env, "ORIN_DENY": "clock"})
     print("PASS native failure/zero/negative/nsec/overflow/boundary and grant/network cases", flush=True)
     failure = OUT / "failure.or"
-    failure.write_text('''import { Host, useClock } from "std:host";
+    failure.write_text('''import { Host, withClock } from "std:host";
 import { monotonicNow, timeErrorMessage } from "std:time";
 import { assert, assertEqString } from "std:test";
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     const r = monotonicNow(clock);
     assert(r.isErr(), "failed read must be an ordinary error");
     assertEqString(timeErrorMessage(r.unwrapErr()), "monotonic clock unavailable", "stable error");
