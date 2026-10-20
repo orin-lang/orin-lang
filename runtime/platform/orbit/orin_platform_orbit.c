@@ -289,7 +289,7 @@ __attribute__((noreturn)) static void fatal(const char *what, const char *detail
     __builtin_trap();
 }
 __attribute__((noreturn)) static void deadlock(void) {
-    fatal("deadlock: a task waits for a notification that no queued task can send (tasks run one at a time, to completion)", "", -1);
+    fatal("deadlock: a task waits for a notification that no queued task can send (tasks run one at a time, to completion)", "", 134);
 }
 
 static Thr *thr_ref(int64_t h) {

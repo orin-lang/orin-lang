@@ -434,8 +434,10 @@ native_build() {
   local ccbin=${CC%% *}
   if ! command -v "$ccbin" >/dev/null 2>&1; then rm -rf "$tmp"; fail "C compiler '$ccbin' was not found. Run 'orin doctor' for installation help."; fi
   mkdir -p "$(dirname "$out")"
+  # A wasm module records its output name (name section): link under a stable name in the per-build temp dir, so equal inputs give equal bytes.
+  # The native ELF does not embed it, so a native build keeps its sibling temp file (the same filesystem: the final mv is atomic).
   local emit=$out.tmp.$$
-  cleanup_files+=("$emit")
+  if [ "$wasm" = true ]; then mkdir -p "$tmp/o"; emit=$tmp/o/$(basename "$out"); else cleanup_files+=("$emit"); fi
   local sources=("$RT/orin_runtime.c" "$PF/orin_platform.c") link=(-lm -pthread) flags=(-I "$RT")
   [ "$backend" != llvm ] || sources+=("$RT/orin_runtime_llvm.c")
   if [ "$wasm" = true ]; then
@@ -452,7 +454,9 @@ native_build() {
     printf '\nFull compiler output: %s\n' "$logfile" >&2
     rm -f "$emit"; rm -rf "$tmp"; return 1
   fi
-  mv -f "$emit" "$out"; rm -rf "$tmp"
+  if [ "$wasm" = true ]; then cp "$emit" "$out.tmp.$$" && mv -f "$out.tmp.$$" "$out" || { rm -f "$out.tmp.$$"; rm -rf "$tmp"; return 1; }
+  else mv -f "$emit" "$out"; fi
+  rm -rf "$tmp"
 }
 build_command() {
   profile=dev backend='' wasm=false wasm_target=

@@ -62,7 +62,7 @@ What does the compiler emit, which memory width, which C library and which host 
    `monitor_wait_until` give the thread to the next queued task (the monitor is released meanwhile and locked again
    afterwards) and return as a spurious wake-up, which the contract allows and every caller handles by re-checking in a loop;
    tasks nobody joined run when `orin_main` returns. A wait with nothing queued ends the module (`wasm64-orbit: deadlock: ...`,
-   trap, status 134); a timed wait with nothing queued returns as timed out at once (the L0 has no way to sleep). Monitors know
+   trap, status 134 like the native abort, rev. 2026-10-20: it was -1, which a host counts as a real trap; the L0 records 134 itself, so tools/wasm_run.mjs prints no `trap:` line and tools/run_tests.py still sees the `wasm64-orbit: ` prefix); a timed wait with nothing queued returns as timed out at once (the L0 has no way to sleep). Monitors know
    their owner, so a lock held by a context suspended lower on the stack is reported as that deadlock. The runtime keeps its
    per-task state (heap block, grants, files, the running task) in `__thread` objects, which one stack and one memory would
    share: the build compiles the runtime with `-D__thread=__attribute__((section("orin_tls")))` (tools/run_tests.py,
@@ -89,8 +89,9 @@ What does the compiler emit, which memory width, which C library and which host 
    always listed (a trap message goes to stderr); decision 9 adds `process/v1`, `fs/v1` and `net/v1`. An effect the target
    does not provide (`Process.Spawn`, the shell) fails the build with **E0523**; `Task.*` and `Channel.*` need no capability (decision 4), so they are listed as available and the evidence path, so a program never compiles into a
    module that would only fail at run time. An unresolved call (`Unknown.*`, e.g. calling a function value) is not an error:
-   the manifest then lists `clock/v1` and every capability that a function of the package needs (a manifest must cover every
-   import; listing one more is the safe over-approximation, and the host then requires its grant). The manifest **describes**; the host's grant authorises (Orbit rejects
+   the manifest then lists every capability that some function of the package needs, and nothing else: a closure can only
+   reach code of the program, so a capability no function reaches (no `Clock.Now` anywhere: no `clock/v1`) is not listed (a
+   manifest must cover every import; rev. 2026-10-20: the unconditional `clock/v1` is gone, `--grant log/v1` alone runs a task program). The manifest **describes**; the host's grant authorises (Orbit rejects
    a module whose imports are not all listed, and instantiates only with every listed capability granted).
 
 6. **Tests and CI.** `tools/run_tests.py --target wasm64-orbit` builds every conformance test as a module and runs it under
