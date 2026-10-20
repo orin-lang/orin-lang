@@ -1,0 +1,5 @@
+// error: E0400
+// TYP-20: `void` is not a type of variables.
+function main(): void {
+  const x: void = 1;
+}

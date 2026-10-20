@@ -4,7 +4,7 @@
 // before the first round and after the last ("fds-start" / "fds-end" lines mark the moments) and requires them to be equal.
 // Usage: storm [N] [ROUNDS]       defaults 192 and 3
 // Output: one "round r: ..." line per round, "storm: ok" or "storm: FAIL ...".
-import { Host, withProcess, useNet } from "std:host";
+import { Host, withProcess, withNet } from "std:host";
 import { Deadline, MonotonicInstant, milliseconds } from "std:time";
 import { Bytes, fromString } from "std:bytes";
 import { args } from "std:process";
@@ -122,7 +122,7 @@ function round(net: NetGrant, n: int): Round {
       let seen: int = 0;
       while (seen < n) {
         const v = rx.recv();
-        if (v.isNone()) {
+        if (v.isErr()) {
           seen = n;
         } else {
           seen += 1;
@@ -160,7 +160,7 @@ function main(host: Host): void {
   const argv = withProcess(host, p => args(p));
   const n = argv.length > 0 ? parseInt(argv[0]).unwrapOr(192) : 192;
   const rounds = argv.length > 1 ? parseInt(argv[1]).unwrapOr(3) : 3;
-  useNet(host, net => {
+  withNet(host, net => {
     console.error("fds-start");
     sleepUntil(at(nowMs(net) + 800));   // a moment for the script to count descriptors
     let bad: int = 0;

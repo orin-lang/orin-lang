@@ -1,7 +1,8 @@
 // Transfer of large and deep values (ADR-0052 Addendum B, R3e.2): the walks that decide move or copy and the deep copy itself are iterative,
 // so a chain of 200,000 records neither overflows the stack nor leaks, moved or copied; and the copy of a million integers or a hundred
 // thousand strings is correct. Counters are pinned like in move_counts.or (the default build).
-import { scope, spawn, channel, movedCount, copiedCount } from "std:task";
+import { scope, spawn, channel } from "std:task";
+import { movedCount, copiedCount } from "std:task/internal";
 
 type Chain = End | Link(int, Chain);
 
@@ -74,18 +75,18 @@ function main(): void {
   console.log("kept: " + walk(kept));
   ch.tx.close();
   match (ch.rx.recv()) {
-    Some(c) => {
+    Ok(c) => {
       console.log("moved: " + walk(c));
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }
   match (ch.rx.recv()) {
-    Some(c) => {
+    Ok(c) => {
       console.log("copied: " + walk(c));
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }
@@ -112,18 +113,18 @@ function main(): void {
   ch3.tx.send(words);
   report("a hundred thousand strings", m0, c0);
   match (ch2.rx.recv()) {
-    Some(xs) => {
+    Ok(xs) => {
       console.log("ints: " + xs.length.toString() + ", first " + xs[0].toString() + ", last " + xs[999999].toString());
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }
   match (ch3.rx.recv()) {
-    Some(ws) => {
+    Ok(ws) => {
       console.log("strings: " + ws.length.toString() + ", last " + ws[99999]);
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }
@@ -138,18 +139,18 @@ function main(): void {
   ch4.tx.send(["delta", "epsilon"]);
   report("two arrays of literals", m0, c0);
   match (ch4.rx.recv()) {
-    Some(xs) => {
+    Ok(xs) => {
       console.log(xs.join(","));
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }
   match (ch4.rx.recv()) {
-    Some(xs) => {
+    Ok(xs) => {
       console.log(xs.join(","));
     },
-    None => {
+    Err(e) => {
       console.log("missing");
     },
   }

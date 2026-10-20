@@ -1,0 +1,8 @@
+size 3
+peek 4
+largest 9
+labels #3 #9 #4
+pop 4
+pop 9
+pop 3
+empty pop is none: true

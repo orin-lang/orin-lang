@@ -1,0 +1,6 @@
+// error: E0200
+// GRM-4: a doubled comma is a syntax error (array elements).
+function main(): void {
+  const a = [1,,2];
+  console.log(a.length.toString());
+}

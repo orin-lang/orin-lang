@@ -1,7 +1,7 @@
 // Network ownership across tasks (ADR-0017 Addendum C): a NetGrant is delegated to client tasks (spawnNet); every accepted
 // Stream is MOVED out of the accepting task into a task of its own (spawnAccepted), or into a pool of workers through a
 // channel of `Accepted` tokens (acceptDetached + serveAccepted). One process, loopback, port 0.
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Bytes, bytesFromString } from "std:bytes";
 import { Scope, TaskHandle, scopeNetDo, spawn, spawnNet, channel, Receiver } from "std:task";
@@ -48,10 +48,10 @@ function worker(rx: Receiver<Accepted>): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         n += serveAccepted(a, (s: Stream, peer) => serveOne(s, peer.host));
       },
-      None => { going = false; }
+      Err(e) => { going = false; }
     }
   }
   return n;
@@ -118,7 +118,7 @@ function run(sc: Scope, ln: Listener, net: NetGrant): void {
     match (a) {
       Ok(acc) => {
         moved += 1;
-        if (!ch.tx.send(acc)) {
+        if (ch.tx.send(acc).isErr()) {
           dropAccepted(acc);
         }
       },
@@ -143,7 +143,7 @@ function run(sc: Scope, ln: Listener, net: NetGrant): void {
 }
 
 function main(host: Host): void {
-  useNet(host, net => {
+  withNet(host, net => {
     scopeNetDo(net, (sc: Scope, g: NetGrant) => {
       const r = useListenerNet(g, "127.0.0.1", 0, 64, (ln: Listener, n2: NetGrant) => {
         run(sc, ln, n2);

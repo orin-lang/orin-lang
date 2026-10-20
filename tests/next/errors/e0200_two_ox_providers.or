@@ -1,0 +1,7 @@
+// error: E0200
+// GRM-2: a file selects at most one OX provider.
+import ox from "std:ox";
+import ox from "std:ox";
+
+function main(): void {
+}

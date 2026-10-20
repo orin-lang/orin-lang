@@ -1,8 +1,8 @@
 // ORIN_DENY=clock: `nowMillis` traps
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { nowMillis } from "std:time";
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     console.log("before");
     console.log((nowMillis(clock) > 0).toString());
   });

@@ -22,7 +22,7 @@ import {
   noChks, noExp, lookupVar, prefix, tailFrom, mk, sortS, tyOf, fresh, freshFree, typeFact, arrLen, arrData, arrMk, arrSel, inBounds, isSomeT, isOkT,
   recField, mapHas, mapSize, mapFact, tfOf, assignedIn, hasJump, rootOf, isThisExpr, clausesOfList, exprOf, hasClauses, valKey
 } from "./ctx";
-import { tr, trClause, wdOf, callFnX, isUnit, sigOf, Cl, clHyp, clGoal, matchPattern } from "./expr";
+import { tr, trClause, wdOf, callFnX, isUnit, sigOf, Cl, clHyp, clGoal, matchPattern, tfOfInv } from "./expr";
 
 // ------------------------------------------------------------------------------------------ emitting
 
@@ -799,7 +799,7 @@ function tryOn(g0: Gen, st0: St, cx: Cx, e: Expr, v: string, vt: VT): Result<Try
   const ret = Ret { st: stRet, val: retVal, vt: cx.ret, isVoid: false };
   st.pc.push(good);
   if (!isUnit(pvt)) {
-    const tf = tfOf(g, cx, pvt, pay)?;
+    const tf = tfOfInv(g, cx, pvt, pay)?;
     const em = emit(tf.g, st, cx, tf.chks);
     g = em.g;
     st = em.st;
@@ -1285,7 +1285,7 @@ function execMatchFrom(g0: Gen, st: St, cx: Cx, s: TR, sn: string, arms: MatchAr
   }
   let tfs: string[] = [];
   for (const bd of mp.binds) {
-    const tfb = tfOf(g, cx, bd.vt, bd.term)?;
+    const tfb = tfOfInv(g, cx, bd.vt, bd.term)?;
     g = tfb.g;
     for (const c of tfb.chks) {
       tfs.push(c.goal);
@@ -1496,6 +1496,31 @@ function incrementsStmt(s: Stmt, name: string): Option<usize> {
     },
     _ => Some(0)
   };
+}
+
+// The conjuncts of a `&&` chain: `a && b && c` holds only when each of them does, so a counter bound may be any one.
+function conjuncts(e: Expr): Expr[] {
+  return match (e.kind) {
+    EBinary(op, l, r) => match (op) {
+      BAnd => conjuncts(l).concat(conjuncts(r)),
+      _ => [e]
+    },
+    _ => [e]
+  };
+}
+
+// The counter bounds of a `while` condition: one per conjunct of the form `i < N` (`<=`, `N > i`, `N >= i`) whose counter
+// the body increments once and whose bound it does not change. The body runs only when the whole condition holds, so
+// every conjunct holds at the start of an iteration, and the bound is inductive exactly as for a bare comparison.
+function inferCounters(st: St, cond: Expr, body: Block, mods: string[]): Ctr[] {
+  let out: Ctr[] = [];
+  for (const c of conjuncts(cond)) {
+    const r = inferCounter(st, c, body, mods);
+    if (r.isSome()) {
+      out.push(r.unwrap());
+    }
+  }
+  return out;
 }
 
 function inferCounter(st: St, cond: Expr, body: Block, mods: string[]): Option<Ctr> {
@@ -1783,9 +1808,8 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
       }
     }
     if (isWhile) {
-      const ctr = inferCounter(st, cond.unwrap(), body, mods);
-      if (ctr.isSome()) {
-        invs.push(LInv { label: "inferred counter bound of `" + ctr.unwrap().name + "`", clause: None, ctr: ctr, line: line });
+      for (const ctr of inferCounters(st, cond.unwrap(), body, mods)) {
+        invs.push(LInv { label: "inferred counter bound of `" + ctr.name + "`", clause: None, ctr: Some(ctr), line: line });
       }
     }
   }
@@ -1805,6 +1829,9 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
           deps: st.deps, approx: st.approx, file: cx.f.file, fn: cx.f.disp, text: cx.f.text, hidden: hidden, exact: false
         });
         g.loopAdd(lid, id);
+        if (hidden) {
+          g.setCore(id, []);
+        }
         kept.push(inv);
         if (!hidden) {
           userCount += 1;
@@ -1821,6 +1848,9 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
   const hv1 = havocVars(g, cx, st.vars, mods)?;
   g = hv1.g;
   let pc1 = st.pc;
+  // What the inferred counters need at the start of an iteration (the core of their preservation obligations): their own
+  // hypotheses and the position or condition that lets the body run.
+  let core1: string[] = [];
   // `for .. of`: this iteration is at the position `iv`, and its element is `arr[iv]`.
   let iv = "";
   let xvName = "";
@@ -1829,6 +1859,7 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
     g = ix.g;
     iv = ix.name;
     pc1.push(inBounds(arrSortName, arrTerm, iv));
+    core1.push(inBounds(arrSortName, arrTerm, iv));
     const xv = freshFree(g, cx, elemTy)?;
     g = xv.g;
     xvName = xv.name;
@@ -1840,6 +1871,9 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
       Ok(x) => {
         g = x.g;
         pc1.push(clHyp(x));
+        if (inv.clause.isNone()) {
+          core1.push(clHyp(x));
+        }
       },
       Err(_) => {}
     }
@@ -1855,6 +1889,7 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
     g = c.g;
     s1 = c.st;
     s1.pc.push(c.t);
+    core1.push(c.t);
   }
   const bodyR = execStmts(g, s1, cx, body.stmts, false)?;
   g = bodyR.g;
@@ -1871,6 +1906,9 @@ function execLoop(g0: Gen, st0: St, cx: Cx, isWhile: bool, cond: Option<Expr>, i
             deps: bodyR.st.deps, approx: bodyR.st.approx, file: cx.f.file, fn: cx.f.disp, text: cx.f.text, hidden: inv.clause.isNone(), exact: false
           });
           g.loopAdd(lid, id);
+          if (inv.clause.isNone()) {
+            g.setCore(id, core1);
+          }
         },
         Err(_) => {}
       }

@@ -96,7 +96,7 @@ Path to 1.0 (milestones, gaps, owner decisions): [roadmaps/orin-1.0.md](roadmaps
      wasi-libc.
    - **Prerequisite:** R3/R4 are done, so L0 is the only C and only L0 needs a second implementation.
    - **Capabilities:** WASI is capability-based itself. `host.fs()` maps to the host's preopened directories, and
-     `useUnder` / `useReadOnly` map to subtrees of them.
+     `withUnder` / `withReadOnly` map to subtrees of them.
    - **Pointer width:** `usize` is i64 in the IR, so wasm64 (Memory64) was the first target; `wasm32-orbit` keeps 64-bit
      Orin values and uses 32-bit C pointers (ADR-0055 decision 8), so no target-dependent `usize` was needed.
    - **Limits:** sockets need WASI preview 2, and threads need wasi-threads. Until then `std:net` and `.parallel()`

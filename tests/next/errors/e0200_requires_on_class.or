@@ -1,0 +1,10 @@
+// error: E0200
+@Requires(true)
+class Box {
+  n: int;
+  constructor() { this.n = 0; }
+}
+
+function main(): void {
+  console.log("x");
+}

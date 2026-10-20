@@ -1,0 +1,7 @@
+// error: E0400
+// EXP-6: `for ... of` iterates an array; a string is not iterable.
+function main(): void {
+  for (const c of "abc") {
+    console.log(c);
+  }
+}

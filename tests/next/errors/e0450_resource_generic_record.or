@@ -1,7 +1,7 @@
 // error: E0450
 // nor can a generic record hold it
 import { Host } from "std:host";
-import { withFile, useFile, Read, Write, File } from "std:fs";
+import { withFile, Read, Write, File } from "std:fs";
 type Box<T> = { v: T; };
 function main(host: Host): void {
   run();

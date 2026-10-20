@@ -21,7 +21,8 @@ recommendation of every open decision. Henry can still overturn each one; a reve
 | D5 | Amend: 1.0 requires a self-hosted, reproducible, behaviour-stable compiler, not the finished ADR-0015 rewrite |
 | D6 | A short named experimental list; everything else frozen under ADR-0048 |
 | D7 | Raise the L0 budget to 1,400 code lines by ADR, each addition with contracts and a CBMC harness (ADR-0054) |
-| D8 | Do not gate 1.0 on R3f; gate on R3d/R3e being merged |
+| D8 | **Decided 2026-10-18 by the owner:** 1.0 ships without R3f; R3f follows in 1.x. 1.0 gates on R3d/R3e being merged |
+| D8a | Decided 2026-10-18 (owner's goal: 1.0 as fast as possible): argv process start stays experimental at 1.0; M3b (scheduler Gate 2) moves to 1.x; the compiler proof gates 1.0 only on 0 REFUTED, a CI ratchet with no new UNKNOWN and the verifier gaps closed, while 0 UNKNOWN is a 1.x goal |
 | D9 | Park T6 #98 and T5 #91 until after 1.0 |
 | D10 | `v1.0.0-beta.1` at M4, `-rc.N` at M5, `--prerelease` tied to the tag suffix |
 | D11 | Beta freezes syntax and std names; semantic fixes allowed |
@@ -92,7 +93,7 @@ Evidence column points to the file that states it; "main" means `5029153`.
 
 | Item | Today | Needed for 1.0 |
 |---|---|---|
-| ADR-0048 unification (rename ~60 items, error shapes, `Duration` options, sentinel removal, `internal` submodules, one JSON module) | partly done (2026-10-18): rows 1, 2 and 7 are in (`compiler/mcp/apitable.or`, deprecated collection wrappers, one JSON module with `json/legacy`); rows 3 and 5 are partial (typed `NetError`/`TaskError`/`FsError`, `Duration`, `std:url`); row 6 is partial (`std:bytes/internal`, `std:collections/internal` exist; `taskcore`, `metacore`, `metajson` are not yet internal); row 8 is partial (`std:task` twins deprecated; `host`, `fs`, `net` `with*`/`use*` twins remain); row 4 has no evidence of completion; `Sender.send` still returns `bool` and `parallelMap` is not deprecated | Must land **before the freeze** because it renames user-visible names (ADR-0048 section 9). Finish the open rows in the ADR's order. Size L |
+| ADR-0048 unification (rename ~60 items, error shapes, `Duration` options, sentinel removal, `internal` submodules, one JSON module) | partly done (2026-10-18): rows 1, 2 and 7 are in (`compiler/mcp/apitable.or`, deprecated collection wrappers, one JSON module with `json/legacy`); rows 3 and 5 are partial (typed `NetError`/`TaskError`/`FsError`, `Duration`, `std:url`); row 6 is partial (`std:bytes/internal`, `std:collections/internal`, `std:task/internal` exist; `metacore`, `metajson` are not yet internal); row 8 is partial (`std:task` twins deprecated; `host`, `fs`, `net` `with*`/`use*` twins remain); row 4 has no evidence of completion; `std:task` follows the ADR (2026-10-18: `Sender.send` returns `Result<void, TaskError>`, `parallelMap` is deprecated, raw-handle fields are private) | Must land **before the freeze** because it renames user-visible names (ADR-0048 section 9). Finish the open rows in the ADR's order. Size L |
 | std I/O freeze ([ADR-0016 amendment](../decisions/0016-language-1.0-core-scope.md), [ADR-0027](../decisions/0027-stage-a-root-capabilities.md) open questions) | `fs`, `host`, `process`, `io`, `time`, `net`, `task` unstable | Owner confirms signatures after ADR-0048; then remove "unstable" labels except the experimental list (D6) |
 | `std:fs` completeness | whole-file and streaming; no directory metadata/iteration, rename, atomic write ([release-1.0-readiness.md](../release-1.0-readiness.md) "Files and clocks") | Add the minimum a CLI tool needs: `exists`/`listDir` as `Result` (ADR-0048 3.2), rename, remove, temp+atomic write. Size M |
 | Time | wall and monotonic clock, `Duration`, deadline helpers; **no `sleep`** (`library/std/time.or` comment) | `sleep` needs a cancellable wait; delivered by the concurrency package (WP-C2), not as a blocking stub |
@@ -133,7 +134,7 @@ These are the async-concurrency.md steps. Without them no option delivers usable
 
 | WP | Content | Size | Touches | Notes |
 |---|---|---|---|---|
-| C0 | ADR amendment to ADR-0017: cancellation tree, outcomes (completed / closed / cancelled / deadline / error), exactly-once result and token ownership, cooperative checkpoints; plus pure state machines in `taskcore` | M | `docs/decisions`, `library/std/taskcore.or` | Pure Orin, provable fragment; can start now |
+| C0 | ADR amendment to ADR-0017: cancellation tree, outcomes (completed / closed / cancelled / deadline / error), exactly-once result and token ownership, cooperative checkpoints; plus pure state machines in `std:task/internal` | M | `docs/decisions`, `library/std/task_internal.or` | Pure Orin, provable fragment; can start now |
 | C1 | Timed and wakeable waits: `recvTimeout`/`joinTimeout`/`select` over channels and a `sleep`, using one absolute monotonic deadline | M | `library/std/task.or`, L0 monitor wait | **L0 is at 999/1000 code lines.** A timed monitor wait needs a budget decision or an offsetting reduction (D7) |
 | C2 | Trap-safe structured cleanup: live-scope registry, parent trap cancels and joins descendants, primary/secondary failure reporting | M-L | runtime task code (temporary C) | Prefer implementing in Orin as part of R3e rather than growing the 342-line C interface that R3e deletes (see M2/M3 ordering) **Done (2026-10-18):** implemented in `runtime/core/task.or` (registry of unjoined children per thread; a trap cancels its scope, cancels and joins its descendants, and ends those blocked in a monitor wait; first trap is the primary failure). Semantics: concurrency.md "Trap-safe cleanup (C2)"; tests `task_trap_*`, `tests/concurrency/trap_unwind.or`. Still open: channel waits do not observe `Scope.cancel()` (only a trapping ancestor ends them) |
 | C3 | Interruptible network waits and operation-wide deadlines (accept/read/write/connect), wake source in readiness wait, generation-tagged handles; DNS limitation stated or resolver pool | M-L | `library/std/net.or`, L0 net wait | Same L0 budget issue |
@@ -219,7 +220,7 @@ executor) and moves the 1.0 date behind S1-S4 plus Y1-Y6. That is a decision to 
 | R3c | capability, fs, file, net, process shells over L0 | not started | must precede concurrency WPs that change net/fs shells (C3, C4) or be coordinated with them |
 | R3d | allocator, small-block cache, RC, `make_unique`, destroy | design addendum in progress | ADR-0052 starts it only after the ADR-0038 `runtime/core` work (packed arrays, in-place reuse) is merged; progress.md lists that work as not built, so the gate is open (section 6); hot-path benchmark gate |
 | R3e | task transfer and per-task heap | not started | **owner of the concurrency/runtime seam**; C2 and S1 depend on it |
-| R3f | delete the C object model and `orin_runtime_llvm.c` | not started | until then C and Orin copies coexist; see D8 on whether 1.0 needs R3f |
+| R3f | delete the C object model and `orin_runtime_llvm.c` | not started; **1.x** (D8) | C and Orin copies coexist in 1.0; the release notes name the runtime a build contains |
 
 L0 stays C (ADR-0052 decision 2). With L0 at 999/1,000 code lines, items C1, C3, C6 and S2/S3 need an
 explicit decision (D7): raise the budget by ADR, or remove code first (for example formatting helpers
@@ -302,10 +303,10 @@ language PRs touch: `compiler/check/expr.or`, `compiler/main.or`, `compiler/load
 |---|---|---|---|---|---|
 | M0 | Org move and tap | PR #150, #149 | `.github/`, `install.sh`, `dist/`, README, docs links, `editors/vscode` | owner executes the move | URLs updated, installer works from the new location, tap formula tested on macOS arm64 |
 | M1 | Std API unification + language prerequisites | "Compiler und std-APIs aufräumen" (ADR-0048, ADR-0049); ADR-0040/0034 as new small threads | `library/`, `docs/std-*.md`, `compiler/loader/embedded_*`, `compiler/mcp/apitable.or`; ADR-0040/0034 in `compiler/check`, `compiler/hir` | layout done (yes) | ADR-0048 rows 1-8 merged; ADR-0040 and ADR-0034 implemented or explicitly dropped from the freeze; `orin doc --check` in CI |
-| M2 | Runtime R3 | "Runtime in Orin schreiben" (ADR-0052) | `runtime/core`, new `core` modules, `compiler/` for R3a only | R3a/b merged (#141) | R3a-R3e merged; R3f merged or deferred by D8; benchmark gate holds |
+| M2 | Runtime R3 | "Runtime in Orin schreiben" (ADR-0052) | `runtime/core`, new `core` modules, `compiler/` for R3a only | R3a/b merged (#141) | R3a-R3e merged; R3f deferred to 1.x (D8); benchmark gate holds |
 | M2b | Annotations S3-S6 | "Annotations als Sprachfeature" (ADR-0046) | `compiler/loader`, `compiler/check/userannos.or`, `library/std/meta*`, `std:json` (S6) | S1-S3 merged | S4-S6 merged, `@Json` example only |
 | M3a | Concurrency floor (Gate 1) | new thread, ADR-0017 amendment | `library/std/task*.or`, `library/std/net.or`, `runtime/platform` (L0), `tests/concurrency`, `tests/net`, checker rules for C4 | C0 can start now; C1/C3 need D7 | C0-C5 merged; acceptance campaign green; API reviewed against ADR-0048 |
-| M3b | Scheduler (Gate 2) | same thread, scheduler ADR | `runtime/core` (task parts, after R3e), `runtime/platform`, `library/std/task*.or` | M3a done, R3e merged | S1-S4 merged with measurements, or deferred to 1.x with a note |
+| M3b | Scheduler (Gate 2) | same thread, scheduler ADR | `runtime/core` (task parts, after R3e), `runtime/platform`, `library/std/task*.or` | M3a done, R3e merged | **Deferred to 1.x** (decided 2026-10-18, fastest path to 1.0) |
 | M4 | Freeze and beta | owner | docs, release workflow, VS Code | M1, M2 (to R3e at least), M3a, language items in 3.1 | std I/O freeze taken; reference and stability page published; `1.0.0-beta.1` available through Homebrew and `install.sh`; agent-ergonomics run done |
 | M5 | RC and 1.0 | owner | none new | beta feedback closed; R3-R5 gates closed on the exact SHA | dry-run on every supported platform; `1.0.0-rc.N`, then `1.0.0` as a non-pre-release |
 
@@ -314,7 +315,7 @@ Parallelism and conflicts:
 | Pair | Conflict | Rule |
 |---|---|---|
 | M1 and M2 | M1 rows regenerate `compiler/loader/embedded_*`; R3b/R3c add Orin modules under `runtime/core` and change shells that std calls | Land M1 rows 1-3 first (docs backfill, collection vocabulary, errors), then R3c |
-| M1 (task.or renames, ADR-0048 3.4 `Sender.send -> Result`, private fields, `taskcore` internal) and M3a | both edit `library/std/task.or` | Write M3a WPs against the ADR-0048 names; do not start M3a code before ADR-0048 rows 4-6 touch `task.or`, or do it in the same PR series |
+| M1 (task.or renames, ADR-0048 3.4 `Sender.send -> Result`, private fields, `std:task/internal`) and M3a | both edit `library/std/task.or` | Write M3a WPs against the ADR-0048 names; do not start M3a code before ADR-0048 rows 4-6 touch `task.or`, or do it in the same PR series |
 | M2 R3a and M2b S4 and ADR-0049 rows | all edit `compiler/check`, `compiler/loader` | One at a time on `check/expr.or`; ADR-0049 says R3a coordinates with its steps |
 | M2 R3e and M3a C2 | task runtime seam | C2's live-scope registry is written in Orin inside R3e, not as new C |
 | M3a C4 and M2b | both add checker/verifier rules | Different error-code ranges; distinct files (`check/tasks.or`, `check/resources.or` vs `check/userannos.or`) |
@@ -375,7 +376,7 @@ removing existing L0 code, or add a second platform file per target that is not 
 budget. Recommendation: a budget ADR with a stated ceiling (for example 1,400) and a CBMC/contract
 requirement for every addition, because C1 and C3 cannot be built without it. Decide before M3a starts.
 
-**D8. Must R3f (delete the C object model) be complete before 1.0?**
+**D8. Must R3f (delete the C object model) be complete before 1.0?** Decided 2026-10-18 by the owner (Henry): no, the fastest way to 1.0; R3f follows in 1.x.
 Options: required; or required only for R3a-R3e with R3f following in 1.x. Recommendation: do not gate 1.0
 on R3f, but gate on R3d/R3e being merged so the concurrency work is not built twice. The C object model
 being present during 1.0 is a TCB statement ([tcb.md](../tcb.md)), not a user-visible one; the release

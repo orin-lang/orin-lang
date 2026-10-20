@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 API = ROOT / "api"
 MODULES = API / "MODULES"
-INTERNAL = {"std:taskcore", "std:metacore", "std:metajson", "std:fsraw", "std:clock", "std:core", "std:coreprobe"}
+INTERNAL = {"std:task/internal", "std:metacore", "std:metajson", "std:fsraw", "std:clock", "std:core", "std:coreprobe"}
 BUILTIN = {"std:process"}  # loader built-ins over the C runtime: no source, `orin api` cannot see their exports
 DECL = re.compile(r"^\s*export\s+(?:function|class|type|const|enum|interface|record|union)\s+([A-Za-z_][A-Za-z0-9_]*)")
 

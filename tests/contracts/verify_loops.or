@@ -40,6 +40,8 @@
 // expect: sum_for ensures UNKNOWN
 // expect: first_negative bounds VERIFIED
 // expect: first_negative ensures VERIFIED
+// expect: skip_negative bounds VERIFIED
+// expect: skip_negative ensures VERIFIED
 // expect: main call-precondition VERIFIED
 // warn: sum_off_by_one W0460
 
@@ -209,6 +211,17 @@ function first_negative(xs: int[]): int {
     i += 1;
   }
   return i.toInt();
+}
+
+// The counter bound is also inferred from one conjunct of the condition (the body runs only when every conjunct holds):
+// `i` stops at the end of the array.
+@Ensures(result <= xs.length)
+function skip_negative(xs: int[]): usize {
+  let i: usize = 0;
+  while (i < xs.length && xs[i] < 0) {
+    i += 1;
+  }
+  return i;
 }
 
 function main(): void {

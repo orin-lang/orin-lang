@@ -427,6 +427,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(module[:4], b"\0asm")
         self.assertIn(b'orbit.manifest{"abi":1,"requires":["log/v1"],"producer":"orin"}', module)
         self.assertNotIn(b"wasi_snapshot_preview1", module)
+        for cap in (b"orbit:fs/v1", b"orbit:net/v1", b"orbit:process/v1"):
+            self.assertNotIn(cap, module)  # a program that uses none of them imports none of them
         # wasm32-orbit: the same manifest in a module of its own (32-bit memory)
         self.run_cli("build", "--target=wasm32-orbit", cwd=project, env={"CC": "clang"})
         module32 = (project / "build/dev/hello.wasm").read_bytes()
@@ -434,6 +436,14 @@ class CliTests(unittest.TestCase):
         self.assertIn(b'orbit.manifest{"abi":1,"requires":["log/v1"],"producer":"orin"}', module32)
         self.assertNotIn(b"wasi_snapshot_preview1", module32)
         self.assertNotEqual(module, module32)
+        # reproducible: the module records no temporary file name, so building again gives the same bytes
+        for tgt, first in (("wasm32-orbit", module32), ("wasm64-orbit", module)):
+            for _ in range(2):
+                self.run_cli("build", "--target=" + tgt, cwd=project, env={"CC": "clang"})
+                again = (project / "build/dev/hello.wasm").read_bytes()
+                self.assertNotIn(b".tmp.", again)
+                self.assertEqual(again, first if _ == 0 else again)
+            self.assertEqual(again, first, tgt + ": two builds of one program are byte-identical")
         # tasks run one at a time inside the one WebAssembly thread: the program builds (no E0523) and keeps the orin_tls section
         (project / "src/main.or").write_text('import { scope, spawn } from "std:task";\n'
                                               'function main(): void { console.log(scope(s => spawn(s, () => 6 * 7).join()).toString()); }\n')
@@ -441,6 +451,28 @@ class CliTests(unittest.TestCase):
         self.assertIn(b"orin_tls", (project / "build/dev/hello.wasm").read_bytes())
         self.run_cli("build", "--target=wasm32-orbit", cwd=project, env={"CC": "clang"})
         self.assertIn(b"orin_tls", (project / "build/dev/hello.wasm").read_bytes())
+        # files, arguments and the network are capabilities of the target (orbit:fs/v1, process/v1, net/v1): the module imports exactly those listed
+        (project / "src/main.or").write_text('import { Host, withHost } from "std:host";\n'
+                                              'import { readFile } from "std:fs";\n'
+                                              'import { args } from "std:process";\n'
+                                              'function main(host: Host): void {\n'
+                                              '  withHost(host, (fs, proc, stdio, clock) => { console.log(readFile(fs, "/data/x").isOk().toString() + args(proc).length.toString()); });\n'
+                                              '}\n')
+        for width in ("wasm64-orbit", "wasm32-orbit"):
+            self.run_cli("build", "--target=" + width, cwd=project, env={"CC": "clang"})
+            module = (project / "build/dev/hello.wasm").read_bytes()
+            self.assertIn(b'"requires":["fs/v1","log/v1","process/v1"]', module)
+            self.assertIn(b"orbit:fs/v1", module)
+            self.assertIn(b"orbit:process/v1", module)
+            self.assertNotIn(b"orbit:net/v1", module)
+        (project / "src/main.or").write_text('import { Host, withHost } from "std:host";\n'
+                                              'import { shell } from "std:io";\n'
+                                              'function main(host: Host): void {\n'
+                                              '  withHost(host, (fs, proc, stdio, clock) => { console.log(shell(proc, "true").isOk().toString()); });\n'
+                                              '}\n')
+        self.assertIn("E0523", self.run_cli("build", "--target=wasm32-orbit", cwd=project, code=1).stderr)
+        (project / "src/main.or").write_text('import { scope, spawn } from "std:task";\n'
+                                              'function main(): void { console.log(scope(s => spawn(s, () => 6 * 7).join()).toString()); }\n')
         self.assertIn("does not support --target=wasm32-orbit", self.run_cli("run", "--target=wasm32-orbit", cwd=project, code=2).stderr)
         self.assertIn("--target=wasm32-orbit uses the C backend", self.run_cli("build", "--target=wasm32-orbit", "--backend=llvm", cwd=project, code=2).stderr)
         self.assertIn("does not support --target=wasm64-orbit", self.run_cli("run", "--target=wasm64-orbit", cwd=project, code=2).stderr)

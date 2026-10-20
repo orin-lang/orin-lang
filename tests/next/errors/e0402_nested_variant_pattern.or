@@ -1,0 +1,10 @@
+// error: E0402
+// EXP-16: a sub-pattern is a name or `_`; a nested variant pattern is rejected.
+function main(): void {
+  const o: Option<Option<int>> = Some(Some(1));
+  const r = match (o) {
+    Some(Some(v)) => v,
+    _ => 0,
+  };
+  console.log(r.toString());
+}

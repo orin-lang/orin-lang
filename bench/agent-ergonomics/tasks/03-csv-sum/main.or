@@ -1,0 +1,66 @@
+// CSV sum by column: `03 COLUMN` reads CSV with a header row from stdin and prints the column total.
+import { Host, useHost } from "std:host";
+import { StdioGrant, readLine } from "std:io";
+import { args, exit } from "std:process";
+
+function indexOfColumn(header: string, column: string): Option<usize> {
+  const names = header.split(",");
+  let i: usize = 0;
+  while (i < names.length) {
+    if (names[i].trim() == column) {
+      return Some(i);
+    }
+    i += 1;
+  }
+  return None;
+}
+
+function sumColumn(stdio: StdioGrant, column: string): Result<int, string> {
+  const header = readLine(stdio);
+  if (header.isNone()) {
+    return Err("empty input");
+  }
+  const col = indexOfColumn(header.unwrap(), column);
+  if (col.isNone()) {
+    return Err("no such column: " + column);
+  }
+  let total = 0;
+  let lineNo = 1;
+  while (true) {
+    const line = readLine(stdio);
+    if (line.isNone()) {
+      break;
+    }
+    lineNo += 1;
+    if (line.unwrap().trim().length == 0) {
+      continue;
+    }
+    const cells = line.unwrap().split(",");
+    if (cells.length <= col.unwrap()) {
+      return Err("line " + lineNo.toString() + ": too few columns");
+    }
+    const cell = cells[col.unwrap()].trim();
+    match (parseInt(cell)) {
+      Some(n) => { total += n; },
+      None => { return Err("line " + lineNo.toString() + ": not a number: " + cell); },
+    }
+  }
+  return Ok(total);
+}
+
+function main(host: Host): void {
+  useHost(host, (fs, proc, stdio, clock) => {
+    const argv = args(proc);
+    if (argv.length < 1) {
+      console.error("usage: 03 COLUMN < file.csv");
+      exit(2);
+    }
+    match (sumColumn(stdio, argv[0])) {
+      Ok(total) => { console.log(argv[0] + " total = " + total.toString()); },
+      Err(e) => {
+        console.error("error: " + e);
+        exit(1);
+      },
+    }
+  });
+}

@@ -4,14 +4,14 @@ The Orin mutation checks: a port of `tools/mutate_std.py` and `tools/mutate_ox.p
 one-line, deliberately wrong change of the code under test; a check is only worth its tests when every mutant is killed.
 
 ```sh
-tools/mutation.sh std --orinc build/bootstrap/orin2 --module taskcore         # the provable std modules
+tools/mutation.sh std --orinc build/bootstrap/orin2 --module task         # the provable std modules
 tools/mutation.sh std --module http --shard 2/3 -j 4                           # a CI shard
 tools/mutation.sh std --list
 tools/mutation.sh ox --orinc build/dev/orin -j 2                               # the OX part of the compiler
 tools/mutation.sh --unit-tests
 ```
 
-`std` flags: `--orinc`, `--module bytes|utf8|collections|http|net|text|html|taskcore` (default: every module except `net`),
+`std` flags: `--orinc`, `--module bytes|utf8|collections|http|net|text|html|task` (default: every module except `net`),
 `--list`, `--shard I/N`, `-j/--jobs`, `--root`. `ox` flags: `--orinc`, `--cc`, `--list`, `--only NAME[,NAME]`, `-j/--jobs`,
 `--root`. Details, differences from the Python scripts and the parity check: `docs/testing.md`, "Mutation checks".
 

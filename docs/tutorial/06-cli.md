@@ -11,7 +11,7 @@ if it is given the right to.
 ```ts
 // A small tool: count the lines and words of a file, optionally save a summary.
 //   06-cli FILE [SUMMARY]
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { FsGrant, FsError, fsErrorMessage, withFile, readFile, writeFile, Read } from "std:fs";
 import { ProcessGrant, args, exit } from "std:process";
 
@@ -49,7 +49,7 @@ function run(fs: FsGrant, argv: string[]): Result<void, FsError> {
 }
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => {
+  withHost(host, (fs, proc, stdio, clock) => {
     const argv = args(proc);
     if (argv.length < 1) {
       console.error("error: usage: 06-cli FILE [SUMMARY]");
@@ -87,12 +87,14 @@ that does not exist, `error: cannot open 'x.txt': No such file or directory`.
 A program that does I/O takes a `Host`, the root of authority. `console.log`, `console.error` and `exit` are always
 available.
 
-**Grants.** `useHost(host, (fs, proc, stdio, clock) => { ... })` hands the body four *grants*: file system, process
+**Grants.** `withHost(host, (fs, proc, stdio, clock) => { ... })` hands the body four *grants*: file system, process
 (arguments, `shell`), standard input/output and clock. Every I/O function takes the matching grant as its first
 argument: `args(proc)`, `readFile(fs, path)`, `writeFile(fs, path, text)`. Passing grants down as parameters
 (`run(fs, argv)`) keeps the code that needs authority visible in its signatures. A grant lives only inside the callback and
-cannot be stored or captured by a closure. You can narrow one before passing it on: `useUnder(fs, "data", sub => ...)`
-only allows paths inside `data/`, and `useReadOnly(fs, ro => ...)` cannot write. The environment variable
+cannot be stored or captured by a closure (nor can the `Host` itself: do not call `withFs(host, ..)` inside the callback of
+another scope function). To get a value out, use `withHost(host, (fs, proc, stdio, clock) => value)`, which returns what the
+callback returns. You can narrow one before passing it on: `withUnder(fs, "data", sub => ...)`
+only allows paths inside `data/`, and `withReadOnly(fs, ro => ...)` cannot write. The environment variable
 `ORIN_DENY=fs` (also `process`, `stdio`, `clock`, `net`) turns a family off for a run: here `readFile` then returns an
 `Err` that says `denied by the host policy`.
 

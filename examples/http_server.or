@@ -34,7 +34,7 @@
 // The connection is closed gracefully after an error answer (shutdown of the write side, bounded drain, close) so that the
 // client sees the answer and not a reset.
 
-import { Host, withProcess, useNet } from "std:host";
+import { Host, withProcess, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Scope, TaskHandle, CancelToken, scopeNetDo, spawn, channel, Receiver, Sender } from "std:task";
 import { args } from "std:process";
@@ -229,13 +229,13 @@ function workerLoop(rx: Receiver<Accepted>, cfg: Config): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         serveAcceptedDo(a, (s: Stream, peer: Peer) => {
           serveConnection(s, peer, cfg);
         });
         served += 1;
       },
-      None => { going = false; }
+      Err(e) => { going = false; }
     }
   }
   return served;
@@ -250,7 +250,7 @@ function acceptLoop(ln: Listener, tx: Sender<Accepted>, maxConns: int): int {
     match (r) {
       Ok(a) => {
         n += 1;
-        if (!tx.send(a)) {
+        if (tx.send(a).isErr()) {
           dropAccepted(a);
         }
       },
@@ -326,7 +326,7 @@ function main(host: Host): void {
   };
   const workers = clamp(intArg(argv, 4, 8), 1, 256);
   const queue = clamp(intArg(argv, 5, 16), 1, 4096);
-  useNet(host, net => {
+  withNet(host, net => {
     runServer(net, port, maxConns, workers, queue, cfgOf);
   });
 }

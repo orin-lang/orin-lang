@@ -1,9 +1,9 @@
-// Tests for the cancellation and outcome state machines of std:taskcore (ADR-0017 Addendum B, C0). Pure: no threads, no clock.
+// Tests for the cancellation and outcome state machines of std:task/internal (ADR-0017 Addendum B, C0). Pure: no threads, no clock.
 import { assert, assertEqUsize, assertEqBool, assertEq } from "std:test";
 import {
   CancelState, TaskCell, CancelScope, causeMerge, causeInherit, outcomeJoin, outcomeOfCause, checkpointOutcome,
   deadlineMin, deadlineAfterMillis, deadlineExpired, waitBudget, isSettled,
-} from "std:taskcore";
+} from "std:task/internal";
 
 @Test
 function firstCauseWins(): void {

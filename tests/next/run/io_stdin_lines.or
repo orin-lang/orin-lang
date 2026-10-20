@@ -1,9 +1,9 @@
-import { Host, useHost } from "std:host";
+import { Host, withHost } from "std:host";
 import { StdioGrant } from "std:io";
 import { readLine, readBytes, writeStdout } from "std:io";
 
 function main(host: Host): void {
-  useHost(host, (fs, proc, stdio, clock) => { run(stdio); });
+  withHost(host, (fs, proc, stdio, clock) => { run(stdio); });
 }
 function run(stdio: StdioGrant): void {
   let n: int = 0;

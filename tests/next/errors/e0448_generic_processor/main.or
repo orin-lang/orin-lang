@@ -1,0 +1,9 @@
+// error: E0448
+import { Mark } from "./anno";
+
+@Mark
+export type Thing = { id: int; };
+
+function main(): void {
+  console.log("unreachable");
+}

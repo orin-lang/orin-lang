@@ -10,21 +10,19 @@ module std:task
     rx: Receiver<T>
   class Receiver<T>
   @Invariant(this.ch != 0)
-    ch: usize
     constructor(ch: usize)
     @Requires(ch != 0)
-    method recv(): Option<T>
+    method recv(): Result<T, TaskError>
     method recvUntil(deadline: Deadline): Result<T, TaskError>
     @Requires(deadline.at.millis >= 0)
     method recvTimeout(clock: ClockGrant, timeout: Duration): Result<T, TaskError>
     method close(): void
+    method selectAmong(rxs: Receiver<T>[], dl: int): Result<Selected<T>, TaskError>
   class Scope
   @Invariant(this.tab != 0)
-    tab: usize
     constructor(tab: usize)
     @Requires(tab != 0)
     method spawn(f: () => T): TaskHandle<T>
-    @Ensures(result.tab == this.tab)
     method token(): CancelToken
     method cancel(): bool
     method isCancelled(): bool
@@ -33,10 +31,9 @@ module std:task
     value: T
   class Sender<T>
   @Invariant(this.ch != 0)
-    ch: usize
     constructor(ch: usize)
     @Requires(ch != 0)
-    method send(v: T): bool
+    method send(v: T): Result<void, TaskError>
     method sendUntil(v: T, deadline: Deadline): Result<void, TaskError>
     @Requires(deadline.at.millis >= 0)
     method sendTimeout(clock: ClockGrant, v: T, timeout: Duration): Result<void, TaskError>
@@ -50,19 +47,15 @@ module std:task
     InvalidDuration: TaskErrorKind
   class TaskHandle<T>
   @Invariant(this.tab != 0 && this.res != 0)
-    tab: usize
-    idx: usize
-    res: usize
     constructor(tab: usize, idx: usize, res: usize)
     @Requires(tab != 0 && res != 0)
     method join(): T
     method joinUntil(deadline: Deadline): Result<T, TaskError>
     @Requires(deadline.at.millis >= 0)
     method joinTimeout(clock: ClockGrant, timeout: Duration): Result<T, TaskError>
+    method tryJoinTask(): Option<T>
   function channel<T>(capacity: usize): Channel<T>
   @Requires(capacity >= 1)
-  @Ensures(result.tx.ch == result.rx.ch)
-  function copiedCount(): usize
   function forkJoin<R>(chunks: usize, workers: usize, body: (k: usize) => R): R[]
   @Ensures(result.length == chunks)
   function forkJoinLent<A, R>(lent: A, chunks: usize, workers: usize, body: (k: usize) => R): R[]
@@ -70,7 +63,7 @@ module std:task
   function forkJoinUntil<R>(chunks: usize, workers: usize, body: (k: usize) => R, hit: (r: R) => bool): R[]
   @Ensures(result.length <= chunks)
   function isCancelled(): bool
-  function movedCount(): usize
+  @Deprecated("use the parallel() array pipeline (its map) or forkJoin")
   function parallelMap<A, B>(xs: A[], f: (x: A) => B, parts: usize): B[]
   @Ensures(result.length == xs.length)
   function parallelism(): usize
@@ -100,7 +93,7 @@ module std:task
   function selectUntil<T>(rxs: Receiver<T>[], deadline: Deadline): Result<Selected<T>, TaskError>
   @Requires(rxs.length >= 1 && deadline.at.millis >= 0)
   function sleep(clock: ClockGrant, timeout: Duration): Result<void, TaskError>
-  function sleepUntil(deadline: Deadline): void
+  function sleepUntil(deadline: Deadline): Result<void, TaskError>
   @Requires(deadline.at.millis >= 0)
   @Deprecated("use s.spawn(f)")
   function spawn<T>(s: Scope, f: () => T): TaskHandle<T>
@@ -113,6 +106,3 @@ module std:task
   function spawnStdio<T>(s: Scope, stdio: StdioGrant, body: (g: StdioGrant) => T): TaskHandle<T>
   function taskErrorMessage(e: TaskError): string
   @Ensures(result.length > 0)
-  builtin Ring from std:taskcore
-  builtin Ledger from std:taskcore
-  builtin Ranges from std:taskcore

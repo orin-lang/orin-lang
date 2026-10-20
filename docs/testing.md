@@ -129,7 +129,7 @@ task is a timeout of the test, not a leak into the next one. Assertions work ins
 with status 101, like in the main task: the test fails). Check **results**, not timing: join the handle or receive from a channel, and
 assert on the values (the tasks of `tests/std/task_test.or` do). A trap in a task (`unwrap` of `None`, a violated contract) is
 reported at its `join` or at the end of the scope as `task panicked: <message>`. Do not assert on the order of output of two tasks.
-`movedCount()` / `copiedCount()` of `std:task` count what this task sent by move or by deep copy; whether a fresh value is moved depends
+`movedCount()` / `copiedCount()` of `std:task/internal` count what this task sent by move or by deep copy; whether a fresh value is moved depends
 on the build (optimiser, contract checking), so pin it only in the default build (`tests/concurrency/move_counts.or`).
 
 ## Fast local loop and parallel tests
@@ -221,7 +221,7 @@ bootstrapped compiler (never with the compiler under test) and runs it. It repla
 and the exit status (0 all killed, 1 a mutant survived, 2 a broken mutant) are those of the scripts:
 
 ```bash
-tools/mutation.sh std --orinc build/bootstrap/orin2 --module taskcore      # bytes|utf8|collections|http|net|text|html|taskcore
+tools/mutation.sh std --orinc build/bootstrap/orin2 --module task      # bytes|utf8|collections|http|net|text|html|task
 tools/mutation.sh std --module http --shard 2/3 -j 4                        # the CI matrix runs every module and shard
 tools/mutation.sh ox --orinc build/dev/orin -j 2                            # the OX part of the compiler (33 mutants)
 tools/mutation.sh --unit-tests                                              # @Test tests of the tool (mutant tables, shards, options)

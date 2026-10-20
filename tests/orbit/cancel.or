@@ -1,0 +1,94 @@
+// Cancellation of network waits through a scope token on Orbit (L0 wake sources, flags kept by L0). Tasks run one at a time here, so
+// a token is always set BEFORE the task that observes it starts, never while it is blocked in the host: a cancelled task starts no
+// network work. Every wait below is given 30 s; only the cancellation (or, in the first case, the 100 ms timeout) ends it early, so
+// a regression shows up as a test that takes 30 s.
+//   timeout     accept with no client ends with Timeout after the time given
+//   precancel   a task spawned into a cancelled scope: connect and accept both report Cancelled at once
+//   cancel      the task is queued first and the scope is cancelled afterwards, before the task runs (it runs at join)
+//   nested      cancelling the outer scope reaches a task of a scope nested in a task of that scope
+// Run: orbit run cancel.wasm --grant log/v1 --grant clock/v1 --grant net:listen=127.0.0.1:0-65535 --grant net:connect=127.0.0.1:0-65535
+import { Host, withNet } from "std:host";
+import { milliseconds } from "std:time";
+import { Scope, scopeNet, spawnNet } from "std:task";
+import {
+  NetGrant, Listener, Stream, NetError, NetErrorKind, Denied, Closed, Timeout, Cancelled, Reset, InvalidArgument, InvalidPeer, Os,
+  withListenerNet, withConnection, acceptDetached, dropAccepted, portOf
+} from "std:net";
+
+function kindName(k: NetErrorKind): string {
+  return match (k) {
+    Denied => "Denied",
+    Closed => "Closed",
+    Timeout => "Timeout",
+    Cancelled => "Cancelled",
+    Reset => "Reset",
+    InvalidArgument => "InvalidArgument",
+    InvalidPeer => "InvalidPeer",
+    Os => "Os"
+  };
+}
+
+// In the calling task: a listener on a free port, a connect to it and an accept, each with a 30 s limit.
+function probe(net: NetGrant, accept: bool): string {
+  const r = withListenerNet(net, "127.0.0.1", 0, 4, (ln: Listener, n: NetGrant) => {
+    const c = withConnection(n, "127.0.0.1", portOf(ln), milliseconds(30000), (s: Stream) => 0);
+    const cs = c.isErr() ? kindName(c.unwrapErr().kind) : "ok";
+    if (!accept) {
+      return "connect " + cs;
+    }
+    const a = acceptDetached(ln, milliseconds(30000));
+    if (a.isOk()) {
+      dropAccepted(a.unwrap());
+    }
+    return "connect " + cs + ", accept " + (a.isErr() ? kindName(a.unwrapErr().kind) : "ok");
+  });
+  return r.isOk() ? r.unwrap() : "no listener";
+}
+
+function timeoutCase(net: NetGrant): string {
+  const r = withListenerNet(net, "127.0.0.1", 0, 4, (ln: Listener, n: NetGrant) => {
+    const a = acceptDetached(ln, milliseconds(100));
+    return a.isErr() ? kindName(a.unwrapErr().kind) : "accepted";
+  });
+  return r.isOk() ? r.unwrap() : "no listener";
+}
+
+function precancel(net: NetGrant): string {
+  return scopeNet(net, (sc: Scope, g: NetGrant) => {
+    sc.cancel();
+    const h = spawnNet(sc, g, (t: NetGrant) => probe(t, true));
+    return h.join();
+  });
+}
+
+function cancelLater(net: NetGrant): string {
+  return scopeNet(net, (sc: Scope, g: NetGrant) => {
+    const h = spawnNet(sc, g, (t: NetGrant) => probe(t, true));
+    const first = sc.cancel();
+    const again = sc.cancel();
+    return h.join() + " (cancel " + first.toString() + ", again " + again.toString() + ")";
+  });
+}
+
+function nested(net: NetGrant): string {
+  return scopeNet(net, (outer: Scope, g: NetGrant) => {
+    const tok = outer.token();
+    const mid = spawnNet(outer, g, (t: NetGrant) => {
+      return scopeNet(t, (inner: Scope, g2: NetGrant) => {
+        const h = spawnNet(inner, g2, (u: NetGrant) => probe(u, true));
+        tok.cancel();
+        return h.join();
+      });
+    });
+    return mid.join();
+  });
+}
+
+function main(host: Host): void {
+  withNet(host, net => {
+    console.log("timeout: " + timeoutCase(net));
+    console.log("precancel: " + precancel(net));
+    console.log("cancel: " + cancelLater(net));
+    console.log("nested: " + nested(net));
+  });
+}

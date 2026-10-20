@@ -1,0 +1,66 @@
+// A TCP echo server on std:net (L0: orbit:net/v1), one connection at a time. It listens on 127.0.0.1:<port> (the first program
+// argument, 0 = any free port), prints "listening on 127.0.0.1:<port>", echoes every chunk back, and stops when a client sends a
+// chunk that starts with "quit" or after 30 s without any client. Run: orbit run echo.wasm --grant log/v1 --grant clock/v1
+// --listen 127.0.0.1:<port> --app-arg <port>
+import { Host, withProcess, withNet } from "std:host";
+import { args } from "std:process";
+import { milliseconds } from "std:time";
+import { NetGrant, Listener, Stream, Peer, withListener, withAccepted, portOf, recv, sendAll, isTimeout, netErrorMessage } from "std:net";
+
+// Echoes one connection; true when the client asked the server to quit.
+function echo(s: Stream, peer: Peer): bool {
+  let quit = false;
+  let going = true;
+  let bytes: int = 0;
+  while (going) {
+    const r = recv(s, 4096, milliseconds(5000));
+    match (r) {
+      Ok(b) => {
+        bytes += b.length().toInt();
+        sendAll(s, b, milliseconds(5000));
+        if (b.toRawString().startsWith("quit")) {
+          quit = true;
+          going = false;
+        }
+      },
+      Err(e) => { going = false; }
+    }
+  }
+  console.log("connection from " + peer.host + ": " + bytes.toString() + " bytes echoed");
+  return quit;
+}
+
+function serve(ln: Listener): bool {
+  console.log("listening on 127.0.0.1:" + portOf(ln).toString());
+  let idle: int = 0;
+  while (idle < 30) {
+    const a = withAccepted(ln, milliseconds(1000), (s: Stream, peer: Peer) => echo(s, peer));
+    match (a) {
+      Ok(quit) => {
+        if (quit) {
+          return true;
+        }
+        idle = 0;
+      },
+      Err(e) => {
+        if (!isTimeout(e)) {
+          console.error("accept: " + netErrorMessage(e));
+        }
+        idle += 1;
+      }
+    }
+  }
+  return false;
+}
+
+function main(host: Host): void {
+  const argv = withProcess(host, p => args(p));
+  const port = argv.length > 0 ? match (parseInt(argv[0])) { Some(v) => v, None => 0 } : 0;
+  withNet(host, net => {
+    const r = withListener(net, "127.0.0.1", port, 16, (ln: Listener) => serve(ln));
+    match (r) {
+      Ok(q) => { console.log(q ? "quit" : "idle, stopping"); },
+      Err(e) => { console.error("cannot listen: " + netErrorMessage(e)); }
+    }
+  });
+}

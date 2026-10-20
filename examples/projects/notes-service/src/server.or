@@ -4,7 +4,7 @@
 //   - the listener is bound through a network grant narrowed to 127.0.0.1, so the program cannot open any other socket.
 // Everything is bounded: `workers` connections in service, `queue` waiting, request head 16 KiB, body 64 KiB, 100 requests per
 // connection, 5 s for a request and for sending an answer.
-import { Host, useNet } from "std:host";
+import { Host, withNet } from "std:host";
 import { milliseconds } from "std:time";
 import { Scope, TaskHandle, scopeNetDo, spawn, channel, Receiver, Sender } from "std:task";
 import { Bytes, bytesFromString, emptyBytes } from "std:bytes";
@@ -186,7 +186,7 @@ function workerLoop(rx: Receiver<Accepted>, commands: Sender<Command>): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         serveAcceptedDo(
           a,
           (s: Stream, peer: Peer) => {
@@ -195,7 +195,7 @@ function workerLoop(rx: Receiver<Accepted>, commands: Sender<Command>): int {
         );
         served += 1;
       },
-      None => {
+      Err(e) => {
         going = false;
       },
     }
@@ -211,7 +211,7 @@ function acceptLoop(ln: Listener, tx: Sender<Accepted>, maxConns: int): int {
     match (r) {
       Ok(a) => {
         n += 1;
-        if (!tx.send(a)) {
+        if (tx.send(a).isErr()) {
           dropAccepted(a);
         }
       },
@@ -257,7 +257,7 @@ function runPool(s: Scope, ln: Listener, cfg: Settings): void {
 }
 
 export function run(host: Host, cfg: Settings): void {
-  useNet(
+  withNet(
     host,
     net => {
       scopeNetDo(

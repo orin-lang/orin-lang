@@ -9,7 +9,7 @@
 // in two rounds (the second round needs the outcome of the first), and the verdicts are computed afterwards in the order
 // of the lists, so the FAIL lines come out in a fixed order.
 
-import { FsGrant, readFile, writeFile, listDir, useFile, Append } from "std:fs";
+import { FsGrant, readFile, writeFile, listDir, withFile, Append } from "std:fs";
 import { ProcessGrant } from "std:process";
 import { Json, JNull, JNum, parse } from "std:json/legacy";
 import { shq, strip, sortedStrs, reprStr } from "./text";
@@ -56,7 +56,7 @@ export function buildExe(fs: FsGrant, proc: ProcessGrant, root: string, orin2: s
 }
 
 function report(fs: FsGrant, c: Ctx, passed: bool, name: string, msg: string, verbose: bool): void {
-  useFile(fs, c.dir + "/log", Append, f => { f.write(passed ? "ok\n" : "FAIL\n"); });
+  withFile(fs, c.dir + "/log", Append, f => { f.write(passed ? "ok\n" : "FAIL\n"); });
   if (!passed) {
     console.log("FAIL " + name + ": " + msg);
   } else if (verbose) {

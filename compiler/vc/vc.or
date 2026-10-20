@@ -39,12 +39,12 @@ import {
   VT, VInt, VBool, VStr, VUnit, VArr, VOpt, VRes, VMap, VRec, VUni, VBad,
   vtKey, vtName, isBad, badReason, vtEq, isIntTy, RecDef, UniDef, AliasDef, Tab, recOfType, recOfClass, uniOfType, payloadTy, resolveTyP, fieldTyOf, identNames, sealTab, fieldIndex
 } from "./vt";
-import { Gen, Obl, SortR, sortOf, opaqueSort } from "./gen";
+import { Gen, Obl, SortR, sortOf, opaqueSort, FactIx, factIndex, slice } from "./gen";
 import { qualKey, bareOf, buildScopes } from "./scope";
 import {
   cyclicMk, Var, Chk, TR, St, Ret, Ex, Fn, Cls, ConstInfo, Prog, Cx, I64_MIN, I64_MAX, lineOf, clauseText, lit, inRange, inKind, concat, unionUsize, andAll,
   noChks, noExp, lookupVar, sortS, tyOf, fresh, freshFree, wfOf, recField, arrLen, arrSel, clausesOfList, exprOf, rulesOfList, hasClauses,
-  Writes, writesStmts
+  Writes, writesStmts, hasBigBound
 } from "./ctx";
 import { tr, trClause, wdOf, sigOf, invTerms, valueInvariants, Cl, Sig, isUnit, clHyp, clGoal } from "./expr";
 import { execStmts, emit } from "./stmt";
@@ -341,7 +341,16 @@ function buildProg(prog: LoadedProgram, sm: SourceMap, hir: Program): Prog {
   const scopes = buildScopes(prog);
   tab.setScope(scopes.types);
   const sealed = sealTab(tab);
-  let p = Prog { tab: sealed, fns: fns, fnIx: fnIx, fnCount: fnCount, classes: classes, clsIx: clsIx, consts: consts, mutNames: mutNames, vscope: scopes.vals, sites: new Map<string, bool>(), verified: new Map<string, bool>() };
+  let bigFns: string[] = [];
+  for (const fn of fns) {
+    for (const c of fn.contracts) {
+      if (c.span.end <= fn.text.length && hasBigBound(fn.text, c.span.start, c.span.end)) {
+        bigFns.push(fn.name);
+        break;
+      }
+    }
+  }
+  let p = Prog { tab: sealed, bigFns: bigFns, fns: fns, fnIx: fnIx, fnCount: fnCount, classes: classes, clsIx: clsIx, consts: consts, mutNames: mutNames, vscope: scopes.vals, sites: new Map<string, bool>(), verified: new Map<string, bool>() };
   return computeFrames(p);
 }
 
@@ -861,6 +870,22 @@ function rawProve(fs: FsGrant, proc: ProcessGrant, or: Oracle, fi: usize, qn: us
   return Raw { status: r.status, reason: "", values: r.values, miss: [] };
 }
 
+// The obligation proved from its core alone (`Gen.setCore`): the core terms, the facts they depend on and the negated goal.
+// `unsat` is a proof (fewer premises than the full query), anything else says nothing and the full query is asked.
+function sliceProve(fs: FsGrant, proc: ProcessGrant, or: Oracle, fi: usize, qn: usize, g: Gen, ix: FactIx, core: string[], goal: string): Raw {
+  const facts = slice(ix, core.concat([goal]));
+  const q = g.declsText() + "\n" + assertAll(facts) + assertAll(core) + "(assert (not " + goal + "))\n(check-sat)\n";
+  const s = solve(fs, proc, or, fi, qn, "s", q);
+  if (s.isErr()) {
+    return Raw { status: "unknown", reason: "", values: [], miss: [] };
+  }
+  const r = s.unwrap();
+  if (r.status == PENDING) {
+    return Raw { status: "error", reason: PENDING, values: [], miss: r.values };
+  }
+  return Raw { status: r.status, reason: "", values: [], miss: [] };
+}
+
 // A sat answer is a counterexample only if nothing on the way was an abstraction.
 // VERIFIED only from unsat; REFUTED only from sat on a path without abstraction (the soundness rule of ADR-0036).
 @Ensures(result.status == "VERIFIED" ==> r.status == "unsat")
@@ -1174,6 +1199,7 @@ function verifyFn(fs: FsGrant, proc: ProcessGrant, rt0: Rt, f: Fn): Rt {
     verdicts.push(unknownV("not solved"));
     statuses.push("PENDING");
   }
+  let ixv: Option<FactIx> = None;
   let id: usize = 0;
   while (id < obls.length) {
     const o = obls[id];
@@ -1185,7 +1211,17 @@ function verifyFn(fs: FsGrant, proc: ProcessGrant, rt0: Rt, f: Fn): Rt {
     } else if (!wanted) {
       statuses[id] = "SKIPPED";
     } else if (!o.exact) {
-      const raw = rawProve(fs, proc, rt.or, rt.fi, rt.qn, g, base, o.pc, o.goal, en.probes);
+      let raw = Raw { status: "unknown", reason: "", values: [], miss: [] };
+      const core = g.coreOf(id);
+      if (core.isSome()) {
+        if (ixv.isNone()) {
+          ixv = Some(factIndex(g));
+        }
+        raw = sliceProve(fs, proc, rt.or, rt.fi, rt.qn, g, ixv.unwrap(), core.unwrap(), o.goal);
+      }
+      if (raw.status != "unsat" && raw.status != "error") {
+        raw = rawProve(fs, proc, rt.or, rt.fi, rt.qn, g, base, o.pc, o.goal, en.probes);
+      }
       rt.qn += 1;
       rt.miss = concat(rt.miss, raw.miss);
       verdicts[id] = judge(g, raw, obligApprox(g, base, raw, o), en.probes);

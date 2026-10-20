@@ -1,0 +1,8 @@
+// error: E0400
+// EXP-6: `for ... of` iterates an array; a map is not iterable (use `keys()` or `entries()`).
+function main(): void {
+  const m = new Map<string, int>();
+  for (const e of m) {
+    console.log(e.key);
+  }
+}

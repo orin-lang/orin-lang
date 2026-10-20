@@ -6,7 +6,7 @@
 // Every row: bytes of messages parsed, wall time in ms, MB/s (1 MB = 1048576 bytes). "one chunk": each message is
 // fed in one call; "64-byte chunks": as a socket with small reads would deliver it; "1-byte chunks": worst case.
 import { Bytes, fromString } from "std:bytes";
-import { Host, useClock } from "std:host";
+import { Host, withClock } from "std:host";
 import { ClockGrant, nowMillis } from "std:time";
 import { Request, Response, ParseResult, NeedMore, Done, Failed, RequestParser, ResponseParser, defaultLimits, ToOther, httpErrorMessage, serializeRequest, serializeResponse }
   from "std:http";
@@ -172,7 +172,7 @@ function run(clock: ClockGrant): void {
 }
 
 function main(host: Host): void {
-  useClock(host, clock => {
+  withClock(host, clock => {
     run(clock);
   });
 }
