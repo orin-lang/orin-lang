@@ -304,10 +304,10 @@ def main():
             ("hello", "tests/wasm_target/hello.or")]}
         want = {"hello": "log/v1", "args_stdin": "log/v1, process/v1", "files": "fs/v1, log/v1",
                 "echo": "clock/v1, log/v1, net/v1, process/v1", "client": "clock/v1, log/v1, net/v1, process/v1",
-                "cancel": "clock/v1, log/v1, net/v1", "http_server": "clock/v1, log/v1, net/v1, process/v1"}
+                "cancel": "log/v1, net/v1", "http_server": "clock/v1, log/v1, net/v1, process/v1"}
         if target == "wasm32-orbit":  # tasks need real threads there
-            for n in ("cancel", "http_server"):
-                want[n] += ", thread/v1"
+            want["cancel"] = "clock/v1, log/v1, net/v1, thread/v1"  # thread/v1 brings clock/v1 (timed waits)
+            want["http_server"] += ", thread/v1"
         for n, caps in want.items():
             text = orbit.inspect(mods[n])
             check("validation: ok" in text and ("requires: " + caps + "\n") in text,

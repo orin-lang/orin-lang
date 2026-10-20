@@ -242,7 +242,7 @@ What does the compiler emit, which memory width, which C library and which host 
       the Node host does not serve; it runs on Orbit), `stress_tasks` (3,000 tasks alive at once need 3 GiB of 1 MiB stacks in a 4 GiB
       memory and more threads than Orbit's ceiling of 1024: it fails with the clean "thread limit reached" trap; it passed with
       `--max-threads 4096` and 256 KiB stacks, 20,000 tasks in 11 s) and `trap_deep` (10,000 trapped tasks = 10,000 parked threads,
-      Node runs out of memory for its workers). Budget: `runtime/platform/orbit` is about 1675 code lines against the ceiling of 1400 (decision 9); the owner raised the ceiling to **1700** (`tools/test_wasm.sh`; the native budget in `verify_platform.sh` is unchanged). Why: the threaded layer is new (257 lines in `orin_threads_orbit.c`, 29 in the sync header) and wasm64 keeps the sequential path (205 lines in `orin_seq_orbit.c`, moved out of `orin_platform_orbit.c`, not new). Removing the sequential path would bring the layer back to about 1470, at the price of wasm64 tasks.
+      Node runs out of memory for its workers). Budget: `runtime/platform/orbit` is 1686 code lines against the ceiling of 1400 (decision 9); the owner raised the ceiling to **1700** (`tools/test_wasm.sh`; the native budget in `verify_platform.sh` is unchanged). Why: the threaded layer is new (257 lines in `orin_threads_orbit.c`, 29 in the sync header) and wasm64 keeps the sequential path (205 lines in `orin_seq_orbit.c`, moved out of `orin_platform_orbit.c`, not new). Removing the sequential path would bring the layer back to about 1470, at the price of wasm64 tasks.
 
 ## Measurements (2026-10-17, one Linux x86_64 container, best of 3, wall time)
 
