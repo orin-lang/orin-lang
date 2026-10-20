@@ -229,13 +229,13 @@ function workerLoop(rx: Receiver<Accepted>, cfg: Config): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         serveAcceptedDo(a, (s: Stream, peer: Peer) => {
           serveConnection(s, peer, cfg);
         });
         served += 1;
       },
-      None => { going = false; }
+      Err(e) => { going = false; }
     }
   }
   return served;

@@ -5,8 +5,8 @@ function main(): void {
   scope(s => {
     spawnDo(s, () => { ch.tx.send(1); ch.tx.close(); });
     match (ch.rx.recv()) {
-      Some(v) => { console.log(v.toString()); },
-      None => { console.log("closed"); },
+      Ok(v) => { console.log(v.toString()); },
+      Err(e) => { console.log("closed"); },
     }
   });
 }

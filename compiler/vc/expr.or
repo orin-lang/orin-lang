@@ -350,11 +350,9 @@ function trBinary(g: Gen, vars: Var[], cx: Cx, op: BinaryOp, l: Expr, r: Expr): 
   const isEq = match (op) { BEq => true, _ => false };
   const isNe = match (op) { BNe => true, _ => false };
   if (isEq || isNe) {
-    if (isIntTy(lt.vt) && isIntTy(rt.vt)) {
-      if (joinKinds(intKindOf(lt.vt), intKindOf(rt.vt)) == "") {
-        return Err("`==` / `!=` on integers of different types");
-      }
-    } else if (!vtEq(lt.vt, rt.vt)) {
+    // Integers of different kinds (`usize` and `int`): the solver's integers are unbounded, so the equality of the two
+    // values is exactly the equality after widening both sides by their signedness (every kind's range embeds in Int).
+    if (!(isIntTy(lt.vt) && isIntTy(rt.vt)) && !vtEq(lt.vt, rt.vt)) {
       return Err("`==` / `!=` on operands of different types");
     }
     const okEq = match (lt.vt) {

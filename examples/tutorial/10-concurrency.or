@@ -35,7 +35,7 @@ function main(): void {
     let sum = 0;
     while (true) {
       const m = ch.rx.recv();
-      if (m.isNone()) {
+      if (m.isErr()) {
         break;
       }
       console.log("got " + m.unwrap().toString());

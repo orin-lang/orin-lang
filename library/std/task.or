@@ -25,7 +25,7 @@
 //   that task; `join` (or the end of the scope) turns it into a trap of the joining task with the message
 //   `task panicked: <message>`. A panic is never lost silently. `spawn` is a method of the scope; `T` may be void.
 // * `channel<T>(capacity)` makes a bounded channel; `ch.tx.send(v)` blocks while it is full, `ch.rx.recv()` blocks while it
-//   is empty and returns `None` once the channel is closed and drained. `tx.close()` ends the stream, `rx.close()`
+//   is empty and returns `Err(Closed)` once the channel is closed and drained. `tx.close()` ends the stream, `rx.close()`
 //   cancels it (a blocked or later `send` returns `Err(Closed)`). Each end can be copied and used by any number of tasks. Close both
 //   ends to release the channel: after that any use of it traps.
 // * Resource handles are not values: a task body cannot capture one (E0483). A grant is delegated with `spawnFs`,
@@ -273,7 +273,7 @@ export class Sender<T> {
     return this.sendUntil(v, d);
   }
 
-  // close(): void -- no more values will be sent; receivers drain what is buffered and then get None. Idempotent. Releases the
+  // close(): void -- no more values will be sent; receivers drain what is buffered and then get Err(Closed). Idempotent. Releases the
   // channel when the receiving end is closed too (any later use then traps). O(waiters).
   close(): void {
     const ch = this.ch;
@@ -304,9 +304,9 @@ export class Receiver<T> {
     this.ch = ch;
   }
 
-  // recv(): Option<T> -- the oldest value, or None once the channel is closed and drained (or cancelled by rx.close()). Blocks
-  // while the channel is empty. O(1) plus the transfer of the value.
-  recv(): Option<T> {
+  // recv(): Result<T, TaskError> -- Ok(the oldest value), or Err(Closed) once the channel is closed and drained (or cancelled by
+  // rx.close()): the end of the stream. Blocks while the channel is empty. O(1) plus the transfer of the value.
+  recv(): Result<T, TaskError> {
     const ch = this.ch;
     monLock(ch);
     const cap = monGet(ch, 0);
@@ -321,14 +321,14 @@ export class Receiver<T> {
     }
     if (len == 0) {
       monUnlock(ch);
-      return None;
+      return Err(fail(Closed));
     }
     const tok = monGet(ch, CH_HDR + head);
     storeRing(ch, ringNextHead(cap, head), len - 1, flags);
     monNotifyOne(ch, 0);
     monUnlock(ch);
     const v: T = takeBox(tok);
-    return Some(v);
+    return Ok(v);
   }
 
   // recvUntil(deadline): Result<T, TaskError> -- recv() that gives up when the absolute monotonic deadline passes while the channel is empty:
@@ -557,10 +557,10 @@ export function selectTimeout<T>(
   return rxs[0].selectAmong(rxs, d.at.millis);
 }
 
-// sleepUntil(deadline): void -- blocks until the absolute monotonic deadline has passed (at least that long: never early; returns
+// sleepUntil(deadline): Result<void, TaskError> -- blocks until the absolute monotonic deadline has passed (at least that long: never early; returns
 // at once when it has passed). Traps if the deadline is negative. Blocks the calling task.
 @Requires(deadline.at.millis >= 0)
-export function sleepUntil(deadline: Deadline): void {
+export function sleepUntil(deadline: Deadline): Result<void, TaskError> {
   const m = monNew(1);
   monLock(m);
   let late = false;
@@ -569,14 +569,14 @@ export function sleepUntil(deadline: Deadline): void {
   }
   monUnlock(m);
   monFree(m);
+  return Ok();
 }
 
 // sleep(clock, timeout): Result<void, TaskError> -- blocks for at least `timeout` on the monotonic clock. Err(InvalidDuration) for
 // a negative timeout, Err(ClockUnavailable) when the clock cannot be read. Blocks the calling task.
 export function sleep(clock: ClockGrant, timeout: Duration): Result<void, TaskError> {
   const d = deadlineIn(clock, timeout)?;
-  sleepUntil(d);
-  return Ok();
+  return sleepUntil(d);
 }
 
 // ------------------------------------------------------------------------------------------------------ scopes
@@ -721,7 +721,7 @@ export class TaskHandle<T> {
     this.res = res;
   }
 
-  // join(): T -- waits for the task and returns its result. If the task panicked, traps with `task panicked: <message>`. Traps if
+  // join(): T -- waits for the task and returns its result. join() is not a cancellation checkpoint; use joinUntil/joinTimeout for an interruptible wait. If the task panicked, traps with `task panicked: <message>`. Traps if
   // the handle was joined before. Blocks until the task ends.
   join(): T {
     monLock(this.tab);

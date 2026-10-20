@@ -48,10 +48,10 @@ function worker(rx: Receiver<Accepted>): int {
   while (going) {
     const next = rx.recv();
     match (next) {
-      Some(a) => {
+      Ok(a) => {
         n += serveAccepted(a, (s: Stream, peer) => serveOne(s, peer.host));
       },
-      None => { going = false; }
+      Err(e) => { going = false; }
     }
   }
   return n;

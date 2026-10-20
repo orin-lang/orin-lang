@@ -19,6 +19,17 @@ function isClosed(r: Result<void, TaskError>): bool {
   };
 }
 
+// True when a recv() ended with the error `Closed` (end of the stream).
+function recvClosed(r: Result<string, TaskError>): bool {
+  return match (r) {
+    Ok(v) => false,
+    Err(e) => match (e.kind) {
+      Closed => true,
+      _ => false,
+    },
+  };
+}
+
 // ------------------------------------------------------------------------------------------------ channels (one task)
 
 @Test
@@ -34,8 +45,8 @@ function channelFifoAndClose(): void {
   assertEqString(ch.rx.recv().unwrap(), "two", "drain 2");
   assertEqString(ch.rx.recv().unwrap(), "three", "drain 3");
   assertEqString(ch.rx.recv().unwrap(), "four", "drain 4");
-  assertEqBool(ch.rx.recv().isNone(), true, "None once closed and drained");
-  assertEqBool(ch.rx.recv().isNone(), true, "and stays None");
+  assertEqBool(recvClosed(ch.rx.recv()), true, "Err(Closed) once closed and drained");
+  assertEqBool(ch.rx.recv().isErr(), true, "and stays Err");
   ch.rx.close();
 }
 
@@ -119,11 +130,11 @@ function scopeJoinsWhatTheBodyDidNot(): void {
   let more = true;
   while (more) {
     match (done.rx.recv()) {
-      Some(v) => {
+      Ok(v) => {
         n += 1;
         sum += v;
       },
-      None => {
+      Err(e) => {
         more = false;
       },
     }
