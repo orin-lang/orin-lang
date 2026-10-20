@@ -33,7 +33,7 @@ run_tsan() {
 }
 
 echo "[concurrency] runtime task tests"
-# the object model (allocator, destroy, make_unique) is Orin code: the C test links the stub that defines its C names (tools/rt_stub.sh)
+# the object model, monitors, transfer, lend and tasks are Orin code: the C test links the stub that defines their C names (tools/rt_stub.sh)
 SRC="runtime/core/tests/task_test.c $(rt_src)"
 STUB=$(ORIN2=$ORIN2 CC=$CC tools/rt_stub.sh $B/rt_stub.o -g -O1)
 $CC -g -O1 -Wall -I runtime/core $SRC $STUB -lm -o $B/task_test
@@ -44,14 +44,6 @@ run_tsan $B/task_test_tsan
 STUB_ASAN=$(ORIN2=$ORIN2 CC=$CC tools/rt_stub.sh $B/rt_stub_asan.o -g -fsanitize=address,undefined -fno-sanitize-recover=undefined)
 $CC -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -I runtime/core $SRC $STUB_ASAN -lm -o $B/task_test_asan
 ASAN_OPTIONS=detect_leaks=0 $B/task_test_asan
-# the same checks with the transfer operations of runtime/core/transfer.or (ADR-0052 Addendum B, R3e.2) in place of the C ones, through the
-# test wrappers of the stub; the C task code and the lend still work on the same slot table
-$CC -g -O1 -Wall -DORIN_TRANSFER_IN_ORIN -I runtime/core $SRC $STUB -lm -o $B/task_test_orin
-$B/task_test_orin
-$CC -g -O1 -fsanitize=thread -DORIN_TRANSFER_IN_ORIN -I runtime/core $SRC $STUB_TSAN -lm -o $B/task_test_orin_tsan
-run_tsan $B/task_test_orin_tsan
-$CC -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -DORIN_TRANSFER_IN_ORIN -I runtime/core $SRC $STUB_ASAN -lm -o $B/task_test_orin_asan
-ASAN_OPTIONS=detect_leaks=0 $B/task_test_orin_asan
 
 for t in tests/concurrency/*.or; do
   n=$(basename "$t" .or)

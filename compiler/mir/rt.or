@@ -43,8 +43,9 @@ export const RT_STRING_TO_BYTES: usize = 27;
 export const RT_STATS_REPORT: usize = 28;
 export const RT_LIVE_COUNT: usize = 29;
 // The task interface (ADR-0052 Addendum B section 3, R3e): the monitor operations of `sync.or` (R3e.1), then the entries of the later
-// steps (transfer R3e.2, lend and parThreads R3e.3, task R3e.4). The numbers are fixed here in R3e.0; an entry whose function is not in
-// the program (`rtIds` gives -1) falls back to the C function of the same operation (`l1Task`), so each step adds its module and nothing else.
+// steps (transfer R3e.2, lend and parThreads R3e.3, task R3e.4). The numbers were fixed in R3e.0. A program without `$rt` (`--c-builtins`,
+// the hand-built MIR of the emitter tests) calls the C function of the same operation (`l1Task`); the live runtime has no such C function
+// since R3e.6, only the frozen snapshot bootstrap/seed/runtime/ that the `--c-builtins` world links.
 export const RT_MON_NEW: usize = 30;
 export const RT_MON_FREE: usize = 31;
 export const RT_MON_LOCK: usize = 32;
@@ -127,27 +128,36 @@ export function rtWraps(): RtWrap[] {
   ];
 }
 
-// The wrappers under C names that only the C unit tests of the runtime call (`runtime/core/tests/*.c` link the stub of
-// tools/rt_stub.sh): emitted, and their entries kept alive, only when the program is compiled with `--rt-wrappers` (`rtWrappersOn`).
-// Normal programs never have them, so `rtAlways` does not pull the task code into every binary (ADR-0052 Addendum B section 3). The C
-// monitor, transfer and task functions are still in the live runtime and define their own names until R3e.6, so these wrappers carry
-// the distinct prefix `orin_t_`: task_test.c built with -DORIN_TRANSFER_IN_ORIN calls the Orin functions through them (R3e.2: the four
-// transfer operations, R3e.3: the lend and the thread count, R3e.4: the task functions and the heap retire), and the plain build keeps
-// testing the C ones. At R3e.6 the C names move to the wrappers.
+// The wrappers under C names that only the C unit tests of the runtime call (`runtime/core/tests/*.c` link the stub of tools/rt_stub.sh):
+// emitted, and their entries kept alive, only when the program is compiled with `--rt-wrappers` (`rtWrappersOn`). Normal programs never
+// have them, so `rtAlways` does not pull the task code into every binary (ADR-0052 Addendum B section 3). Since R3e.6 deleted the C
+// monitor, transfer, lend, task and heap-exit functions of the live runtime, the wrappers carry exactly the names those functions had
+// (declared in runtime/core/orin_runtime.h), so the unit tests are unchanged and run against the Orin code.
 export function rtTestWraps(): RtWrap[] {
   return [
-    RtWrap { entry: RT_TRANSFER_PUT, name: "orin_t_transfer_put", ret: "u64", params: ["o"] },
-    RtWrap { entry: RT_TRANSFER_TAKE, name: "orin_t_transfer_take", ret: "o", params: ["u64"] },
-    RtWrap { entry: RT_TRANSFER_DROP, name: "orin_t_transfer_drop", ret: "v", params: ["u64"] },
-    RtWrap { entry: RT_TRANSFER_COUNT, name: "orin_t_transfer_count", ret: "u64", params: ["u64"] },
-    RtWrap { entry: RT_LEND_PUT, name: "orin_t_lend", ret: "u64", params: ["o"] },
-    RtWrap { entry: RT_TASK_PAR_THREADS, name: "orin_t_par_threads", ret: "u64", params: [] },
-    RtWrap { entry: RT_TASK_SPAWN, name: "orin_t_task_spawn", ret: "u64", params: ["u64"] },
-    RtWrap { entry: RT_TASK_JOIN, name: "orin_t_task_join", ret: "u64", params: ["u64"] },
-    RtWrap { entry: RT_TASK_MESSAGE, name: "orin_t_task_message", ret: "o", params: [] },
-    RtWrap { entry: RT_TASK_WATCH, name: "orin_t_task_watch", ret: "v", params: ["u64"] },
-    RtWrap { entry: RT_TASK_TRAP_STR, name: "orin_t_trap_str", ret: "x", params: ["o"] },
-    RtWrap { entry: RT_TASK_HEAP_RETIRE, name: "orin_t_heap_retire", ret: "v", params: [] },
+    RtWrap { entry: RT_MON_NEW, name: "orin_mon_new", ret: "u64", params: ["u64"] },
+    RtWrap { entry: RT_MON_FREE, name: "orin_mon_free", ret: "v", params: ["u64"] },
+    RtWrap { entry: RT_MON_LOCK, name: "orin_mon_lock", ret: "v", params: ["u64"] },
+    RtWrap { entry: RT_MON_UNLOCK, name: "orin_mon_unlock", ret: "v", params: ["u64"] },
+    RtWrap { entry: RT_MON_WAIT, name: "orin_mon_wait", ret: "v", params: ["u64", "u64"] },
+    RtWrap { entry: RT_MON_NOTIFY_ALL, name: "orin_mon_notify_all", ret: "v", params: ["u64", "u64"] },
+    RtWrap { entry: RT_MON_GET, name: "orin_mon_get", ret: "u64", params: ["u64", "u64"] },
+    RtWrap { entry: RT_MON_SET, name: "orin_mon_set", ret: "v", params: ["u64", "u64", "u64"] },
+    RtWrap { entry: RT_MON_GROW, name: "orin_mon_grow", ret: "v", params: ["u64", "u64"] },
+    RtWrap { entry: RT_MON_NOTIFY_ONE, name: "orin_mon_notify_one", ret: "v", params: ["u64", "u64"] },
+    RtWrap { entry: RT_MON_WAIT_UNTIL, name: "orin_mon_wait_until", ret: "u64", params: ["u64", "u64", "u64"] },
+    RtWrap { entry: RT_TRANSFER_PUT, name: "orin_rt_transfer_put", ret: "u64", params: ["o"] },
+    RtWrap { entry: RT_TRANSFER_TAKE, name: "orin_rt_transfer_take", ret: "o", params: ["u64"] },
+    RtWrap { entry: RT_TRANSFER_DROP, name: "orin_rt_transfer_drop", ret: "v", params: ["u64"] },
+    RtWrap { entry: RT_TRANSFER_COUNT, name: "orin_rt_transfer_count", ret: "u64", params: ["u64"] },
+    RtWrap { entry: RT_LEND_PUT, name: "orin_rt_lend", ret: "u64", params: ["o"] },
+    RtWrap { entry: RT_TASK_PAR_THREADS, name: "orin_rt_par_threads", ret: "u64", params: [] },
+    RtWrap { entry: RT_TASK_SPAWN, name: "orin_rt_task_spawn", ret: "u64", params: ["u64"] },
+    RtWrap { entry: RT_TASK_JOIN, name: "orin_rt_task_join", ret: "u64", params: ["u64"] },
+    RtWrap { entry: RT_TASK_MESSAGE, name: "orin_rt_task_message", ret: "o", params: [] },
+    RtWrap { entry: RT_TASK_WATCH, name: "orin_rt_task_watch", ret: "v", params: ["u64"] },
+    RtWrap { entry: RT_TASK_TRAP_STR, name: "orin_rt_trap_str", ret: "x", params: ["o"] },
+    RtWrap { entry: RT_TASK_HEAP_RETIRE, name: "orin_rt_heap_exit", ret: "v", params: [] },
   ];
 }
 
@@ -227,8 +237,9 @@ export function rtCold(name: string): bool {
 }
 
 // The L1 entry that the task or monitor operation `BTask(k)` (hir/taskops.or) calls, if it has one (ADR-0052 Addendum B section 3). A backend
-// emits a call of the Orin function when the program has the entry (`rtIds`), else the call of the C function `taskOpC(k)`, so
-// `l1Task` may name entries whose step has not landed yet. Wake sources 31..36 stay direct calls of L0.
+// emits a call of the Orin function when the program has the entry (`rtIds`), else the call of the C function `taskOpC(k)`: that case is
+// only a program without `$rt` (`--c-builtins`, linked with the frozen C runtime of bootstrap/seed/runtime/, and the hand-built MIR of
+// the emitter tests). Wake sources 31..36 stay direct calls of L0.
 @Ensures(result.isSome() ==> result.unwrap() <= RT_LAST)
 export function l1Task(k: usize): Option<usize> {
   return match (k) {

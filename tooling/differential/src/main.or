@@ -43,7 +43,10 @@ function runModes(fs: FsGrant, proc: ProcessGrant, o0: Options): int {
     for (const p of entries(fs, o.root, suite)) {
       // `--mode builtins` runs the alternative side in the legacy world, which has no `$rt` (so no `std:coreprobe`): the programs of
       // the core dialect (ADR-0052) have no counterpart there
-      if (p.name.includes(o.filter) && !(o.mode == "builtins" && readText(fs, o.root + "/" + p.entry).includes("std:coreprobe"))) {
+      // A program with the header line `// differential-skip-builtins: reason` behaves differently in the frozen legacy world on
+      // purpose (a runtime behaviour change the snapshot bootstrap/seed/runtime/ does not have, e.g. C2 trap-safe cleanup)
+      const text = o.mode == "builtins" ? readText(fs, o.root + "/" + p.entry) : "";
+      if (p.name.includes(o.filter) && !(o.mode == "builtins" && (text.includes("std:coreprobe") || text.includes("\n// differential-skip-builtins:")))) {
         tests.push(p);
       }
     }

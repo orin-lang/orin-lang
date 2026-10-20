@@ -130,9 +130,11 @@ void *orin_sb_realloc(void *p, uint64_t old, uint64_t n);
 OrinObj *orin_str_alloc(uint64_t len, uint64_t cap); /* a string of length len, capacity max(len, cap); the NUL terminator is set */
 void orin_destroy(OrinObj *o); /* internal: free an object whose count reached 0 (an Orin function of runtime/core/rc.or, ADR-0052 R3d.3 (b)) */
 
-/* ---------------------------------------------------------------- tasks (ADR-0017 stage 0, docs/concurrency.md)
- * TEMPORARY interface (spec 19 R3): the part of task support that needs the object model. Each function maps 1:1 onto
- * a planned Orin core-dialect function (docs/concurrency.md "Porting table"). Everything else of std:task is Orin.
+/* ---------------------------------------------------------------- tasks (ADR-0017, docs/concurrency.md)
+ * Since ADR-0052 R3e.6 this part of the runtime has NO C definitions: transfer, lend, tasks and monitors are the Orin functions of
+ * runtime/core/{sync,transfer,lend,task}.or, which generated code calls through the L1 entries of compiler/mir/rt.or. The declarations
+ * below are the interface of the C unit tests (runtime/core/tests/task_test.c): a program compiled with `--rt-wrappers`
+ * (tools/rt_stub.sh) defines these names as wrappers of the Orin functions, and nothing else in the runtime calls them.
  *   transfer: a value changes task heaps. `box` is a record with ONE slot that the sender has just built (so the value
  *     in it was consumed by the sender); put detaches the value (moved if its whole graph is uniquely owned, deep-copied
  *     otherwise; a copy is a fresh graph nobody else can reach) and returns a token; take returns the box (owned by the
@@ -144,7 +146,7 @@ void orin_destroy(OrinObj *o); /* internal: free an object whose count reached 0
  *     ends only that task.
  *   lend (ADR-0039, `.parallel()`): orin_rt_lend of a TWO-slot record { value, _ } pins the value's graph for reading by the tasks
  *     the owner spawns next (their closures share it instead of copying it); drop of that token ends the lend and
- *     restores the counts; take of it traps. A transfer by another task copies pinned objects. See "lending" in the .c. */
+ *     restores the counts; take of it traps. A transfer by another task copies pinned objects. See runtime/core/lend.or. */
 uint64_t orin_rt_transfer_put(OrinObj *box);
 OrinObj *orin_rt_transfer_take(uint64_t token);
 void orin_rt_transfer_drop(uint64_t token);
@@ -156,8 +158,8 @@ uint64_t orin_rt_task_join(uint64_t thread);
 void orin_rt_task_watch(uint64_t monitor);         /* the calling task sets word 1 of the monitor to 1 and notifies queue 0 when it ends */
 OrinObj *orin_rt_task_message(void);
 void orin_rt_trap_str(OrinObj *msg) __attribute__((noreturn)); /* trap with the text of an Orin string */
-void orin_rt_heap_exit(void);                                   /* end of a task's heap (called by the runtime itself) */
-/* monitors (L0, platform layer): forwarders that trap on an invalid handle / unlocked access */
+void orin_rt_heap_exit(void);                                   /* end of a task's heap (task.or `heapRetire`) */
+/* monitors (L0, platform layer): the operations trap on an invalid handle / unlocked access */
 uint64_t orin_mon_new(uint64_t nwords);
 void orin_mon_free(uint64_t m);
 void orin_mon_lock(uint64_t m);
@@ -266,7 +268,10 @@ typedef struct OrinHeap {
     uint64_t files;                         /* @360  the open-file table of this task (R3c) */
     uint64_t netbuf;                        /* @368  the per-task network buffer (C4) */
     uint64_t scratch;                       /* @376  scratch word: the out parameter of L0 calls (thread_join, monitor_get) */
-    uint64_t reserved1[15];                 /* @384  up to 504 */
+    uint64_t children;                      /* @384  the registry of the tasks this thread started and has not joined: first node (C2, runtime/core/task.or) */
+    uint64_t children_tail;                 /* @392  its last node */
+    uint64_t trapping;                      /* @400  1 once this thread is running the cleanup of a trap (a trap inside it is an exit) */
+    uint64_t reserved1[12];                 /* @408  up to 504 */
     uint64_t probe;                         /* @504  std:coreprobe scratch word */
     SbClass sb[SB_CLASSES + 1];             /* @512  small-block cache by 16-byte class 0..16: list head, length */
     uint64_t reserved2[30];                 /* @784  up to 1024 */
@@ -280,11 +285,15 @@ enum { ORIN_SHARED_WORDS = 128 };
 typedef struct OrinShared {
     uint64_t transfer[4];   /* @0    transfer slot table: pointer, n, cap, free head */
     uint64_t flight[4];     /* @32   grant flight table: pointer, n, cap, free head (R3e.5) */
-    uint64_t reserved[56];  /* @64   up to 512 */
+    uint64_t main_doomed;   /* @64   1 once the main thread is trapping: every task is a descendant of it (C2) */
+    uint64_t trap_seq;      /* @72   the number of task traps published so far (C2: the primary failure of a scope is the first) */
+    uint64_t waiters;       /* @80   the first task record of the list of tasks blocked in a monitor wait (C2) */
+    uint64_t reserved[53];  /* @88   up to 512 */
     char trapline[512];     /* @512  line buffer of the process trap (the main thread only, which is about to exit) */
 } OrinShared;
 extern OrinShared orin_shared;
-_Static_assert(offsetof(OrinShared, transfer) == 0 && offsetof(OrinShared, flight) == 32 && offsetof(OrinShared, reserved) == 64 &&
+_Static_assert(offsetof(OrinShared, transfer) == 0 && offsetof(OrinShared, flight) == 32 && offsetof(OrinShared, main_doomed) == 64 &&
+                   offsetof(OrinShared, trap_seq) == 72 && offsetof(OrinShared, waiters) == 80 && offsetof(OrinShared, reserved) == 88 &&
                    offsetof(OrinShared, trapline) == 512 && sizeof(OrinShared) == ORIN_SHARED_WORDS * 8,
                "orin_shared: transfer @0, flight @32, trap line @512, 128 words");
 /* The counters keep their name: `orin_stats.retains++` in the inline functions below and in generated code. */
@@ -308,7 +317,9 @@ _Static_assert(ORIN_HEAP_OFF(grants) == 352, "orin_heap.grants @352");
 _Static_assert(ORIN_HEAP_OFF(files) == 360, "orin_heap.files @360");
 _Static_assert(ORIN_HEAP_OFF(netbuf) == 368, "orin_heap.netbuf @368");
 _Static_assert(ORIN_HEAP_OFF(scratch) == 376, "orin_heap.scratch @376");
-_Static_assert(ORIN_HEAP_OFF(reserved1) == 384, "orin_heap.reserved1 @384");
+_Static_assert(ORIN_HEAP_OFF(children) == 384 && ORIN_HEAP_OFF(children_tail) == 392 && ORIN_HEAP_OFF(trapping) == 400,
+               "orin_heap.children @384, children_tail @392, trapping @400");
+_Static_assert(ORIN_HEAP_OFF(reserved1) == 408, "orin_heap.reserved1 @408");
 _Static_assert(ORIN_HEAP_OFF(probe) == 504, "orin_heap.probe @504");
 _Static_assert(ORIN_HEAP_OFF(sb) == 512 && sizeof(SbClass) == 16, "orin_heap.sb @512, 16 bytes per class (head @+0, n @+8)");
 _Static_assert(ORIN_HEAP_OFF(reserved2) == 784, "orin_heap.reserved2 @784");

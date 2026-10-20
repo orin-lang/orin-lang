@@ -124,7 +124,7 @@ component name.
 ## S6 no data race
 
 - **Statement.** No heap object is reachable from two tasks at the same time. A value crossing a task boundary is moved only if
-  its whole graph is uniquely owned, otherwise deep-copied (`orin_rt_transfer_put`); reference counts stay non-atomic; the only
+  its whole graph is uniquely owned, otherwise deep-copied (`transfer.put` in `runtime/core/transfer.or`); reference counts stay non-atomic; the only
   state shared between tasks is behind validated L0 handles and locks (ADR-0017 stage 0). A resource handle or grant is never
   captured by or sent to a task body except through the delegating `spawn*` forms.
 - **Safe outcome.** Static rejection (E0450-E0452, E0481, E0483) or a run-time trap on a stale / forged handle. There is no trap
@@ -133,7 +133,7 @@ component name.
   (e) for L0 threads and monitors (stay C after R3).
 - **Claims.** C14, C15, C17. tcb.md rows: Task runtime, L0 threads and monitors, Capability grants.
 - **Files.** `compiler/check/tasks.or`, `compiler/check/resources.or`, `compiler/verify/rules.or` (handle rules),
-  `runtime/core/orin_runtime.c` (`orin_rt_transfer_put`), `runtime/core/tests/task_test.c`, `tools/test_concurrency.sh`,
+  `runtime/core/transfer.or` (`put`), `runtime/core/tests/task_test.c`, `tools/test_concurrency.sh`,
   `tests/concurrency/`.
 - **Model.** None: "disjoint heaps, send transfers ownership" is a Lean goal of ADR-0053 M12.
 - **Assurance level.** `TESTED_ONLY`.
