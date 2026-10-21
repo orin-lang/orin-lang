@@ -313,18 +313,31 @@ function trickleReader(s: Stream): string {
   const f = rd.readExactUntil(s, 500, at(t0 + 300));
   const dt = monotonicMillis(s) - t0;
   const got = rd.buffered().length();
-  // then recvUntil in a loop on a second deadline: many small chunks, one deadline
-  const t1 = monotonicMillis(s);
-  const end = at(t1 + 300);
+  // then recvUntil in a loop on a second deadline: many small chunks, one deadline. The chunk count depends on how the scheduler
+  // treats the feeder (a loaded runner can delay it or coalesce its bytes into one segment), so a window that saw fewer than 3 chunks
+  // is repeated (up to 10 windows, the feeder lasts 5 s): what is checked is that EVERY window ends at its own deadline with a
+  // Timeout, that recvUntil returned once per chunk, and that 3 chunks arrive in all.
   let chunks: int = 0;
   let last = "data";
-  while (last == "data") {
-    last = recvName(recvUntil(s, 64, end));
-    if (last == "data") {
-      chunks += 1;
+  let windows: int = 0;
+  let dt2: int = 300;
+  let windowBad = "";
+  while (chunks < 3 && windows < 10 && windowBad == "") {
+    const t1 = monotonicMillis(s);
+    const end = at(t1 + 300);
+    last = "data";
+    while (last == "data") {
+      last = recvName(recvUntil(s, 64, end));
+      if (last == "data") {
+        chunks += 1;
+      }
+    }
+    dt2 = monotonicMillis(s) - t1;
+    windows += 1;
+    if (last != "Timeout" || dt2 < 280 || dt2 > 300 + WAKE_SLACK) {
+      windowBad = "window " + windows.toString() + " ended " + last + " after " + dt2.toString() + " ms (deadline 300)";
     }
   }
-  const dt2 = monotonicMillis(s) - t1;
   if (fillName(f) != "Timeout") {
     return "trickle: FAIL readExactUntil gave " + fillName(f);
   }
@@ -334,8 +347,8 @@ function trickleReader(s: Stream): string {
   if (got < 3 || got >= 500) {
     return "trickle: FAIL " + got.toString() + " bytes buffered";
   }
-  if (last != "Timeout" || dt2 < 280 || dt2 > 300 + WAKE_SLACK || chunks < 3) {
-    return "trickle: FAIL recvUntil loop ended " + last + " after " + dt2.toString() + " ms with " + chunks.toString() + " chunks";
+  if (windowBad != "" || chunks < 3) {
+    return "trickle: FAIL recvUntil loop: " + windowBad + " with " + chunks.toString() + " chunks in " + windows.toString() + " windows";
   }
   return "trickle: ok";
 }

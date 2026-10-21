@@ -1,0 +1,1 @@
+- **std:net: macOS cancel-storm and trickle flakes.** Network waits retry ENOBUFS/ENOMEM and poll resource errors instead of surfacing Os, keep waiting (in short slices) when the wake descriptor cannot be made, and report Cancelled for any error after the task's token was set; the `trickle` interrupt test repeats its 300 ms window until 3 chunks arrive.
