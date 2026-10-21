@@ -955,8 +955,9 @@ static int net_cancelled(void) { /* 1 when the bound token or an ancestor is set
 
 /* what is left of a wait of `ms` that began at t0 (ms when the clock fails: the operation then keeps its per-wait bound) */
 static int net_left(int64_t t0, int ms) {
-    int64_t now = orin_platform_monotonic_millis(), left = ms - (now - t0);
-    return ms < 0 || ms > ORIN_PLATFORM_NET_MAXMS || now < 0 || t0 < 0 ? ms : left < 0 ? 0 : left > ms ? ms : (int)left;
+    int64_t now = orin_platform_monotonic_millis();
+    if (ms < 0 || ms > ORIN_PLATFORM_NET_MAXMS || now < 0 || t0 < 0 || now < t0) return ms; /* both clocks >= 0: no overflow below */
+    return now - t0 >= ms ? 0 : ms - (int)(now - t0);
 }
 
 /* Errors a wait can see that say "not now" and not "never": poll/send/accept running out of kernel buffers (macOS reports ENOBUFS
@@ -1048,15 +1049,15 @@ int orin_platform_tcp_accept(const orin_platform_net *l, int timeout_ms, int opt
     struct sockaddr_storage ss;
     socklen_t sl;
     char serv[16];
-    int fd, e;
+    int fd, e, tries;
     int64_t t0 = orin_platform_monotonic_millis();
-    for (;;) {
+    for (tries = 0;; tries++) {
         if ((e = net_wait(l->fd, POLLIN, net_left(t0, timeout_ms)))) return e;
         sl = sizeof ss;
         fd = accept(l->fd, (struct sockaddr *)&ss, &sl);
         if (fd >= 0 || (errno != ENOBUFS && errno != ENOMEM)) break;
-        if ((e = net_pause())) return e; /* out of kernel buffers: not now; retry until the deadline */
-        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+        if ((e = net_pause())) return e; /* out of kernel buffers: not now. One retry, then Timeout (callers retry against their deadline) */
+        if (tries >= 1 || net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
     }
     if (fd >= 0 && (pcap == 0 || getnameinfo((struct sockaddr *)&ss, sl, peer, (socklen_t)pcap, serv, sizeof serv,
                                              NI_NUMERICHOST | NI_NUMERICSERV)))
@@ -1091,7 +1092,7 @@ int orin_platform_stream_recv(const orin_platform_net *s, char *buf, size_t cap,
     if (net_ok(s, ORIN_PLATFORM_NET_STREAM)) return ORIN_PLATFORM_EPERM;
     if (cap == 0) return ORIN_PLATFORM_EINVAL;
     int64_t t0 = orin_platform_monotonic_millis();
-    for (;;) {
+    for (int tries = 0;; tries++) {
         int e = net_wait(s->fd, POLLIN, net_left(t0, timeout_ms));
         if (e) return e;
         ssize_t n = recv(s->fd, buf, cap, MSG_DONTWAIT);
@@ -1099,7 +1100,7 @@ int orin_platform_stream_recv(const orin_platform_net *s, char *buf, size_t cap,
         if (n == 0) return ORIN_PLATFORM_NET_EOF;
         if (errno != ENOBUFS && errno != ENOMEM) return net_fin(net_err(errno));
         if ((e = net_pause())) return e;
-        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+        if (tries >= 1 || net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT; /* one retry, then Timeout (callers retry) */
     }
 }
 
@@ -1107,14 +1108,14 @@ int orin_platform_stream_send(const orin_platform_net *s, const char *data, size
     *out_sent = 0;
     if (net_ok(s, ORIN_PLATFORM_NET_STREAM)) return ORIN_PLATFORM_EPERM;
     int64_t t0 = orin_platform_monotonic_millis();
-    for (;;) {
+    for (int tries = 0;; tries++) {
         int e = net_wait(s->fd, POLLOUT, net_left(t0, timeout_ms));
         if (e || len == 0) return e;
         ssize_t n = send(s->fd, data, len, NET_SEND_FLAGS);
         if (n >= 0 && (size_t)n <= len) return *out_sent = (size_t)n, 0;
         if (errno != ENOBUFS && errno != ENOMEM) return net_fin(net_err(errno));
         if ((e = net_pause())) return e; /* macOS: ENOBUFS from a loopback send under load; wait for buffers, do not fail */
-        if (net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT;
+        if (tries >= 1 || net_left(t0, timeout_ms) == 0) return ORIN_PLATFORM_NET_TIMEOUT; /* one retry, then Timeout (sendAll retries) */
     }
 }
 
