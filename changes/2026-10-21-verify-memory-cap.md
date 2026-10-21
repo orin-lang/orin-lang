@@ -1,0 +1,1 @@
+- **verify --contracts: z3 memory cap.** Each solver run gets `-memory:${ORIN_Z3_MEMORY_MB:-3000}` (uncapped, one z3 reached 8 GB and four 10.7 GB on the ratchet); a query that hits it is a memory unknown and is not cached. The CI ratchet has a 75 minute budget and saves its answer cache under a per-attempt key even when it fails, so a re-run continues.
