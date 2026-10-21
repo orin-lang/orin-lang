@@ -443,7 +443,7 @@ function queryMs(lim: SolverLimits, base: string): int {
 // ran to the end (exit status 0 or 1) and the answer may be kept. The script never fails itself: a missing solver is
 // the exit status 127 in BASE.rc.
 function solveScript(z3: string, lim: SolverLimits, version: string): string {
-  let t = "#!/bin/sh\n# written by `orin verify --contracts`: sh solve.sh BASE MS HARD RLIMIT\nb=$1; ms=$2; hard=$3; rl=$4\nx=\nif [ \"$rl\" -gt 0 ]; then x=\"rlimit=$rl\"; fi\n";
+  let t = "#!/bin/sh\n# written by `orin verify --contracts`: sh solve.sh BASE MS HARD RLIMIT\nb=$1; ms=$2; hard=$3; rl=$4\nx=\"-memory:${ORIN_Z3_MEMORY_MB:-3000}\"\nif [ \"$rl\" -gt 0 ]; then x=\"$x rlimit=$rl\"; fi\n";
   const run = z3 + " -in -t:$ms -T:$hard $x < \"$b.smt2\" > \"$b.out\" 2>&1";
   if (lim.cacheDir == "") {
     return t + run + "\nprintf '%s run\\n' $? | tee -a " + STATS_LOG + " > \"$b.rc\"\n";

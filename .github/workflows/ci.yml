@@ -259,18 +259,33 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/verify-cache
-          key: verify-cache-${{ env.Z3_KEY }}-${{ github.sha }}
+          # the key is new in every attempt (a cache entry cannot be overwritten), the prefix restores the newest earlier one
+          key: verify-cache-${{ env.Z3_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: verify-cache-${{ env.Z3_KEY }}-
       - name: Verification ratchet (no new UNKNOWN, no REFUTED)
         if: steps.rel.outputs.run == 'true'
-        run: python3 tools/verify_ratchet.py --check --orin "$PWD/build/bootstrap/orin2" --cache-dir "$PWD/build/verify-cache" --threads 4
+        run: |
+          # A cold run takes about 70 minutes on 4 cores, a warm one 7. The budget below ends the run by itself, so the cache
+          # step after it still runs and stores what was solved; the next attempt continues from there. Each z3 is capped
+          # (ORIN_Z3_MEMORY_MB, default 3000: 4 of them stay below 12 of the 16 GB of the runner, a memory unknown is not cached).
+          mkdir -p build/verify-cache
+          ( while sleep 300; do echo "--- $(date +%T) $(free -m | awk '/Mem:/{print "mem used " $3 " MB, available " $7 " MB"}'), disk free $(df -m . | awk 'NR==2{print $4}') MB, cache entries $(ls build/verify-cache | wc -l)"; done ) &
+          mon=$!
+          set +e
+          timeout -k 60 75m python3 tools/verify_ratchet.py --check --orin "$PWD/build/bootstrap/orin2" --cache-dir "$PWD/build/verify-cache" --threads 4
+          rc=$?
+          kill $mon 2>/dev/null
+          if [ "$rc" = 124 ]; then
+            echo "::error::verification ratchet: out of time budget (75 min). The answers solved so far (cache entries: $(ls build/verify-cache | wc -l)) are saved by the next step; re-run this job, it continues from them."
+          fi
+          exit $rc
       - name: Save the verifier's answer cache
         if: always() && steps.rel.outputs.run == 'true'
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: build/verify-cache
-          key: verify-cache-${{ env.Z3_KEY }}-${{ github.sha }}
+          key: verify-cache-${{ env.Z3_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   tooling:
     needs: build
