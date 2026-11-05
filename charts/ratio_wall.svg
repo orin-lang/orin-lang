@@ -27,49 +27,51 @@
 <text class="t2" x="24.0" y="157.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 157.0)">ratio to C</text>
 <line class="ref" x1="64.0" y1="197.2" x2="292.0" y2="197.2" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="78.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="125.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="172.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="219.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="266.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="278.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M78.0,115.4 L89.8,129.8 L101.5,115.4 L113.3,107.7 L125.1,120.8 L136.8,107.0 L148.6,120.0 L160.4,144.8 L172.1,105.8 L183.9,135.6 L195.6,141.7 L207.4,142.5 L219.2,145.9 L230.9,156.0 L242.7,141.4 L254.5,144.4 L266.2,113.1 L278.0,134.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="122.4" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="166.9" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="211.3" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="255.8" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="278.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M78.0,115.4 L89.1,129.8 L100.2,115.4 L111.3,107.7 L122.4,120.8 L133.6,107.0 L144.7,120.0 L155.8,144.8 L166.9,105.8 L178.0,135.6 L189.1,141.7 L200.2,142.5 L211.3,145.9 L222.4,156.0 L233.6,141.4 L244.7,144.4 L255.8,113.1 L266.9,134.8 L278.0,146.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="115.4" r="4" stroke-width="2"><title>10-18: 1.611</title></circle>
-<circle class="s1 ring" cx="89.8" cy="129.8" r="4" stroke-width="2"><title>10-19: 1.503</title></circle>
-<circle class="s1 ring" cx="101.5" cy="115.4" r="4" stroke-width="2"><title>10-20: 1.61</title></circle>
-<circle class="s1 ring" cx="113.3" cy="107.7" r="4" stroke-width="2"><title>10-21: 1.668</title></circle>
-<circle class="s1 ring" cx="125.1" cy="120.8" r="4" stroke-width="2"><title>10-22: 1.57</title></circle>
-<circle class="s1 ring" cx="136.8" cy="107.0" r="4" stroke-width="2"><title>10-23: 1.673</title></circle>
-<circle class="s1 ring" cx="148.6" cy="120.0" r="4" stroke-width="2"><title>10-24: 1.576</title></circle>
-<circle class="s1 ring" cx="160.4" cy="144.8" r="4" stroke-width="2"><title>10-25: 1.391</title></circle>
-<circle class="s1 ring" cx="172.1" cy="105.8" r="4" stroke-width="2"><title>10-26: 1.682</title></circle>
-<circle class="s1 ring" cx="183.9" cy="135.6" r="4" stroke-width="2"><title>10-27: 1.46</title></circle>
-<circle class="s1 ring" cx="195.6" cy="141.7" r="4" stroke-width="2"><title>10-28: 1.414</title></circle>
-<circle class="s1 ring" cx="207.4" cy="142.5" r="4" stroke-width="2"><title>10-29: 1.408</title></circle>
-<circle class="s1 ring" cx="219.2" cy="145.9" r="4" stroke-width="2"><title>10-30: 1.382</title></circle>
-<circle class="s1 ring" cx="230.9" cy="156.0" r="4" stroke-width="2"><title>10-31: 1.308</title></circle>
-<circle class="s1 ring" cx="242.7" cy="141.4" r="4" stroke-width="2"><title>11-01: 1.416</title></circle>
-<circle class="s1 ring" cx="254.5" cy="144.4" r="4" stroke-width="2"><title>11-02: 1.394</title></circle>
-<circle class="s1 ring" cx="266.2" cy="113.1" r="4" stroke-width="2"><title>11-03: 1.627</title></circle>
-<circle class="s1 ring" cx="278.0" cy="134.8" r="4" stroke-width="2"><title>11-04: 1.465</title></circle>
-<path class="s2" d="M78.0,144.7 L89.8,167.1 L101.5,153.5 L113.3,124.3 L125.1,145.4 L136.8,129.7 L148.6,144.6 L160.4,173.9 L172.1,130.4 L183.9,143.5 L195.6,157.8 L207.4,150.6 L219.2,172.4 L230.9,180.0 L242.7,162.0 L254.5,174.1 L266.2,135.0 L278.0,160.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="89.1" cy="129.8" r="4" stroke-width="2"><title>10-19: 1.503</title></circle>
+<circle class="s1 ring" cx="100.2" cy="115.4" r="4" stroke-width="2"><title>10-20: 1.61</title></circle>
+<circle class="s1 ring" cx="111.3" cy="107.7" r="4" stroke-width="2"><title>10-21: 1.668</title></circle>
+<circle class="s1 ring" cx="122.4" cy="120.8" r="4" stroke-width="2"><title>10-22: 1.57</title></circle>
+<circle class="s1 ring" cx="133.6" cy="107.0" r="4" stroke-width="2"><title>10-23: 1.673</title></circle>
+<circle class="s1 ring" cx="144.7" cy="120.0" r="4" stroke-width="2"><title>10-24: 1.576</title></circle>
+<circle class="s1 ring" cx="155.8" cy="144.8" r="4" stroke-width="2"><title>10-25: 1.391</title></circle>
+<circle class="s1 ring" cx="166.9" cy="105.8" r="4" stroke-width="2"><title>10-26: 1.682</title></circle>
+<circle class="s1 ring" cx="178.0" cy="135.6" r="4" stroke-width="2"><title>10-27: 1.46</title></circle>
+<circle class="s1 ring" cx="189.1" cy="141.7" r="4" stroke-width="2"><title>10-28: 1.414</title></circle>
+<circle class="s1 ring" cx="200.2" cy="142.5" r="4" stroke-width="2"><title>10-29: 1.408</title></circle>
+<circle class="s1 ring" cx="211.3" cy="145.9" r="4" stroke-width="2"><title>10-30: 1.382</title></circle>
+<circle class="s1 ring" cx="222.4" cy="156.0" r="4" stroke-width="2"><title>10-31: 1.308</title></circle>
+<circle class="s1 ring" cx="233.6" cy="141.4" r="4" stroke-width="2"><title>11-01: 1.416</title></circle>
+<circle class="s1 ring" cx="244.7" cy="144.4" r="4" stroke-width="2"><title>11-02: 1.394</title></circle>
+<circle class="s1 ring" cx="255.8" cy="113.1" r="4" stroke-width="2"><title>11-03: 1.627</title></circle>
+<circle class="s1 ring" cx="266.9" cy="134.8" r="4" stroke-width="2"><title>11-04: 1.465</title></circle>
+<circle class="s1 ring" cx="278.0" cy="146.6" r="4" stroke-width="2"><title>11-05: 1.378</title></circle>
+<path class="s2" d="M78.0,144.7 L89.1,167.1 L100.2,153.5 L111.3,124.3 L122.4,145.4 L133.6,129.7 L144.7,144.6 L155.8,173.9 L166.9,130.4 L178.0,143.5 L189.1,157.8 L200.2,150.6 L211.3,172.4 L222.4,180.0 L233.6,162.0 L244.7,174.1 L255.8,135.0 L266.9,160.2 L278.0,172.3" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="78.0" cy="144.7" r="4" stroke-width="2"><title>10-18: 1.391</title></circle>
-<circle class="s2 ring" cx="89.8" cy="167.1" r="4" stroke-width="2"><title>10-19: 1.224</title></circle>
-<circle class="s2 ring" cx="101.5" cy="153.5" r="4" stroke-width="2"><title>10-20: 1.326</title></circle>
-<circle class="s2 ring" cx="113.3" cy="124.3" r="4" stroke-width="2"><title>10-21: 1.544</title></circle>
-<circle class="s2 ring" cx="125.1" cy="145.4" r="4" stroke-width="2"><title>10-22: 1.387</title></circle>
-<circle class="s2 ring" cx="136.8" cy="129.7" r="4" stroke-width="2"><title>10-23: 1.504</title></circle>
-<circle class="s2 ring" cx="148.6" cy="144.6" r="4" stroke-width="2"><title>10-24: 1.392</title></circle>
-<circle class="s2 ring" cx="160.4" cy="173.9" r="4" stroke-width="2"><title>10-25: 1.174</title></circle>
-<circle class="s2 ring" cx="172.1" cy="130.4" r="4" stroke-width="2"><title>10-26: 1.498</title></circle>
-<circle class="s2 ring" cx="183.9" cy="143.5" r="4" stroke-width="2"><title>10-27: 1.401</title></circle>
-<circle class="s2 ring" cx="195.6" cy="157.8" r="4" stroke-width="2"><title>10-28: 1.294</title></circle>
-<circle class="s2 ring" cx="207.4" cy="150.6" r="4" stroke-width="2"><title>10-29: 1.348</title></circle>
-<circle class="s2 ring" cx="219.2" cy="172.4" r="4" stroke-width="2"><title>10-30: 1.185</title></circle>
-<circle class="s2 ring" cx="230.9" cy="180.0" r="4" stroke-width="2"><title>10-31: 1.128</title></circle>
-<circle class="s2 ring" cx="242.7" cy="162.0" r="4" stroke-width="2"><title>11-01: 1.263</title></circle>
-<circle class="s2 ring" cx="254.5" cy="174.1" r="4" stroke-width="2"><title>11-02: 1.172</title></circle>
-<circle class="s2 ring" cx="266.2" cy="135.0" r="4" stroke-width="2"><title>11-03: 1.464</title></circle>
-<circle class="s2 ring" cx="278.0" cy="160.2" r="4" stroke-width="2"><title>11-04: 1.276</title></circle>
+<circle class="s2 ring" cx="89.1" cy="167.1" r="4" stroke-width="2"><title>10-19: 1.224</title></circle>
+<circle class="s2 ring" cx="100.2" cy="153.5" r="4" stroke-width="2"><title>10-20: 1.326</title></circle>
+<circle class="s2 ring" cx="111.3" cy="124.3" r="4" stroke-width="2"><title>10-21: 1.544</title></circle>
+<circle class="s2 ring" cx="122.4" cy="145.4" r="4" stroke-width="2"><title>10-22: 1.387</title></circle>
+<circle class="s2 ring" cx="133.6" cy="129.7" r="4" stroke-width="2"><title>10-23: 1.504</title></circle>
+<circle class="s2 ring" cx="144.7" cy="144.6" r="4" stroke-width="2"><title>10-24: 1.392</title></circle>
+<circle class="s2 ring" cx="155.8" cy="173.9" r="4" stroke-width="2"><title>10-25: 1.174</title></circle>
+<circle class="s2 ring" cx="166.9" cy="130.4" r="4" stroke-width="2"><title>10-26: 1.498</title></circle>
+<circle class="s2 ring" cx="178.0" cy="143.5" r="4" stroke-width="2"><title>10-27: 1.401</title></circle>
+<circle class="s2 ring" cx="189.1" cy="157.8" r="4" stroke-width="2"><title>10-28: 1.294</title></circle>
+<circle class="s2 ring" cx="200.2" cy="150.6" r="4" stroke-width="2"><title>10-29: 1.348</title></circle>
+<circle class="s2 ring" cx="211.3" cy="172.4" r="4" stroke-width="2"><title>10-30: 1.185</title></circle>
+<circle class="s2 ring" cx="222.4" cy="180.0" r="4" stroke-width="2"><title>10-31: 1.128</title></circle>
+<circle class="s2 ring" cx="233.6" cy="162.0" r="4" stroke-width="2"><title>11-01: 1.263</title></circle>
+<circle class="s2 ring" cx="244.7" cy="174.1" r="4" stroke-width="2"><title>11-02: 1.172</title></circle>
+<circle class="s2 ring" cx="255.8" cy="135.0" r="4" stroke-width="2"><title>11-03: 1.464</title></circle>
+<circle class="s2 ring" cx="266.9" cy="160.2" r="4" stroke-width="2"><title>11-04: 1.276</title></circle>
+<circle class="s2 ring" cx="278.0" cy="172.3" r="4" stroke-width="2"><title>11-05: 1.186</title></circle>
 <text class="t" x="312.0" y="77.0" font-size="13" text-anchor="start" font-weight="600">bintrees</text>
 <line class="grid" x1="364.0" y1="224.0" x2="592.0" y2="224.0" stroke-width="1"/>
 <text class="t2" x="358.0" y="228.0" font-size="11" text-anchor="end" font-weight="normal">0.4</text>
@@ -84,49 +86,51 @@
 <text class="t2" x="324.0" y="157.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 324.0 157.0)">ratio to C</text>
 <line class="ref" x1="364.0" y1="123.5" x2="592.0" y2="123.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="378.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="425.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="472.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="519.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="566.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="578.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M378.0,178.6 L389.8,153.5 L401.5,189.5 L413.3,191.6 L425.1,175.4 L436.8,170.1 L448.6,176.3 L460.4,159.3 L472.1,168.3 L483.9,176.2 L495.6,152.5 L507.4,148.4 L519.2,163.7 L530.9,160.8 L542.7,157.8 L554.5,159.2 L566.2,167.1 L578.0,164.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="422.4" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="466.9" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="511.3" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="555.8" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="578.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M378.0,178.6 L389.1,153.5 L400.2,189.5 L411.3,191.6 L422.4,175.4 L433.6,170.1 L444.7,176.3 L455.8,159.3 L466.9,168.3 L478.0,176.2 L489.1,152.5 L500.2,148.4 L511.3,163.7 L522.4,160.8 L533.6,157.8 L544.7,159.2 L555.8,167.1 L566.9,164.8 L578.0,159.3" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="378.0" cy="178.6" r="4" stroke-width="2"><title>10-18: 0.671</title></circle>
-<circle class="s1 ring" cx="389.8" cy="153.5" r="4" stroke-width="2"><title>10-19: 0.821</title></circle>
-<circle class="s1 ring" cx="401.5" cy="189.5" r="4" stroke-width="2"><title>10-20: 0.606</title></circle>
-<circle class="s1 ring" cx="413.3" cy="191.6" r="4" stroke-width="2"><title>10-21: 0.593</title></circle>
-<circle class="s1 ring" cx="425.1" cy="175.4" r="4" stroke-width="2"><title>10-22: 0.69</title></circle>
-<circle class="s1 ring" cx="436.8" cy="170.1" r="4" stroke-width="2"><title>10-23: 0.722</title></circle>
-<circle class="s1 ring" cx="448.6" cy="176.3" r="4" stroke-width="2"><title>10-24: 0.685</title></circle>
-<circle class="s1 ring" cx="460.4" cy="159.3" r="4" stroke-width="2"><title>10-25: 0.786</title></circle>
-<circle class="s1 ring" cx="472.1" cy="168.3" r="4" stroke-width="2"><title>10-26: 0.733</title></circle>
-<circle class="s1 ring" cx="483.9" cy="176.2" r="4" stroke-width="2"><title>10-27: 0.685</title></circle>
-<circle class="s1 ring" cx="495.6" cy="152.5" r="4" stroke-width="2"><title>10-28: 0.827</title></circle>
-<circle class="s1 ring" cx="507.4" cy="148.4" r="4" stroke-width="2"><title>10-29: 0.851</title></circle>
-<circle class="s1 ring" cx="519.2" cy="163.7" r="4" stroke-width="2"><title>10-30: 0.76</title></circle>
-<circle class="s1 ring" cx="530.9" cy="160.8" r="4" stroke-width="2"><title>10-31: 0.778</title></circle>
-<circle class="s1 ring" cx="542.7" cy="157.8" r="4" stroke-width="2"><title>11-01: 0.795</title></circle>
-<circle class="s1 ring" cx="554.5" cy="159.2" r="4" stroke-width="2"><title>11-02: 0.787</title></circle>
-<circle class="s1 ring" cx="566.2" cy="167.1" r="4" stroke-width="2"><title>11-03: 0.74</title></circle>
-<circle class="s1 ring" cx="578.0" cy="164.8" r="4" stroke-width="2"><title>11-04: 0.754</title></circle>
-<path class="s2" d="M378.0,173.2 L389.8,145.6 L401.5,181.6 L413.3,192.0 L425.1,171.9 L436.8,170.9 L448.6,175.8 L460.4,166.7 L472.1,167.8 L483.9,173.2 L495.6,142.2 L507.4,138.7 L519.2,169.3 L530.9,166.0 L542.7,152.8 L554.5,164.9 L566.2,168.0 L578.0,166.4" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="389.1" cy="153.5" r="4" stroke-width="2"><title>10-19: 0.821</title></circle>
+<circle class="s1 ring" cx="400.2" cy="189.5" r="4" stroke-width="2"><title>10-20: 0.606</title></circle>
+<circle class="s1 ring" cx="411.3" cy="191.6" r="4" stroke-width="2"><title>10-21: 0.593</title></circle>
+<circle class="s1 ring" cx="422.4" cy="175.4" r="4" stroke-width="2"><title>10-22: 0.69</title></circle>
+<circle class="s1 ring" cx="433.6" cy="170.1" r="4" stroke-width="2"><title>10-23: 0.722</title></circle>
+<circle class="s1 ring" cx="444.7" cy="176.3" r="4" stroke-width="2"><title>10-24: 0.685</title></circle>
+<circle class="s1 ring" cx="455.8" cy="159.3" r="4" stroke-width="2"><title>10-25: 0.786</title></circle>
+<circle class="s1 ring" cx="466.9" cy="168.3" r="4" stroke-width="2"><title>10-26: 0.733</title></circle>
+<circle class="s1 ring" cx="478.0" cy="176.2" r="4" stroke-width="2"><title>10-27: 0.685</title></circle>
+<circle class="s1 ring" cx="489.1" cy="152.5" r="4" stroke-width="2"><title>10-28: 0.827</title></circle>
+<circle class="s1 ring" cx="500.2" cy="148.4" r="4" stroke-width="2"><title>10-29: 0.851</title></circle>
+<circle class="s1 ring" cx="511.3" cy="163.7" r="4" stroke-width="2"><title>10-30: 0.76</title></circle>
+<circle class="s1 ring" cx="522.4" cy="160.8" r="4" stroke-width="2"><title>10-31: 0.778</title></circle>
+<circle class="s1 ring" cx="533.6" cy="157.8" r="4" stroke-width="2"><title>11-01: 0.795</title></circle>
+<circle class="s1 ring" cx="544.7" cy="159.2" r="4" stroke-width="2"><title>11-02: 0.787</title></circle>
+<circle class="s1 ring" cx="555.8" cy="167.1" r="4" stroke-width="2"><title>11-03: 0.74</title></circle>
+<circle class="s1 ring" cx="566.9" cy="164.8" r="4" stroke-width="2"><title>11-04: 0.754</title></circle>
+<circle class="s1 ring" cx="578.0" cy="159.3" r="4" stroke-width="2"><title>11-05: 0.786</title></circle>
+<path class="s2" d="M378.0,173.2 L389.1,145.6 L400.2,181.6 L411.3,192.0 L422.4,171.9 L433.6,170.9 L444.7,175.8 L455.8,166.7 L466.9,167.8 L478.0,173.2 L489.1,142.2 L500.2,138.7 L511.3,169.3 L522.4,166.0 L533.6,152.8 L544.7,164.9 L555.8,168.0 L566.9,166.4 L578.0,165.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="378.0" cy="173.2" r="4" stroke-width="2"><title>10-18: 0.703</title></circle>
-<circle class="s2 ring" cx="389.8" cy="145.6" r="4" stroke-width="2"><title>10-19: 0.868</title></circle>
-<circle class="s2 ring" cx="401.5" cy="181.6" r="4" stroke-width="2"><title>10-20: 0.653</title></circle>
-<circle class="s2 ring" cx="413.3" cy="192.0" r="4" stroke-width="2"><title>10-21: 0.591</title></circle>
-<circle class="s2 ring" cx="425.1" cy="171.9" r="4" stroke-width="2"><title>10-22: 0.711</title></circle>
-<circle class="s2 ring" cx="436.8" cy="170.9" r="4" stroke-width="2"><title>10-23: 0.717</title></circle>
-<circle class="s2 ring" cx="448.6" cy="175.8" r="4" stroke-width="2"><title>10-24: 0.688</title></circle>
-<circle class="s2 ring" cx="460.4" cy="166.7" r="4" stroke-width="2"><title>10-25: 0.742</title></circle>
-<circle class="s2 ring" cx="472.1" cy="167.8" r="4" stroke-width="2"><title>10-26: 0.736</title></circle>
-<circle class="s2 ring" cx="483.9" cy="173.2" r="4" stroke-width="2"><title>10-27: 0.703</title></circle>
-<circle class="s2 ring" cx="495.6" cy="142.2" r="4" stroke-width="2"><title>10-28: 0.889</title></circle>
-<circle class="s2 ring" cx="507.4" cy="138.7" r="4" stroke-width="2"><title>10-29: 0.909</title></circle>
-<circle class="s2 ring" cx="519.2" cy="169.3" r="4" stroke-width="2"><title>10-30: 0.727</title></circle>
-<circle class="s2 ring" cx="530.9" cy="166.0" r="4" stroke-width="2"><title>10-31: 0.746</title></circle>
-<circle class="s2 ring" cx="542.7" cy="152.8" r="4" stroke-width="2"><title>11-01: 0.825</title></circle>
-<circle class="s2 ring" cx="554.5" cy="164.9" r="4" stroke-width="2"><title>11-02: 0.753</title></circle>
-<circle class="s2 ring" cx="566.2" cy="168.0" r="4" stroke-width="2"><title>11-03: 0.734</title></circle>
-<circle class="s2 ring" cx="578.0" cy="166.4" r="4" stroke-width="2"><title>11-04: 0.744</title></circle>
+<circle class="s2 ring" cx="389.1" cy="145.6" r="4" stroke-width="2"><title>10-19: 0.868</title></circle>
+<circle class="s2 ring" cx="400.2" cy="181.6" r="4" stroke-width="2"><title>10-20: 0.653</title></circle>
+<circle class="s2 ring" cx="411.3" cy="192.0" r="4" stroke-width="2"><title>10-21: 0.591</title></circle>
+<circle class="s2 ring" cx="422.4" cy="171.9" r="4" stroke-width="2"><title>10-22: 0.711</title></circle>
+<circle class="s2 ring" cx="433.6" cy="170.9" r="4" stroke-width="2"><title>10-23: 0.717</title></circle>
+<circle class="s2 ring" cx="444.7" cy="175.8" r="4" stroke-width="2"><title>10-24: 0.688</title></circle>
+<circle class="s2 ring" cx="455.8" cy="166.7" r="4" stroke-width="2"><title>10-25: 0.742</title></circle>
+<circle class="s2 ring" cx="466.9" cy="167.8" r="4" stroke-width="2"><title>10-26: 0.736</title></circle>
+<circle class="s2 ring" cx="478.0" cy="173.2" r="4" stroke-width="2"><title>10-27: 0.703</title></circle>
+<circle class="s2 ring" cx="489.1" cy="142.2" r="4" stroke-width="2"><title>10-28: 0.889</title></circle>
+<circle class="s2 ring" cx="500.2" cy="138.7" r="4" stroke-width="2"><title>10-29: 0.909</title></circle>
+<circle class="s2 ring" cx="511.3" cy="169.3" r="4" stroke-width="2"><title>10-30: 0.727</title></circle>
+<circle class="s2 ring" cx="522.4" cy="166.0" r="4" stroke-width="2"><title>10-31: 0.746</title></circle>
+<circle class="s2 ring" cx="533.6" cy="152.8" r="4" stroke-width="2"><title>11-01: 0.825</title></circle>
+<circle class="s2 ring" cx="544.7" cy="164.9" r="4" stroke-width="2"><title>11-02: 0.753</title></circle>
+<circle class="s2 ring" cx="555.8" cy="168.0" r="4" stroke-width="2"><title>11-03: 0.734</title></circle>
+<circle class="s2 ring" cx="566.9" cy="166.4" r="4" stroke-width="2"><title>11-04: 0.744</title></circle>
+<circle class="s2 ring" cx="578.0" cy="165.2" r="4" stroke-width="2"><title>11-05: 0.751</title></circle>
 <text class="t" x="612.0" y="77.0" font-size="13" text-anchor="start" font-weight="600">bytesstr</text>
 <line class="grid" x1="664.0" y1="224.0" x2="892.0" y2="224.0" stroke-width="1"/>
 <text class="t2" x="658.0" y="228.0" font-size="11" text-anchor="end" font-weight="normal">0.5</text>
@@ -139,49 +143,51 @@
 <text class="t2" x="624.0" y="157.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 624.0 157.0)">ratio to C</text>
 <line class="ref" x1="664.0" y1="179.3" x2="892.0" y2="179.3" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="678.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="725.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="772.1" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="819.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="866.2" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="878.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M678.0,98.7 L689.8,171.8 L701.5,99.6 L713.3,125.2 L725.1,123.3 L736.8,116.5 L748.6,99.7 L760.4,117.4 L772.1,109.3 L783.9,104.7 L795.6,182.8 L807.4,174.0 L819.2,138.3 L830.9,132.6 L842.7,167.4 L854.5,134.6 L866.2,132.1 L878.0,125.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="722.4" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="766.9" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="811.3" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="855.8" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="878.0" y="239.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M678.0,98.7 L689.1,171.8 L700.2,99.6 L711.3,125.2 L722.4,123.3 L733.6,116.5 L744.7,99.7 L755.8,117.4 L766.9,109.3 L778.0,104.7 L789.1,182.8 L800.2,174.0 L811.3,138.3 L822.4,132.6 L833.6,167.4 L844.7,134.6 L855.8,132.1 L866.9,125.7 L878.0,135.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="678.0" cy="98.7" r="4" stroke-width="2"><title>10-18: 1.902</title></circle>
-<circle class="s1 ring" cx="689.8" cy="171.8" r="4" stroke-width="2"><title>10-19: 1.084</title></circle>
-<circle class="s1 ring" cx="701.5" cy="99.6" r="4" stroke-width="2"><title>10-20: 1.893</title></circle>
-<circle class="s1 ring" cx="713.3" cy="125.2" r="4" stroke-width="2"><title>10-21: 1.606</title></circle>
-<circle class="s1 ring" cx="725.1" cy="123.3" r="4" stroke-width="2"><title>10-22: 1.628</title></circle>
-<circle class="s1 ring" cx="736.8" cy="116.5" r="4" stroke-width="2"><title>10-23: 1.703</title></circle>
-<circle class="s1 ring" cx="748.6" cy="99.7" r="4" stroke-width="2"><title>10-24: 1.891</title></circle>
-<circle class="s1 ring" cx="760.4" cy="117.4" r="4" stroke-width="2"><title>10-25: 1.694</title></circle>
-<circle class="s1 ring" cx="772.1" cy="109.3" r="4" stroke-width="2"><title>10-26: 1.784</title></circle>
-<circle class="s1 ring" cx="783.9" cy="104.7" r="4" stroke-width="2"><title>10-27: 1.835</title></circle>
-<circle class="s1 ring" cx="795.6" cy="182.8" r="4" stroke-width="2"><title>10-28: 0.961</title></circle>
-<circle class="s1 ring" cx="807.4" cy="174.0" r="4" stroke-width="2"><title>10-29: 1.06</title></circle>
-<circle class="s1 ring" cx="819.2" cy="138.3" r="4" stroke-width="2"><title>10-30: 1.459</title></circle>
-<circle class="s1 ring" cx="830.9" cy="132.6" r="4" stroke-width="2"><title>10-31: 1.523</title></circle>
-<circle class="s1 ring" cx="842.7" cy="167.4" r="4" stroke-width="2"><title>11-01: 1.134</title></circle>
-<circle class="s1 ring" cx="854.5" cy="134.6" r="4" stroke-width="2"><title>11-02: 1.501</title></circle>
-<circle class="s1 ring" cx="866.2" cy="132.1" r="4" stroke-width="2"><title>11-03: 1.529</title></circle>
-<circle class="s1 ring" cx="878.0" cy="125.7" r="4" stroke-width="2"><title>11-04: 1.601</title></circle>
-<path class="s2" d="M678.0,125.4 L689.8,174.9 L701.5,124.8 L713.3,139.8 L725.1,143.9 L736.8,133.9 L748.6,125.1 L760.4,142.9 L772.1,131.0 L783.9,129.5 L795.6,186.7 L807.4,188.1 L819.2,156.4 L830.9,154.5 L842.7,175.3 L854.5,155.4 L866.2,145.9 L878.0,141.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="689.1" cy="171.8" r="4" stroke-width="2"><title>10-19: 1.084</title></circle>
+<circle class="s1 ring" cx="700.2" cy="99.6" r="4" stroke-width="2"><title>10-20: 1.893</title></circle>
+<circle class="s1 ring" cx="711.3" cy="125.2" r="4" stroke-width="2"><title>10-21: 1.606</title></circle>
+<circle class="s1 ring" cx="722.4" cy="123.3" r="4" stroke-width="2"><title>10-22: 1.628</title></circle>
+<circle class="s1 ring" cx="733.6" cy="116.5" r="4" stroke-width="2"><title>10-23: 1.703</title></circle>
+<circle class="s1 ring" cx="744.7" cy="99.7" r="4" stroke-width="2"><title>10-24: 1.891</title></circle>
+<circle class="s1 ring" cx="755.8" cy="117.4" r="4" stroke-width="2"><title>10-25: 1.694</title></circle>
+<circle class="s1 ring" cx="766.9" cy="109.3" r="4" stroke-width="2"><title>10-26: 1.784</title></circle>
+<circle class="s1 ring" cx="778.0" cy="104.7" r="4" stroke-width="2"><title>10-27: 1.835</title></circle>
+<circle class="s1 ring" cx="789.1" cy="182.8" r="4" stroke-width="2"><title>10-28: 0.961</title></circle>
+<circle class="s1 ring" cx="800.2" cy="174.0" r="4" stroke-width="2"><title>10-29: 1.06</title></circle>
+<circle class="s1 ring" cx="811.3" cy="138.3" r="4" stroke-width="2"><title>10-30: 1.459</title></circle>
+<circle class="s1 ring" cx="822.4" cy="132.6" r="4" stroke-width="2"><title>10-31: 1.523</title></circle>
+<circle class="s1 ring" cx="833.6" cy="167.4" r="4" stroke-width="2"><title>11-01: 1.134</title></circle>
+<circle class="s1 ring" cx="844.7" cy="134.6" r="4" stroke-width="2"><title>11-02: 1.501</title></circle>
+<circle class="s1 ring" cx="855.8" cy="132.1" r="4" stroke-width="2"><title>11-03: 1.529</title></circle>
+<circle class="s1 ring" cx="866.9" cy="125.7" r="4" stroke-width="2"><title>11-04: 1.601</title></circle>
+<circle class="s1 ring" cx="878.0" cy="135.0" r="4" stroke-width="2"><title>11-05: 1.496</title></circle>
+<path class="s2" d="M678.0,125.4 L689.1,174.9 L700.2,124.8 L711.3,139.8 L722.4,143.9 L733.6,133.9 L744.7,125.1 L755.8,142.9 L766.9,131.0 L778.0,129.5 L789.1,186.7 L800.2,188.1 L811.3,156.4 L822.4,154.5 L833.6,175.3 L844.7,155.4 L855.8,145.9 L866.9,141.1 L878.0,154.5" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="678.0" cy="125.4" r="4" stroke-width="2"><title>10-18: 1.603</title></circle>
-<circle class="s2 ring" cx="689.8" cy="174.9" r="4" stroke-width="2"><title>10-19: 1.05</title></circle>
-<circle class="s2 ring" cx="701.5" cy="124.8" r="4" stroke-width="2"><title>10-20: 1.61</title></circle>
-<circle class="s2 ring" cx="713.3" cy="139.8" r="4" stroke-width="2"><title>10-21: 1.442</title></circle>
-<circle class="s2 ring" cx="725.1" cy="143.9" r="4" stroke-width="2"><title>10-22: 1.397</title></circle>
-<circle class="s2 ring" cx="736.8" cy="133.9" r="4" stroke-width="2"><title>10-23: 1.508</title></circle>
-<circle class="s2 ring" cx="748.6" cy="125.1" r="4" stroke-width="2"><title>10-24: 1.607</title></circle>
-<circle class="s2 ring" cx="760.4" cy="142.9" r="4" stroke-width="2"><title>10-25: 1.408</title></circle>
-<circle class="s2 ring" cx="772.1" cy="131.0" r="4" stroke-width="2"><title>10-26: 1.541</title></circle>
-<circle class="s2 ring" cx="783.9" cy="129.5" r="4" stroke-width="2"><title>10-27: 1.558</title></circle>
-<circle class="s2 ring" cx="795.6" cy="186.7" r="4" stroke-width="2"><title>10-28: 0.918</title></circle>
-<circle class="s2 ring" cx="807.4" cy="188.1" r="4" stroke-width="2"><title>10-29: 0.902</title></circle>
-<circle class="s2 ring" cx="819.2" cy="156.4" r="4" stroke-width="2"><title>10-30: 1.257</title></circle>
-<circle class="s2 ring" cx="830.9" cy="154.5" r="4" stroke-width="2"><title>10-31: 1.278</title></circle>
-<circle class="s2 ring" cx="842.7" cy="175.3" r="4" stroke-width="2"><title>11-01: 1.046</title></circle>
-<circle class="s2 ring" cx="854.5" cy="155.4" r="4" stroke-width="2"><title>11-02: 1.268</title></circle>
-<circle class="s2 ring" cx="866.2" cy="145.9" r="4" stroke-width="2"><title>11-03: 1.374</title></circle>
-<circle class="s2 ring" cx="878.0" cy="141.1" r="4" stroke-width="2"><title>11-04: 1.428</title></circle>
+<circle class="s2 ring" cx="689.1" cy="174.9" r="4" stroke-width="2"><title>10-19: 1.05</title></circle>
+<circle class="s2 ring" cx="700.2" cy="124.8" r="4" stroke-width="2"><title>10-20: 1.61</title></circle>
+<circle class="s2 ring" cx="711.3" cy="139.8" r="4" stroke-width="2"><title>10-21: 1.442</title></circle>
+<circle class="s2 ring" cx="722.4" cy="143.9" r="4" stroke-width="2"><title>10-22: 1.397</title></circle>
+<circle class="s2 ring" cx="733.6" cy="133.9" r="4" stroke-width="2"><title>10-23: 1.508</title></circle>
+<circle class="s2 ring" cx="744.7" cy="125.1" r="4" stroke-width="2"><title>10-24: 1.607</title></circle>
+<circle class="s2 ring" cx="755.8" cy="142.9" r="4" stroke-width="2"><title>10-25: 1.408</title></circle>
+<circle class="s2 ring" cx="766.9" cy="131.0" r="4" stroke-width="2"><title>10-26: 1.541</title></circle>
+<circle class="s2 ring" cx="778.0" cy="129.5" r="4" stroke-width="2"><title>10-27: 1.558</title></circle>
+<circle class="s2 ring" cx="789.1" cy="186.7" r="4" stroke-width="2"><title>10-28: 0.918</title></circle>
+<circle class="s2 ring" cx="800.2" cy="188.1" r="4" stroke-width="2"><title>10-29: 0.902</title></circle>
+<circle class="s2 ring" cx="811.3" cy="156.4" r="4" stroke-width="2"><title>10-30: 1.257</title></circle>
+<circle class="s2 ring" cx="822.4" cy="154.5" r="4" stroke-width="2"><title>10-31: 1.278</title></circle>
+<circle class="s2 ring" cx="833.6" cy="175.3" r="4" stroke-width="2"><title>11-01: 1.046</title></circle>
+<circle class="s2 ring" cx="844.7" cy="155.4" r="4" stroke-width="2"><title>11-02: 1.268</title></circle>
+<circle class="s2 ring" cx="855.8" cy="145.9" r="4" stroke-width="2"><title>11-03: 1.374</title></circle>
+<circle class="s2 ring" cx="866.9" cy="141.1" r="4" stroke-width="2"><title>11-04: 1.428</title></circle>
+<circle class="s2 ring" cx="878.0" cy="154.5" r="4" stroke-width="2"><title>11-05: 1.278</title></circle>
 <text class="t" x="12.0" y="267.0" font-size="13" text-anchor="start" font-weight="600">fib</text>
 <line class="grid" x1="64.0" y1="414.0" x2="292.0" y2="414.0" stroke-width="1"/>
 <text class="t2" x="58.0" y="418.0" font-size="11" text-anchor="end" font-weight="normal">0.5</text>
@@ -196,49 +202,51 @@
 <text class="t2" x="24.0" y="347.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 347.0)">ratio to C</text>
 <line class="ref" x1="64.0" y1="380.5" x2="292.0" y2="380.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="78.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="125.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="172.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="219.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="266.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="278.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M78.0,326.0 L89.8,343.8 L101.5,352.2 L113.3,351.8 L125.1,339.3 L136.8,351.7 L148.6,339.3 L160.4,327.2 L172.1,351.7 L183.9,339.3 L195.6,309.9 L207.4,309.9 L219.2,328.4 L230.9,324.4 L242.7,339.4 L254.5,326.6 L266.2,351.7 L278.0,351.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="122.4" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="166.9" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="211.3" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="255.8" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="278.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M78.0,326.0 L89.1,343.8 L100.2,352.2 L111.3,351.8 L122.4,339.3 L133.6,351.7 L144.7,339.3 L155.8,327.2 L166.9,351.7 L178.0,339.3 L189.1,309.9 L200.2,309.9 L211.3,328.4 L222.4,324.4 L233.6,339.4 L244.7,326.6 L255.8,351.7 L266.9,351.8 L278.0,327.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="326.0" r="4" stroke-width="2"><title>10-18: 1.813</title></circle>
-<circle class="s1 ring" cx="89.8" cy="343.8" r="4" stroke-width="2"><title>10-19: 1.547</title></circle>
-<circle class="s1 ring" cx="101.5" cy="352.2" r="4" stroke-width="2"><title>10-20: 1.423</title></circle>
-<circle class="s1 ring" cx="113.3" cy="351.8" r="4" stroke-width="2"><title>10-21: 1.428</title></circle>
-<circle class="s1 ring" cx="125.1" cy="339.3" r="4" stroke-width="2"><title>10-22: 1.615</title></circle>
-<circle class="s1 ring" cx="136.8" cy="351.7" r="4" stroke-width="2"><title>10-23: 1.431</title></circle>
-<circle class="s1 ring" cx="148.6" cy="339.3" r="4" stroke-width="2"><title>10-24: 1.614</title></circle>
-<circle class="s1 ring" cx="160.4" cy="327.2" r="4" stroke-width="2"><title>10-25: 1.796</title></circle>
-<circle class="s1 ring" cx="172.1" cy="351.7" r="4" stroke-width="2"><title>10-26: 1.43</title></circle>
-<circle class="s1 ring" cx="183.9" cy="339.3" r="4" stroke-width="2"><title>10-27: 1.615</title></circle>
-<circle class="s1 ring" cx="195.6" cy="309.9" r="4" stroke-width="2"><title>10-28: 2.053</title></circle>
-<circle class="s1 ring" cx="207.4" cy="309.9" r="4" stroke-width="2"><title>10-29: 2.053</title></circle>
-<circle class="s1 ring" cx="219.2" cy="328.4" r="4" stroke-width="2"><title>10-30: 1.778</title></circle>
-<circle class="s1 ring" cx="230.9" cy="324.4" r="4" stroke-width="2"><title>10-31: 1.837</title></circle>
-<circle class="s1 ring" cx="242.7" cy="339.4" r="4" stroke-width="2"><title>11-01: 1.613</title></circle>
-<circle class="s1 ring" cx="254.5" cy="326.6" r="4" stroke-width="2"><title>11-02: 1.804</title></circle>
-<circle class="s1 ring" cx="266.2" cy="351.7" r="4" stroke-width="2"><title>11-03: 1.43</title></circle>
-<circle class="s1 ring" cx="278.0" cy="351.8" r="4" stroke-width="2"><title>11-04: 1.428</title></circle>
-<path class="s2" d="M78.0,338.4 L89.8,341.3 L101.5,351.0 L113.3,344.1 L125.1,338.0 L136.8,343.8 L148.6,338.2 L160.4,315.7 L172.1,343.8 L183.9,338.2 L195.6,321.6 L207.4,321.8 L219.2,317.2 L230.9,312.1 L242.7,346.7 L254.5,312.8 L266.2,344.1 L278.0,343.9" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="89.1" cy="343.8" r="4" stroke-width="2"><title>10-19: 1.547</title></circle>
+<circle class="s1 ring" cx="100.2" cy="352.2" r="4" stroke-width="2"><title>10-20: 1.423</title></circle>
+<circle class="s1 ring" cx="111.3" cy="351.8" r="4" stroke-width="2"><title>10-21: 1.428</title></circle>
+<circle class="s1 ring" cx="122.4" cy="339.3" r="4" stroke-width="2"><title>10-22: 1.615</title></circle>
+<circle class="s1 ring" cx="133.6" cy="351.7" r="4" stroke-width="2"><title>10-23: 1.431</title></circle>
+<circle class="s1 ring" cx="144.7" cy="339.3" r="4" stroke-width="2"><title>10-24: 1.614</title></circle>
+<circle class="s1 ring" cx="155.8" cy="327.2" r="4" stroke-width="2"><title>10-25: 1.796</title></circle>
+<circle class="s1 ring" cx="166.9" cy="351.7" r="4" stroke-width="2"><title>10-26: 1.43</title></circle>
+<circle class="s1 ring" cx="178.0" cy="339.3" r="4" stroke-width="2"><title>10-27: 1.615</title></circle>
+<circle class="s1 ring" cx="189.1" cy="309.9" r="4" stroke-width="2"><title>10-28: 2.053</title></circle>
+<circle class="s1 ring" cx="200.2" cy="309.9" r="4" stroke-width="2"><title>10-29: 2.053</title></circle>
+<circle class="s1 ring" cx="211.3" cy="328.4" r="4" stroke-width="2"><title>10-30: 1.778</title></circle>
+<circle class="s1 ring" cx="222.4" cy="324.4" r="4" stroke-width="2"><title>10-31: 1.837</title></circle>
+<circle class="s1 ring" cx="233.6" cy="339.4" r="4" stroke-width="2"><title>11-01: 1.613</title></circle>
+<circle class="s1 ring" cx="244.7" cy="326.6" r="4" stroke-width="2"><title>11-02: 1.804</title></circle>
+<circle class="s1 ring" cx="255.8" cy="351.7" r="4" stroke-width="2"><title>11-03: 1.43</title></circle>
+<circle class="s1 ring" cx="266.9" cy="351.8" r="4" stroke-width="2"><title>11-04: 1.428</title></circle>
+<circle class="s1 ring" cx="278.0" cy="327.6" r="4" stroke-width="2"><title>11-05: 1.789</title></circle>
+<path class="s2" d="M78.0,338.4 L89.1,341.3 L100.2,351.0 L111.3,344.1 L122.4,338.0 L133.6,343.8 L144.7,338.2 L155.8,315.7 L166.9,343.8 L178.0,338.2 L189.1,321.6 L200.2,321.8 L211.3,317.2 L222.4,312.1 L233.6,346.7 L244.7,312.8 L255.8,344.1 L266.9,343.9 L278.0,315.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="78.0" cy="338.4" r="4" stroke-width="2"><title>10-18: 1.629</title></circle>
-<circle class="s2 ring" cx="89.8" cy="341.3" r="4" stroke-width="2"><title>10-19: 1.585</title></circle>
-<circle class="s2 ring" cx="101.5" cy="351.0" r="4" stroke-width="2"><title>10-20: 1.441</title></circle>
-<circle class="s2 ring" cx="113.3" cy="344.1" r="4" stroke-width="2"><title>10-21: 1.544</title></circle>
-<circle class="s2 ring" cx="125.1" cy="338.0" r="4" stroke-width="2"><title>10-22: 1.634</title></circle>
-<circle class="s2 ring" cx="136.8" cy="343.8" r="4" stroke-width="2"><title>10-23: 1.547</title></circle>
-<circle class="s2 ring" cx="148.6" cy="338.2" r="4" stroke-width="2"><title>10-24: 1.632</title></circle>
-<circle class="s2 ring" cx="160.4" cy="315.7" r="4" stroke-width="2"><title>10-25: 1.967</title></circle>
-<circle class="s2 ring" cx="172.1" cy="343.8" r="4" stroke-width="2"><title>10-26: 1.547</title></circle>
-<circle class="s2 ring" cx="183.9" cy="338.2" r="4" stroke-width="2"><title>10-27: 1.632</title></circle>
-<circle class="s2 ring" cx="195.6" cy="321.6" r="4" stroke-width="2"><title>10-28: 1.879</title></circle>
-<circle class="s2 ring" cx="207.4" cy="321.8" r="4" stroke-width="2"><title>10-29: 1.876</title></circle>
-<circle class="s2 ring" cx="219.2" cy="317.2" r="4" stroke-width="2"><title>10-30: 1.944</title></circle>
-<circle class="s2 ring" cx="230.9" cy="312.1" r="4" stroke-width="2"><title>10-31: 2.021</title></circle>
-<circle class="s2 ring" cx="242.7" cy="346.7" r="4" stroke-width="2"><title>11-01: 1.505</title></circle>
-<circle class="s2 ring" cx="254.5" cy="312.8" r="4" stroke-width="2"><title>11-02: 2.01</title></circle>
-<circle class="s2 ring" cx="266.2" cy="344.1" r="4" stroke-width="2"><title>11-03: 1.543</title></circle>
-<circle class="s2 ring" cx="278.0" cy="343.9" r="4" stroke-width="2"><title>11-04: 1.546</title></circle>
+<circle class="s2 ring" cx="89.1" cy="341.3" r="4" stroke-width="2"><title>10-19: 1.585</title></circle>
+<circle class="s2 ring" cx="100.2" cy="351.0" r="4" stroke-width="2"><title>10-20: 1.441</title></circle>
+<circle class="s2 ring" cx="111.3" cy="344.1" r="4" stroke-width="2"><title>10-21: 1.544</title></circle>
+<circle class="s2 ring" cx="122.4" cy="338.0" r="4" stroke-width="2"><title>10-22: 1.634</title></circle>
+<circle class="s2 ring" cx="133.6" cy="343.8" r="4" stroke-width="2"><title>10-23: 1.547</title></circle>
+<circle class="s2 ring" cx="144.7" cy="338.2" r="4" stroke-width="2"><title>10-24: 1.632</title></circle>
+<circle class="s2 ring" cx="155.8" cy="315.7" r="4" stroke-width="2"><title>10-25: 1.967</title></circle>
+<circle class="s2 ring" cx="166.9" cy="343.8" r="4" stroke-width="2"><title>10-26: 1.547</title></circle>
+<circle class="s2 ring" cx="178.0" cy="338.2" r="4" stroke-width="2"><title>10-27: 1.632</title></circle>
+<circle class="s2 ring" cx="189.1" cy="321.6" r="4" stroke-width="2"><title>10-28: 1.879</title></circle>
+<circle class="s2 ring" cx="200.2" cy="321.8" r="4" stroke-width="2"><title>10-29: 1.876</title></circle>
+<circle class="s2 ring" cx="211.3" cy="317.2" r="4" stroke-width="2"><title>10-30: 1.944</title></circle>
+<circle class="s2 ring" cx="222.4" cy="312.1" r="4" stroke-width="2"><title>10-31: 2.021</title></circle>
+<circle class="s2 ring" cx="233.6" cy="346.7" r="4" stroke-width="2"><title>11-01: 1.505</title></circle>
+<circle class="s2 ring" cx="244.7" cy="312.8" r="4" stroke-width="2"><title>11-02: 2.01</title></circle>
+<circle class="s2 ring" cx="255.8" cy="344.1" r="4" stroke-width="2"><title>11-03: 1.543</title></circle>
+<circle class="s2 ring" cx="266.9" cy="343.9" r="4" stroke-width="2"><title>11-04: 1.546</title></circle>
+<circle class="s2 ring" cx="278.0" cy="315.6" r="4" stroke-width="2"><title>11-05: 1.968</title></circle>
 <text class="t" x="312.0" y="267.0" font-size="13" text-anchor="start" font-weight="600">html</text>
 <line class="grid" x1="364.0" y1="414.0" x2="592.0" y2="414.0" stroke-width="1"/>
 <text class="t2" x="358.0" y="418.0" font-size="11" text-anchor="end" font-weight="normal">0.7</text>
@@ -253,49 +261,51 @@
 <text class="t2" x="324.0" y="347.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 324.0 347.0)">ratio to C</text>
 <line class="ref" x1="364.0" y1="313.5" x2="592.0" y2="313.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="378.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="425.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="472.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="519.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="566.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="578.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M378.0,297.6 L389.8,291.7 L401.5,305.3 L413.3,316.6 L425.1,309.3 L436.8,324.2 L448.6,313.3 L460.4,295.8 L472.1,322.3 L483.9,313.4 L495.6,319.8 L507.4,314.6 L519.2,297.0 L530.9,302.5 L542.7,296.3 L554.5,293.1 L566.2,319.6 L578.0,323.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="422.4" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="466.9" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="511.3" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="555.8" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="578.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M378.0,297.6 L389.1,291.7 L400.2,305.3 L411.3,316.6 L422.4,309.3 L433.6,324.2 L444.7,313.3 L455.8,295.8 L466.9,322.3 L478.0,313.4 L489.1,319.8 L500.2,314.6 L511.3,297.0 L522.4,302.5 L533.6,296.3 L544.7,293.1 L555.8,319.6 L566.9,323.8 L578.0,307.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="378.0" cy="297.6" r="4" stroke-width="2"><title>10-18: 1.048</title></circle>
-<circle class="s1 ring" cx="389.8" cy="291.7" r="4" stroke-width="2"><title>10-19: 1.065</title></circle>
-<circle class="s1 ring" cx="401.5" cy="305.3" r="4" stroke-width="2"><title>10-20: 1.024</title></circle>
-<circle class="s1 ring" cx="413.3" cy="316.6" r="4" stroke-width="2"><title>10-21: 0.991</title></circle>
-<circle class="s1 ring" cx="425.1" cy="309.3" r="4" stroke-width="2"><title>10-22: 1.013</title></circle>
-<circle class="s1 ring" cx="436.8" cy="324.2" r="4" stroke-width="2"><title>10-23: 0.968</title></circle>
-<circle class="s1 ring" cx="448.6" cy="313.3" r="4" stroke-width="2"><title>10-24: 1</title></circle>
-<circle class="s1 ring" cx="460.4" cy="295.8" r="4" stroke-width="2"><title>10-25: 1.053</title></circle>
-<circle class="s1 ring" cx="472.1" cy="322.3" r="4" stroke-width="2"><title>10-26: 0.974</title></circle>
-<circle class="s1 ring" cx="483.9" cy="313.4" r="4" stroke-width="2"><title>10-27: 1</title></circle>
-<circle class="s1 ring" cx="495.6" cy="319.8" r="4" stroke-width="2"><title>10-28: 0.981</title></circle>
-<circle class="s1 ring" cx="507.4" cy="314.6" r="4" stroke-width="2"><title>10-29: 0.997</title></circle>
-<circle class="s1 ring" cx="519.2" cy="297.0" r="4" stroke-width="2"><title>10-30: 1.049</title></circle>
-<circle class="s1 ring" cx="530.9" cy="302.5" r="4" stroke-width="2"><title>10-31: 1.033</title></circle>
-<circle class="s1 ring" cx="542.7" cy="296.3" r="4" stroke-width="2"><title>11-01: 1.051</title></circle>
-<circle class="s1 ring" cx="554.5" cy="293.1" r="4" stroke-width="2"><title>11-02: 1.061</title></circle>
-<circle class="s1 ring" cx="566.2" cy="319.6" r="4" stroke-width="2"><title>11-03: 0.982</title></circle>
-<circle class="s1 ring" cx="578.0" cy="323.8" r="4" stroke-width="2"><title>11-04: 0.969</title></circle>
-<path class="s2" d="M378.0,373.1 L389.8,363.6 L401.5,374.8 L413.3,374.6 L425.1,369.9 L436.8,378.1 L448.6,372.6 L460.4,362.3 L472.1,374.6 L483.9,374.4 L495.6,369.0 L507.4,362.8 L519.2,362.1 L530.9,363.7 L542.7,348.6 L554.5,352.8 L566.2,374.0 L578.0,378.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="389.1" cy="291.7" r="4" stroke-width="2"><title>10-19: 1.065</title></circle>
+<circle class="s1 ring" cx="400.2" cy="305.3" r="4" stroke-width="2"><title>10-20: 1.024</title></circle>
+<circle class="s1 ring" cx="411.3" cy="316.6" r="4" stroke-width="2"><title>10-21: 0.991</title></circle>
+<circle class="s1 ring" cx="422.4" cy="309.3" r="4" stroke-width="2"><title>10-22: 1.013</title></circle>
+<circle class="s1 ring" cx="433.6" cy="324.2" r="4" stroke-width="2"><title>10-23: 0.968</title></circle>
+<circle class="s1 ring" cx="444.7" cy="313.3" r="4" stroke-width="2"><title>10-24: 1</title></circle>
+<circle class="s1 ring" cx="455.8" cy="295.8" r="4" stroke-width="2"><title>10-25: 1.053</title></circle>
+<circle class="s1 ring" cx="466.9" cy="322.3" r="4" stroke-width="2"><title>10-26: 0.974</title></circle>
+<circle class="s1 ring" cx="478.0" cy="313.4" r="4" stroke-width="2"><title>10-27: 1</title></circle>
+<circle class="s1 ring" cx="489.1" cy="319.8" r="4" stroke-width="2"><title>10-28: 0.981</title></circle>
+<circle class="s1 ring" cx="500.2" cy="314.6" r="4" stroke-width="2"><title>10-29: 0.997</title></circle>
+<circle class="s1 ring" cx="511.3" cy="297.0" r="4" stroke-width="2"><title>10-30: 1.049</title></circle>
+<circle class="s1 ring" cx="522.4" cy="302.5" r="4" stroke-width="2"><title>10-31: 1.033</title></circle>
+<circle class="s1 ring" cx="533.6" cy="296.3" r="4" stroke-width="2"><title>11-01: 1.051</title></circle>
+<circle class="s1 ring" cx="544.7" cy="293.1" r="4" stroke-width="2"><title>11-02: 1.061</title></circle>
+<circle class="s1 ring" cx="555.8" cy="319.6" r="4" stroke-width="2"><title>11-03: 0.982</title></circle>
+<circle class="s1 ring" cx="566.9" cy="323.8" r="4" stroke-width="2"><title>11-04: 0.969</title></circle>
+<circle class="s1 ring" cx="578.0" cy="307.8" r="4" stroke-width="2"><title>11-05: 1.017</title></circle>
+<path class="s2" d="M378.0,373.1 L389.1,363.6 L400.2,374.8 L411.3,374.6 L422.4,369.9 L433.6,378.1 L444.7,372.6 L455.8,362.3 L466.9,374.6 L478.0,374.4 L489.1,369.0 L500.2,362.8 L511.3,362.1 L522.4,363.7 L533.6,348.6 L544.7,352.8 L555.8,374.0 L566.9,378.0 L578.0,364.4" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="378.0" cy="373.1" r="4" stroke-width="2"><title>10-18: 0.822</title></circle>
-<circle class="s2 ring" cx="389.8" cy="363.6" r="4" stroke-width="2"><title>10-19: 0.85</title></circle>
-<circle class="s2 ring" cx="401.5" cy="374.8" r="4" stroke-width="2"><title>10-20: 0.817</title></circle>
-<circle class="s2 ring" cx="413.3" cy="374.6" r="4" stroke-width="2"><title>10-21: 0.818</title></circle>
-<circle class="s2 ring" cx="425.1" cy="369.9" r="4" stroke-width="2"><title>10-22: 0.831</title></circle>
-<circle class="s2 ring" cx="436.8" cy="378.1" r="4" stroke-width="2"><title>10-23: 0.807</title></circle>
-<circle class="s2 ring" cx="448.6" cy="372.6" r="4" stroke-width="2"><title>10-24: 0.824</title></circle>
-<circle class="s2 ring" cx="460.4" cy="362.3" r="4" stroke-width="2"><title>10-25: 0.854</title></circle>
-<circle class="s2 ring" cx="472.1" cy="374.6" r="4" stroke-width="2"><title>10-26: 0.818</title></circle>
-<circle class="s2 ring" cx="483.9" cy="374.4" r="4" stroke-width="2"><title>10-27: 0.818</title></circle>
-<circle class="s2 ring" cx="495.6" cy="369.0" r="4" stroke-width="2"><title>10-28: 0.834</title></circle>
-<circle class="s2 ring" cx="507.4" cy="362.8" r="4" stroke-width="2"><title>10-29: 0.853</title></circle>
-<circle class="s2 ring" cx="519.2" cy="362.1" r="4" stroke-width="2"><title>10-30: 0.855</title></circle>
-<circle class="s2 ring" cx="530.9" cy="363.7" r="4" stroke-width="2"><title>10-31: 0.85</title></circle>
-<circle class="s2 ring" cx="542.7" cy="348.6" r="4" stroke-width="2"><title>11-01: 0.895</title></circle>
-<circle class="s2 ring" cx="554.5" cy="352.8" r="4" stroke-width="2"><title>11-02: 0.883</title></circle>
-<circle class="s2 ring" cx="566.2" cy="374.0" r="4" stroke-width="2"><title>11-03: 0.819</title></circle>
-<circle class="s2 ring" cx="578.0" cy="378.0" r="4" stroke-width="2"><title>11-04: 0.808</title></circle>
+<circle class="s2 ring" cx="389.1" cy="363.6" r="4" stroke-width="2"><title>10-19: 0.85</title></circle>
+<circle class="s2 ring" cx="400.2" cy="374.8" r="4" stroke-width="2"><title>10-20: 0.817</title></circle>
+<circle class="s2 ring" cx="411.3" cy="374.6" r="4" stroke-width="2"><title>10-21: 0.818</title></circle>
+<circle class="s2 ring" cx="422.4" cy="369.9" r="4" stroke-width="2"><title>10-22: 0.831</title></circle>
+<circle class="s2 ring" cx="433.6" cy="378.1" r="4" stroke-width="2"><title>10-23: 0.807</title></circle>
+<circle class="s2 ring" cx="444.7" cy="372.6" r="4" stroke-width="2"><title>10-24: 0.824</title></circle>
+<circle class="s2 ring" cx="455.8" cy="362.3" r="4" stroke-width="2"><title>10-25: 0.854</title></circle>
+<circle class="s2 ring" cx="466.9" cy="374.6" r="4" stroke-width="2"><title>10-26: 0.818</title></circle>
+<circle class="s2 ring" cx="478.0" cy="374.4" r="4" stroke-width="2"><title>10-27: 0.818</title></circle>
+<circle class="s2 ring" cx="489.1" cy="369.0" r="4" stroke-width="2"><title>10-28: 0.834</title></circle>
+<circle class="s2 ring" cx="500.2" cy="362.8" r="4" stroke-width="2"><title>10-29: 0.853</title></circle>
+<circle class="s2 ring" cx="511.3" cy="362.1" r="4" stroke-width="2"><title>10-30: 0.855</title></circle>
+<circle class="s2 ring" cx="522.4" cy="363.7" r="4" stroke-width="2"><title>10-31: 0.85</title></circle>
+<circle class="s2 ring" cx="533.6" cy="348.6" r="4" stroke-width="2"><title>11-01: 0.895</title></circle>
+<circle class="s2 ring" cx="544.7" cy="352.8" r="4" stroke-width="2"><title>11-02: 0.883</title></circle>
+<circle class="s2 ring" cx="555.8" cy="374.0" r="4" stroke-width="2"><title>11-03: 0.819</title></circle>
+<circle class="s2 ring" cx="566.9" cy="378.0" r="4" stroke-width="2"><title>11-04: 0.808</title></circle>
+<circle class="s2 ring" cx="578.0" cy="364.4" r="4" stroke-width="2"><title>11-05: 0.848</title></circle>
 <text class="t" x="612.0" y="267.0" font-size="13" text-anchor="start" font-weight="600">mapfreq</text>
 <line class="grid" x1="664.0" y1="414.0" x2="892.0" y2="414.0" stroke-width="1"/>
 <text class="t2" x="658.0" y="418.0" font-size="11" text-anchor="end" font-weight="normal">0.5</text>
@@ -310,49 +320,51 @@
 <text class="t2" x="624.0" y="347.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 624.0 347.0)">ratio to C</text>
 <line class="ref" x1="664.0" y1="380.5" x2="892.0" y2="380.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="678.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="725.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="772.1" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="819.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="866.2" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="878.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M678.0,307.7 L689.8,308.2 L701.5,302.0 L713.3,311.3 L725.1,312.8 L736.8,311.3 L748.6,309.3 L760.4,314.6 L772.1,306.7 L783.9,310.0 L795.6,315.3 L807.4,303.2 L819.2,307.9 L830.9,313.0 L842.7,305.0 L854.5,316.3 L866.2,305.9 L878.0,311.9" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="722.4" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="766.9" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="811.3" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="855.8" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="878.0" y="429.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M678.0,307.7 L689.1,308.2 L700.2,302.0 L711.3,311.3 L722.4,312.8 L733.6,311.3 L744.7,309.3 L755.8,314.6 L766.9,306.7 L778.0,310.0 L789.1,315.3 L800.2,303.2 L811.3,307.9 L822.4,313.0 L833.6,305.0 L844.7,316.3 L855.8,305.9 L866.9,311.9 L878.0,310.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="678.0" cy="307.7" r="4" stroke-width="2"><title>10-18: 2.087</title></circle>
-<circle class="s1 ring" cx="689.8" cy="308.2" r="4" stroke-width="2"><title>10-19: 2.079</title></circle>
-<circle class="s1 ring" cx="701.5" cy="302.0" r="4" stroke-width="2"><title>10-20: 2.172</title></circle>
-<circle class="s1 ring" cx="713.3" cy="311.3" r="4" stroke-width="2"><title>10-21: 2.033</title></circle>
-<circle class="s1 ring" cx="725.1" cy="312.8" r="4" stroke-width="2"><title>10-22: 2.011</title></circle>
-<circle class="s1 ring" cx="736.8" cy="311.3" r="4" stroke-width="2"><title>10-23: 2.032</title></circle>
-<circle class="s1 ring" cx="748.6" cy="309.3" r="4" stroke-width="2"><title>10-24: 2.063</title></circle>
-<circle class="s1 ring" cx="760.4" cy="314.6" r="4" stroke-width="2"><title>10-25: 1.983</title></circle>
-<circle class="s1 ring" cx="772.1" cy="306.7" r="4" stroke-width="2"><title>10-26: 2.102</title></circle>
-<circle class="s1 ring" cx="783.9" cy="310.0" r="4" stroke-width="2"><title>10-27: 2.052</title></circle>
-<circle class="s1 ring" cx="795.6" cy="315.3" r="4" stroke-width="2"><title>10-28: 1.972</title></circle>
-<circle class="s1 ring" cx="807.4" cy="303.2" r="4" stroke-width="2"><title>10-29: 2.154</title></circle>
-<circle class="s1 ring" cx="819.2" cy="307.9" r="4" stroke-width="2"><title>10-30: 2.084</title></circle>
-<circle class="s1 ring" cx="830.9" cy="313.0" r="4" stroke-width="2"><title>10-31: 2.007</title></circle>
-<circle class="s1 ring" cx="842.7" cy="305.0" r="4" stroke-width="2"><title>11-01: 2.126</title></circle>
-<circle class="s1 ring" cx="854.5" cy="316.3" r="4" stroke-width="2"><title>11-02: 1.957</title></circle>
-<circle class="s1 ring" cx="866.2" cy="305.9" r="4" stroke-width="2"><title>11-03: 2.113</title></circle>
-<circle class="s1 ring" cx="878.0" cy="311.9" r="4" stroke-width="2"><title>11-04: 2.024</title></circle>
-<path class="s2" d="M678.0,306.0 L689.8,307.0 L701.5,300.9 L713.3,311.4 L725.1,310.9 L736.8,311.5 L748.6,307.5 L760.4,316.9 L772.1,305.5 L783.9,308.8 L795.6,314.4 L807.4,301.9 L819.2,306.1 L830.9,311.5 L842.7,304.5 L854.5,320.0 L866.2,300.6 L878.0,311.9" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="689.1" cy="308.2" r="4" stroke-width="2"><title>10-19: 2.079</title></circle>
+<circle class="s1 ring" cx="700.2" cy="302.0" r="4" stroke-width="2"><title>10-20: 2.172</title></circle>
+<circle class="s1 ring" cx="711.3" cy="311.3" r="4" stroke-width="2"><title>10-21: 2.033</title></circle>
+<circle class="s1 ring" cx="722.4" cy="312.8" r="4" stroke-width="2"><title>10-22: 2.011</title></circle>
+<circle class="s1 ring" cx="733.6" cy="311.3" r="4" stroke-width="2"><title>10-23: 2.032</title></circle>
+<circle class="s1 ring" cx="744.7" cy="309.3" r="4" stroke-width="2"><title>10-24: 2.063</title></circle>
+<circle class="s1 ring" cx="755.8" cy="314.6" r="4" stroke-width="2"><title>10-25: 1.983</title></circle>
+<circle class="s1 ring" cx="766.9" cy="306.7" r="4" stroke-width="2"><title>10-26: 2.102</title></circle>
+<circle class="s1 ring" cx="778.0" cy="310.0" r="4" stroke-width="2"><title>10-27: 2.052</title></circle>
+<circle class="s1 ring" cx="789.1" cy="315.3" r="4" stroke-width="2"><title>10-28: 1.972</title></circle>
+<circle class="s1 ring" cx="800.2" cy="303.2" r="4" stroke-width="2"><title>10-29: 2.154</title></circle>
+<circle class="s1 ring" cx="811.3" cy="307.9" r="4" stroke-width="2"><title>10-30: 2.084</title></circle>
+<circle class="s1 ring" cx="822.4" cy="313.0" r="4" stroke-width="2"><title>10-31: 2.007</title></circle>
+<circle class="s1 ring" cx="833.6" cy="305.0" r="4" stroke-width="2"><title>11-01: 2.126</title></circle>
+<circle class="s1 ring" cx="844.7" cy="316.3" r="4" stroke-width="2"><title>11-02: 1.957</title></circle>
+<circle class="s1 ring" cx="855.8" cy="305.9" r="4" stroke-width="2"><title>11-03: 2.113</title></circle>
+<circle class="s1 ring" cx="866.9" cy="311.9" r="4" stroke-width="2"><title>11-04: 2.024</title></circle>
+<circle class="s1 ring" cx="878.0" cy="310.6" r="4" stroke-width="2"><title>11-05: 2.043</title></circle>
+<path class="s2" d="M678.0,306.0 L689.1,307.0 L700.2,300.9 L711.3,311.4 L722.4,310.9 L733.6,311.5 L744.7,307.5 L755.8,316.9 L766.9,305.5 L778.0,308.8 L789.1,314.4 L800.2,301.9 L811.3,306.1 L822.4,311.5 L833.6,304.5 L844.7,320.0 L855.8,300.6 L866.9,311.9 L878.0,313.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="678.0" cy="306.0" r="4" stroke-width="2"><title>10-18: 2.113</title></circle>
-<circle class="s2 ring" cx="689.8" cy="307.0" r="4" stroke-width="2"><title>10-19: 2.097</title></circle>
-<circle class="s2 ring" cx="701.5" cy="300.9" r="4" stroke-width="2"><title>10-20: 2.188</title></circle>
-<circle class="s2 ring" cx="713.3" cy="311.4" r="4" stroke-width="2"><title>10-21: 2.032</title></circle>
-<circle class="s2 ring" cx="725.1" cy="310.9" r="4" stroke-width="2"><title>10-22: 2.039</title></circle>
-<circle class="s2 ring" cx="736.8" cy="311.5" r="4" stroke-width="2"><title>10-23: 2.03</title></circle>
-<circle class="s2 ring" cx="748.6" cy="307.5" r="4" stroke-width="2"><title>10-24: 2.09</title></circle>
-<circle class="s2 ring" cx="760.4" cy="316.9" r="4" stroke-width="2"><title>10-25: 1.949</title></circle>
-<circle class="s2 ring" cx="772.1" cy="305.5" r="4" stroke-width="2"><title>10-26: 2.119</title></circle>
-<circle class="s2 ring" cx="783.9" cy="308.8" r="4" stroke-width="2"><title>10-27: 2.071</title></circle>
-<circle class="s2 ring" cx="795.6" cy="314.4" r="4" stroke-width="2"><title>10-28: 1.986</title></circle>
-<circle class="s2 ring" cx="807.4" cy="301.9" r="4" stroke-width="2"><title>10-29: 2.173</title></circle>
-<circle class="s2 ring" cx="819.2" cy="306.1" r="4" stroke-width="2"><title>10-30: 2.111</title></circle>
-<circle class="s2 ring" cx="830.9" cy="311.5" r="4" stroke-width="2"><title>10-31: 2.03</title></circle>
-<circle class="s2 ring" cx="842.7" cy="304.5" r="4" stroke-width="2"><title>11-01: 2.134</title></circle>
-<circle class="s2 ring" cx="854.5" cy="320.0" r="4" stroke-width="2"><title>11-02: 1.902</title></circle>
-<circle class="s2 ring" cx="866.2" cy="300.6" r="4" stroke-width="2"><title>11-03: 2.193</title></circle>
-<circle class="s2 ring" cx="878.0" cy="311.9" r="4" stroke-width="2"><title>11-04: 2.024</title></circle>
+<circle class="s2 ring" cx="689.1" cy="307.0" r="4" stroke-width="2"><title>10-19: 2.097</title></circle>
+<circle class="s2 ring" cx="700.2" cy="300.9" r="4" stroke-width="2"><title>10-20: 2.188</title></circle>
+<circle class="s2 ring" cx="711.3" cy="311.4" r="4" stroke-width="2"><title>10-21: 2.032</title></circle>
+<circle class="s2 ring" cx="722.4" cy="310.9" r="4" stroke-width="2"><title>10-22: 2.039</title></circle>
+<circle class="s2 ring" cx="733.6" cy="311.5" r="4" stroke-width="2"><title>10-23: 2.03</title></circle>
+<circle class="s2 ring" cx="744.7" cy="307.5" r="4" stroke-width="2"><title>10-24: 2.09</title></circle>
+<circle class="s2 ring" cx="755.8" cy="316.9" r="4" stroke-width="2"><title>10-25: 1.949</title></circle>
+<circle class="s2 ring" cx="766.9" cy="305.5" r="4" stroke-width="2"><title>10-26: 2.119</title></circle>
+<circle class="s2 ring" cx="778.0" cy="308.8" r="4" stroke-width="2"><title>10-27: 2.071</title></circle>
+<circle class="s2 ring" cx="789.1" cy="314.4" r="4" stroke-width="2"><title>10-28: 1.986</title></circle>
+<circle class="s2 ring" cx="800.2" cy="301.9" r="4" stroke-width="2"><title>10-29: 2.173</title></circle>
+<circle class="s2 ring" cx="811.3" cy="306.1" r="4" stroke-width="2"><title>10-30: 2.111</title></circle>
+<circle class="s2 ring" cx="822.4" cy="311.5" r="4" stroke-width="2"><title>10-31: 2.03</title></circle>
+<circle class="s2 ring" cx="833.6" cy="304.5" r="4" stroke-width="2"><title>11-01: 2.134</title></circle>
+<circle class="s2 ring" cx="844.7" cy="320.0" r="4" stroke-width="2"><title>11-02: 1.902</title></circle>
+<circle class="s2 ring" cx="855.8" cy="300.6" r="4" stroke-width="2"><title>11-03: 2.193</title></circle>
+<circle class="s2 ring" cx="866.9" cy="311.9" r="4" stroke-width="2"><title>11-04: 2.024</title></circle>
+<circle class="s2 ring" cx="878.0" cy="313.2" r="4" stroke-width="2"><title>11-05: 2.005</title></circle>
 <text class="t" x="12.0" y="457.0" font-size="13" text-anchor="start" font-weight="600">mutres</text>
 <line class="grid" x1="64.0" y1="604.0" x2="292.0" y2="604.0" stroke-width="1"/>
 <text class="t2" x="58.0" y="608.0" font-size="11" text-anchor="end" font-weight="normal">0</text>
@@ -365,49 +377,51 @@
 <text class="t2" x="24.0" y="537.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 537.0)">ratio to C</text>
 <line class="ref" x1="64.0" y1="581.7" x2="292.0" y2="581.7" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="78.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="125.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="172.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="219.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="266.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="278.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M78.0,488.3 L89.8,490.1 L101.5,488.6 L113.3,493.3 L125.1,492.3 L136.8,488.3 L148.6,491.8 L160.4,510.3 L172.1,491.9 L183.9,491.4 L195.6,491.6 L207.4,494.1 L219.2,510.5 L230.9,508.2 L242.7,492.9 L254.5,510.7 L266.2,490.1 L278.0,490.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="122.4" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="166.9" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="211.3" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="255.8" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="278.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M78.0,488.3 L89.1,490.1 L100.2,488.6 L111.3,493.3 L122.4,492.3 L133.6,488.3 L144.7,491.8 L155.8,510.3 L166.9,491.9 L178.0,491.4 L189.1,491.6 L200.2,494.1 L211.3,510.5 L222.4,508.2 L233.6,492.9 L244.7,510.7 L255.8,490.1 L266.9,490.1 L278.0,504.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="488.3" r="4" stroke-width="2"><title>10-18: 5.178</title></circle>
-<circle class="s1 ring" cx="89.8" cy="490.1" r="4" stroke-width="2"><title>10-19: 5.101</title></circle>
-<circle class="s1 ring" cx="101.5" cy="488.6" r="4" stroke-width="2"><title>10-20: 5.168</title></circle>
-<circle class="s1 ring" cx="113.3" cy="493.3" r="4" stroke-width="2"><title>10-21: 4.955</title></circle>
-<circle class="s1 ring" cx="125.1" cy="492.3" r="4" stroke-width="2"><title>10-22: 5</title></circle>
-<circle class="s1 ring" cx="136.8" cy="488.3" r="4" stroke-width="2"><title>10-23: 5.18</title></circle>
-<circle class="s1 ring" cx="148.6" cy="491.8" r="4" stroke-width="2"><title>10-24: 5.023</title></circle>
-<circle class="s1 ring" cx="160.4" cy="510.3" r="4" stroke-width="2"><title>10-25: 4.196</title></circle>
-<circle class="s1 ring" cx="172.1" cy="491.9" r="4" stroke-width="2"><title>10-26: 5.02</title></circle>
-<circle class="s1 ring" cx="183.9" cy="491.4" r="4" stroke-width="2"><title>10-27: 5.042</title></circle>
-<circle class="s1 ring" cx="195.6" cy="491.6" r="4" stroke-width="2"><title>10-28: 5.034</title></circle>
-<circle class="s1 ring" cx="207.4" cy="494.1" r="4" stroke-width="2"><title>10-29: 4.919</title></circle>
-<circle class="s1 ring" cx="219.2" cy="510.5" r="4" stroke-width="2"><title>10-30: 4.187</title></circle>
-<circle class="s1 ring" cx="230.9" cy="508.2" r="4" stroke-width="2"><title>10-31: 4.289</title></circle>
-<circle class="s1 ring" cx="242.7" cy="492.9" r="4" stroke-width="2"><title>11-01: 4.977</title></circle>
-<circle class="s1 ring" cx="254.5" cy="510.7" r="4" stroke-width="2"><title>11-02: 4.178</title></circle>
-<circle class="s1 ring" cx="266.2" cy="490.1" r="4" stroke-width="2"><title>11-03: 5.1</title></circle>
-<circle class="s1 ring" cx="278.0" cy="490.1" r="4" stroke-width="2"><title>11-04: 5.099</title></circle>
-<path class="s2" d="M78.0,532.1 L89.8,524.3 L101.5,532.4 L113.3,535.5 L125.1,532.7 L136.8,532.7 L148.6,532.4 L160.4,546.4 L172.1,534.9 L183.9,532.0 L195.6,525.2 L207.4,527.2 L219.2,546.2 L230.9,546.5 L242.7,527.4 L254.5,545.1 L266.2,533.5 L278.0,534.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="89.1" cy="490.1" r="4" stroke-width="2"><title>10-19: 5.101</title></circle>
+<circle class="s1 ring" cx="100.2" cy="488.6" r="4" stroke-width="2"><title>10-20: 5.168</title></circle>
+<circle class="s1 ring" cx="111.3" cy="493.3" r="4" stroke-width="2"><title>10-21: 4.955</title></circle>
+<circle class="s1 ring" cx="122.4" cy="492.3" r="4" stroke-width="2"><title>10-22: 5</title></circle>
+<circle class="s1 ring" cx="133.6" cy="488.3" r="4" stroke-width="2"><title>10-23: 5.18</title></circle>
+<circle class="s1 ring" cx="144.7" cy="491.8" r="4" stroke-width="2"><title>10-24: 5.023</title></circle>
+<circle class="s1 ring" cx="155.8" cy="510.3" r="4" stroke-width="2"><title>10-25: 4.196</title></circle>
+<circle class="s1 ring" cx="166.9" cy="491.9" r="4" stroke-width="2"><title>10-26: 5.02</title></circle>
+<circle class="s1 ring" cx="178.0" cy="491.4" r="4" stroke-width="2"><title>10-27: 5.042</title></circle>
+<circle class="s1 ring" cx="189.1" cy="491.6" r="4" stroke-width="2"><title>10-28: 5.034</title></circle>
+<circle class="s1 ring" cx="200.2" cy="494.1" r="4" stroke-width="2"><title>10-29: 4.919</title></circle>
+<circle class="s1 ring" cx="211.3" cy="510.5" r="4" stroke-width="2"><title>10-30: 4.187</title></circle>
+<circle class="s1 ring" cx="222.4" cy="508.2" r="4" stroke-width="2"><title>10-31: 4.289</title></circle>
+<circle class="s1 ring" cx="233.6" cy="492.9" r="4" stroke-width="2"><title>11-01: 4.977</title></circle>
+<circle class="s1 ring" cx="244.7" cy="510.7" r="4" stroke-width="2"><title>11-02: 4.178</title></circle>
+<circle class="s1 ring" cx="255.8" cy="490.1" r="4" stroke-width="2"><title>11-03: 5.1</title></circle>
+<circle class="s1 ring" cx="266.9" cy="490.1" r="4" stroke-width="2"><title>11-04: 5.099</title></circle>
+<circle class="s1 ring" cx="278.0" cy="504.7" r="4" stroke-width="2"><title>11-05: 4.448</title></circle>
+<path class="s2" d="M78.0,532.1 L89.1,524.3 L100.2,532.4 L111.3,535.5 L122.4,532.7 L133.6,532.7 L144.7,532.4 L155.8,546.4 L166.9,534.9 L178.0,532.0 L189.1,525.2 L200.2,527.2 L211.3,546.2 L222.4,546.5 L233.6,527.4 L244.7,545.1 L255.8,533.5 L266.9,534.7 L278.0,546.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="78.0" cy="532.1" r="4" stroke-width="2"><title>10-18: 3.221</title></circle>
-<circle class="s2 ring" cx="89.8" cy="524.3" r="4" stroke-width="2"><title>10-19: 3.567</title></circle>
-<circle class="s2 ring" cx="101.5" cy="532.4" r="4" stroke-width="2"><title>10-20: 3.205</title></circle>
-<circle class="s2 ring" cx="113.3" cy="535.5" r="4" stroke-width="2"><title>10-21: 3.067</title></circle>
-<circle class="s2 ring" cx="125.1" cy="532.7" r="4" stroke-width="2"><title>10-22: 3.192</title></circle>
-<circle class="s2 ring" cx="136.8" cy="532.7" r="4" stroke-width="2"><title>10-23: 3.194</title></circle>
-<circle class="s2 ring" cx="148.6" cy="532.4" r="4" stroke-width="2"><title>10-24: 3.204</title></circle>
-<circle class="s2 ring" cx="160.4" cy="546.4" r="4" stroke-width="2"><title>10-25: 2.581</title></circle>
-<circle class="s2 ring" cx="172.1" cy="534.9" r="4" stroke-width="2"><title>10-26: 3.094</title></circle>
-<circle class="s2 ring" cx="183.9" cy="532.0" r="4" stroke-width="2"><title>10-27: 3.225</title></circle>
-<circle class="s2 ring" cx="195.6" cy="525.2" r="4" stroke-width="2"><title>10-28: 3.529</title></circle>
-<circle class="s2 ring" cx="207.4" cy="527.2" r="4" stroke-width="2"><title>10-29: 3.437</title></circle>
-<circle class="s2 ring" cx="219.2" cy="546.2" r="4" stroke-width="2"><title>10-30: 2.586</title></circle>
-<circle class="s2 ring" cx="230.9" cy="546.5" r="4" stroke-width="2"><title>10-31: 2.575</title></circle>
-<circle class="s2 ring" cx="242.7" cy="527.4" r="4" stroke-width="2"><title>11-01: 3.428</title></circle>
-<circle class="s2 ring" cx="254.5" cy="545.1" r="4" stroke-width="2"><title>11-02: 2.637</title></circle>
-<circle class="s2 ring" cx="266.2" cy="533.5" r="4" stroke-width="2"><title>11-03: 3.157</title></circle>
-<circle class="s2 ring" cx="278.0" cy="534.7" r="4" stroke-width="2"><title>11-04: 3.104</title></circle>
+<circle class="s2 ring" cx="89.1" cy="524.3" r="4" stroke-width="2"><title>10-19: 3.567</title></circle>
+<circle class="s2 ring" cx="100.2" cy="532.4" r="4" stroke-width="2"><title>10-20: 3.205</title></circle>
+<circle class="s2 ring" cx="111.3" cy="535.5" r="4" stroke-width="2"><title>10-21: 3.067</title></circle>
+<circle class="s2 ring" cx="122.4" cy="532.7" r="4" stroke-width="2"><title>10-22: 3.192</title></circle>
+<circle class="s2 ring" cx="133.6" cy="532.7" r="4" stroke-width="2"><title>10-23: 3.194</title></circle>
+<circle class="s2 ring" cx="144.7" cy="532.4" r="4" stroke-width="2"><title>10-24: 3.204</title></circle>
+<circle class="s2 ring" cx="155.8" cy="546.4" r="4" stroke-width="2"><title>10-25: 2.581</title></circle>
+<circle class="s2 ring" cx="166.9" cy="534.9" r="4" stroke-width="2"><title>10-26: 3.094</title></circle>
+<circle class="s2 ring" cx="178.0" cy="532.0" r="4" stroke-width="2"><title>10-27: 3.225</title></circle>
+<circle class="s2 ring" cx="189.1" cy="525.2" r="4" stroke-width="2"><title>10-28: 3.529</title></circle>
+<circle class="s2 ring" cx="200.2" cy="527.2" r="4" stroke-width="2"><title>10-29: 3.437</title></circle>
+<circle class="s2 ring" cx="211.3" cy="546.2" r="4" stroke-width="2"><title>10-30: 2.586</title></circle>
+<circle class="s2 ring" cx="222.4" cy="546.5" r="4" stroke-width="2"><title>10-31: 2.575</title></circle>
+<circle class="s2 ring" cx="233.6" cy="527.4" r="4" stroke-width="2"><title>11-01: 3.428</title></circle>
+<circle class="s2 ring" cx="244.7" cy="545.1" r="4" stroke-width="2"><title>11-02: 2.637</title></circle>
+<circle class="s2 ring" cx="255.8" cy="533.5" r="4" stroke-width="2"><title>11-03: 3.157</title></circle>
+<circle class="s2 ring" cx="266.9" cy="534.7" r="4" stroke-width="2"><title>11-04: 3.104</title></circle>
+<circle class="s2 ring" cx="278.0" cy="546.2" r="4" stroke-width="2"><title>11-05: 2.59</title></circle>
 <text class="t" x="312.0" y="457.0" font-size="13" text-anchor="start" font-weight="600">nbody</text>
 <line class="grid" x1="364.0" y1="604.0" x2="592.0" y2="604.0" stroke-width="1"/>
 <text class="t2" x="358.0" y="608.0" font-size="11" text-anchor="end" font-weight="normal">0.9</text>
@@ -420,49 +434,51 @@
 <text class="t2" x="324.0" y="537.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 324.0 537.0)">ratio to C</text>
 <line class="ref" x1="364.0" y1="559.3" x2="592.0" y2="559.3" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="378.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="425.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="472.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="519.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="566.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="578.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M378.0,537.3 L389.8,545.0 L401.5,536.6 L413.3,511.7 L425.1,536.7 L436.8,512.3 L448.6,536.1 L460.4,550.4 L472.1,513.2 L483.9,534.4 L495.6,537.0 L507.4,537.9 L519.2,556.7 L530.9,543.2 L542.7,486.0 L554.5,547.3 L566.2,513.3 L578.0,512.3" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="422.4" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="466.9" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="511.3" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="555.8" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="578.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M378.0,537.3 L389.1,545.0 L400.2,536.6 L411.3,511.7 L422.4,536.7 L433.6,512.3 L444.7,536.1 L455.8,550.4 L466.9,513.2 L478.0,534.4 L489.1,537.0 L500.2,537.9 L511.3,556.7 L522.4,543.2 L533.6,486.0 L544.7,547.3 L555.8,513.3 L566.9,512.3 L578.0,548.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="378.0" cy="537.3" r="4" stroke-width="2"><title>10-18: 1.049</title></circle>
-<circle class="s1 ring" cx="389.8" cy="545.0" r="4" stroke-width="2"><title>10-19: 1.032</title></circle>
-<circle class="s1 ring" cx="401.5" cy="536.6" r="4" stroke-width="2"><title>10-20: 1.051</title></circle>
-<circle class="s1 ring" cx="413.3" cy="511.7" r="4" stroke-width="2"><title>10-21: 1.107</title></circle>
-<circle class="s1 ring" cx="425.1" cy="536.7" r="4" stroke-width="2"><title>10-22: 1.051</title></circle>
-<circle class="s1 ring" cx="436.8" cy="512.3" r="4" stroke-width="2"><title>10-23: 1.105</title></circle>
-<circle class="s1 ring" cx="448.6" cy="536.1" r="4" stroke-width="2"><title>10-24: 1.052</title></circle>
-<circle class="s1 ring" cx="460.4" cy="550.4" r="4" stroke-width="2"><title>10-25: 1.02</title></circle>
-<circle class="s1 ring" cx="472.1" cy="513.2" r="4" stroke-width="2"><title>10-26: 1.103</title></circle>
-<circle class="s1 ring" cx="483.9" cy="534.4" r="4" stroke-width="2"><title>10-27: 1.056</title></circle>
-<circle class="s1 ring" cx="495.6" cy="537.0" r="4" stroke-width="2"><title>10-28: 1.05</title></circle>
-<circle class="s1 ring" cx="507.4" cy="537.9" r="4" stroke-width="2"><title>10-29: 1.048</title></circle>
-<circle class="s1 ring" cx="519.2" cy="556.7" r="4" stroke-width="2"><title>10-30: 1.006</title></circle>
-<circle class="s1 ring" cx="530.9" cy="543.2" r="4" stroke-width="2"><title>10-31: 1.036</title></circle>
-<circle class="s1 ring" cx="542.7" cy="486.0" r="4" stroke-width="2"><title>11-01: 1.164</title></circle>
-<circle class="s1 ring" cx="554.5" cy="547.3" r="4" stroke-width="2"><title>11-02: 1.027</title></circle>
-<circle class="s1 ring" cx="566.2" cy="513.3" r="4" stroke-width="2"><title>11-03: 1.103</title></circle>
-<circle class="s1 ring" cx="578.0" cy="512.3" r="4" stroke-width="2"><title>11-04: 1.105</title></circle>
-<path class="s2" d="M378.0,532.7 L389.8,551.3 L401.5,528.0 L413.3,506.2 L425.1,534.3 L436.8,506.6 L448.6,531.0 L460.4,555.6 L472.1,506.0 L483.9,532.1 L495.6,540.9 L507.4,543.1 L519.2,563.0 L530.9,557.7 L542.7,485.1 L554.5,551.9 L566.2,507.9 L578.0,505.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="389.1" cy="545.0" r="4" stroke-width="2"><title>10-19: 1.032</title></circle>
+<circle class="s1 ring" cx="400.2" cy="536.6" r="4" stroke-width="2"><title>10-20: 1.051</title></circle>
+<circle class="s1 ring" cx="411.3" cy="511.7" r="4" stroke-width="2"><title>10-21: 1.107</title></circle>
+<circle class="s1 ring" cx="422.4" cy="536.7" r="4" stroke-width="2"><title>10-22: 1.051</title></circle>
+<circle class="s1 ring" cx="433.6" cy="512.3" r="4" stroke-width="2"><title>10-23: 1.105</title></circle>
+<circle class="s1 ring" cx="444.7" cy="536.1" r="4" stroke-width="2"><title>10-24: 1.052</title></circle>
+<circle class="s1 ring" cx="455.8" cy="550.4" r="4" stroke-width="2"><title>10-25: 1.02</title></circle>
+<circle class="s1 ring" cx="466.9" cy="513.2" r="4" stroke-width="2"><title>10-26: 1.103</title></circle>
+<circle class="s1 ring" cx="478.0" cy="534.4" r="4" stroke-width="2"><title>10-27: 1.056</title></circle>
+<circle class="s1 ring" cx="489.1" cy="537.0" r="4" stroke-width="2"><title>10-28: 1.05</title></circle>
+<circle class="s1 ring" cx="500.2" cy="537.9" r="4" stroke-width="2"><title>10-29: 1.048</title></circle>
+<circle class="s1 ring" cx="511.3" cy="556.7" r="4" stroke-width="2"><title>10-30: 1.006</title></circle>
+<circle class="s1 ring" cx="522.4" cy="543.2" r="4" stroke-width="2"><title>10-31: 1.036</title></circle>
+<circle class="s1 ring" cx="533.6" cy="486.0" r="4" stroke-width="2"><title>11-01: 1.164</title></circle>
+<circle class="s1 ring" cx="544.7" cy="547.3" r="4" stroke-width="2"><title>11-02: 1.027</title></circle>
+<circle class="s1 ring" cx="555.8" cy="513.3" r="4" stroke-width="2"><title>11-03: 1.103</title></circle>
+<circle class="s1 ring" cx="566.9" cy="512.3" r="4" stroke-width="2"><title>11-04: 1.105</title></circle>
+<circle class="s1 ring" cx="578.0" cy="548.6" r="4" stroke-width="2"><title>11-05: 1.024</title></circle>
+<path class="s2" d="M378.0,532.7 L389.1,551.3 L400.2,528.0 L411.3,506.2 L422.4,534.3 L433.6,506.6 L444.7,531.0 L455.8,555.6 L466.9,506.0 L478.0,532.1 L489.1,540.9 L500.2,543.1 L511.3,563.0 L522.4,557.7 L533.6,485.1 L544.7,551.9 L555.8,507.9 L566.9,505.7 L578.0,555.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="378.0" cy="532.7" r="4" stroke-width="2"><title>10-18: 1.06</title></circle>
-<circle class="s2 ring" cx="389.8" cy="551.3" r="4" stroke-width="2"><title>10-19: 1.018</title></circle>
-<circle class="s2 ring" cx="401.5" cy="528.0" r="4" stroke-width="2"><title>10-20: 1.07</title></circle>
-<circle class="s2 ring" cx="413.3" cy="506.2" r="4" stroke-width="2"><title>10-21: 1.119</title></circle>
-<circle class="s2 ring" cx="425.1" cy="534.3" r="4" stroke-width="2"><title>10-22: 1.056</title></circle>
-<circle class="s2 ring" cx="436.8" cy="506.6" r="4" stroke-width="2"><title>10-23: 1.118</title></circle>
-<circle class="s2 ring" cx="448.6" cy="531.0" r="4" stroke-width="2"><title>10-24: 1.063</title></circle>
-<circle class="s2 ring" cx="460.4" cy="555.6" r="4" stroke-width="2"><title>10-25: 1.008</title></circle>
-<circle class="s2 ring" cx="472.1" cy="506.0" r="4" stroke-width="2"><title>10-26: 1.119</title></circle>
-<circle class="s2 ring" cx="483.9" cy="532.1" r="4" stroke-width="2"><title>10-27: 1.061</title></circle>
-<circle class="s2 ring" cx="495.6" cy="540.9" r="4" stroke-width="2"><title>10-28: 1.041</title></circle>
-<circle class="s2 ring" cx="507.4" cy="543.1" r="4" stroke-width="2"><title>10-29: 1.036</title></circle>
-<circle class="s2 ring" cx="519.2" cy="563.0" r="4" stroke-width="2"><title>10-30: 0.992</title></circle>
-<circle class="s2 ring" cx="530.9" cy="557.7" r="4" stroke-width="2"><title>10-31: 1.004</title></circle>
-<circle class="s2 ring" cx="542.7" cy="485.1" r="4" stroke-width="2"><title>11-01: 1.166</title></circle>
-<circle class="s2 ring" cx="554.5" cy="551.9" r="4" stroke-width="2"><title>11-02: 1.017</title></circle>
-<circle class="s2 ring" cx="566.2" cy="507.9" r="4" stroke-width="2"><title>11-03: 1.115</title></circle>
-<circle class="s2 ring" cx="578.0" cy="505.7" r="4" stroke-width="2"><title>11-04: 1.12</title></circle>
+<circle class="s2 ring" cx="389.1" cy="551.3" r="4" stroke-width="2"><title>10-19: 1.018</title></circle>
+<circle class="s2 ring" cx="400.2" cy="528.0" r="4" stroke-width="2"><title>10-20: 1.07</title></circle>
+<circle class="s2 ring" cx="411.3" cy="506.2" r="4" stroke-width="2"><title>10-21: 1.119</title></circle>
+<circle class="s2 ring" cx="422.4" cy="534.3" r="4" stroke-width="2"><title>10-22: 1.056</title></circle>
+<circle class="s2 ring" cx="433.6" cy="506.6" r="4" stroke-width="2"><title>10-23: 1.118</title></circle>
+<circle class="s2 ring" cx="444.7" cy="531.0" r="4" stroke-width="2"><title>10-24: 1.063</title></circle>
+<circle class="s2 ring" cx="455.8" cy="555.6" r="4" stroke-width="2"><title>10-25: 1.008</title></circle>
+<circle class="s2 ring" cx="466.9" cy="506.0" r="4" stroke-width="2"><title>10-26: 1.119</title></circle>
+<circle class="s2 ring" cx="478.0" cy="532.1" r="4" stroke-width="2"><title>10-27: 1.061</title></circle>
+<circle class="s2 ring" cx="489.1" cy="540.9" r="4" stroke-width="2"><title>10-28: 1.041</title></circle>
+<circle class="s2 ring" cx="500.2" cy="543.1" r="4" stroke-width="2"><title>10-29: 1.036</title></circle>
+<circle class="s2 ring" cx="511.3" cy="563.0" r="4" stroke-width="2"><title>10-30: 0.992</title></circle>
+<circle class="s2 ring" cx="522.4" cy="557.7" r="4" stroke-width="2"><title>10-31: 1.004</title></circle>
+<circle class="s2 ring" cx="533.6" cy="485.1" r="4" stroke-width="2"><title>11-01: 1.166</title></circle>
+<circle class="s2 ring" cx="544.7" cy="551.9" r="4" stroke-width="2"><title>11-02: 1.017</title></circle>
+<circle class="s2 ring" cx="555.8" cy="507.9" r="4" stroke-width="2"><title>11-03: 1.115</title></circle>
+<circle class="s2 ring" cx="566.9" cy="505.7" r="4" stroke-width="2"><title>11-04: 1.12</title></circle>
+<circle class="s2 ring" cx="578.0" cy="555.2" r="4" stroke-width="2"><title>11-05: 1.009</title></circle>
 <text class="t" x="612.0" y="457.0" font-size="13" text-anchor="start" font-weight="600">pqueue</text>
 <line class="grid" x1="664.0" y1="604.0" x2="892.0" y2="604.0" stroke-width="1"/>
 <text class="t2" x="658.0" y="608.0" font-size="11" text-anchor="end" font-weight="normal">0.5</text>
@@ -479,49 +495,51 @@
 <text class="t2" x="624.0" y="537.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 624.0 537.0)">ratio to C</text>
 <line class="ref" x1="664.0" y1="577.2" x2="892.0" y2="577.2" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="678.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="725.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="772.1" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="819.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="866.2" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="878.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M678.0,516.0 L689.8,512.0 L701.5,516.3 L713.3,508.6 L725.1,508.6 L736.8,502.7 L748.6,516.3 L760.4,526.2 L772.1,506.4 L783.9,517.1 L795.6,524.1 L807.4,523.9 L819.2,523.8 L830.9,526.1 L842.7,494.5 L854.5,530.2 L866.2,492.0 L878.0,505.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="722.4" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="766.9" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="811.3" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="855.8" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="878.0" y="619.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M678.0,516.0 L689.1,512.0 L700.2,516.3 L711.3,508.6 L722.4,508.6 L733.6,502.7 L744.7,516.3 L755.8,526.2 L766.9,506.4 L778.0,517.1 L789.1,524.1 L800.2,523.9 L811.3,523.8 L822.4,526.1 L833.6,494.5 L844.7,530.2 L855.8,492.0 L866.9,505.2 L878.0,528.5" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="678.0" cy="516.0" r="4" stroke-width="2"><title>10-18: 2.142</title></circle>
-<circle class="s1 ring" cx="689.8" cy="512.0" r="4" stroke-width="2"><title>10-19: 2.216</title></circle>
-<circle class="s1 ring" cx="701.5" cy="516.3" r="4" stroke-width="2"><title>10-20: 2.137</title></circle>
-<circle class="s1 ring" cx="713.3" cy="508.6" r="4" stroke-width="2"><title>10-21: 2.281</title></circle>
-<circle class="s1 ring" cx="725.1" cy="508.6" r="4" stroke-width="2"><title>10-22: 2.279</title></circle>
-<circle class="s1 ring" cx="736.8" cy="502.7" r="4" stroke-width="2"><title>10-23: 2.39</title></circle>
-<circle class="s1 ring" cx="748.6" cy="516.3" r="4" stroke-width="2"><title>10-24: 2.136</title></circle>
-<circle class="s1 ring" cx="760.4" cy="526.2" r="4" stroke-width="2"><title>10-25: 1.952</title></circle>
-<circle class="s1 ring" cx="772.1" cy="506.4" r="4" stroke-width="2"><title>10-26: 2.32</title></circle>
-<circle class="s1 ring" cx="783.9" cy="517.1" r="4" stroke-width="2"><title>10-27: 2.122</title></circle>
-<circle class="s1 ring" cx="795.6" cy="524.1" r="4" stroke-width="2"><title>10-28: 1.991</title></circle>
-<circle class="s1 ring" cx="807.4" cy="523.9" r="4" stroke-width="2"><title>10-29: 1.995</title></circle>
-<circle class="s1 ring" cx="819.2" cy="523.8" r="4" stroke-width="2"><title>10-30: 1.996</title></circle>
-<circle class="s1 ring" cx="830.9" cy="526.1" r="4" stroke-width="2"><title>10-31: 1.953</title></circle>
-<circle class="s1 ring" cx="842.7" cy="494.5" r="4" stroke-width="2"><title>11-01: 2.542</title></circle>
-<circle class="s1 ring" cx="854.5" cy="530.2" r="4" stroke-width="2"><title>11-02: 1.878</title></circle>
-<circle class="s1 ring" cx="866.2" cy="492.0" r="4" stroke-width="2"><title>11-03: 2.59</title></circle>
-<circle class="s1 ring" cx="878.0" cy="505.2" r="4" stroke-width="2"><title>11-04: 2.344</title></circle>
-<path class="s2" d="M678.0,535.1 L689.8,544.4 L701.5,535.7 L713.3,524.5 L725.1,532.7 L736.8,517.5 L748.6,532.2 L760.4,544.3 L772.1,524.3 L783.9,536.7 L795.6,551.9 L807.4,551.4 L819.2,542.1 L830.9,547.0 L842.7,512.8 L854.5,548.9 L866.2,513.3 L878.0,524.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="689.1" cy="512.0" r="4" stroke-width="2"><title>10-19: 2.216</title></circle>
+<circle class="s1 ring" cx="700.2" cy="516.3" r="4" stroke-width="2"><title>10-20: 2.137</title></circle>
+<circle class="s1 ring" cx="711.3" cy="508.6" r="4" stroke-width="2"><title>10-21: 2.281</title></circle>
+<circle class="s1 ring" cx="722.4" cy="508.6" r="4" stroke-width="2"><title>10-22: 2.279</title></circle>
+<circle class="s1 ring" cx="733.6" cy="502.7" r="4" stroke-width="2"><title>10-23: 2.39</title></circle>
+<circle class="s1 ring" cx="744.7" cy="516.3" r="4" stroke-width="2"><title>10-24: 2.136</title></circle>
+<circle class="s1 ring" cx="755.8" cy="526.2" r="4" stroke-width="2"><title>10-25: 1.952</title></circle>
+<circle class="s1 ring" cx="766.9" cy="506.4" r="4" stroke-width="2"><title>10-26: 2.32</title></circle>
+<circle class="s1 ring" cx="778.0" cy="517.1" r="4" stroke-width="2"><title>10-27: 2.122</title></circle>
+<circle class="s1 ring" cx="789.1" cy="524.1" r="4" stroke-width="2"><title>10-28: 1.991</title></circle>
+<circle class="s1 ring" cx="800.2" cy="523.9" r="4" stroke-width="2"><title>10-29: 1.995</title></circle>
+<circle class="s1 ring" cx="811.3" cy="523.8" r="4" stroke-width="2"><title>10-30: 1.996</title></circle>
+<circle class="s1 ring" cx="822.4" cy="526.1" r="4" stroke-width="2"><title>10-31: 1.953</title></circle>
+<circle class="s1 ring" cx="833.6" cy="494.5" r="4" stroke-width="2"><title>11-01: 2.542</title></circle>
+<circle class="s1 ring" cx="844.7" cy="530.2" r="4" stroke-width="2"><title>11-02: 1.878</title></circle>
+<circle class="s1 ring" cx="855.8" cy="492.0" r="4" stroke-width="2"><title>11-03: 2.59</title></circle>
+<circle class="s1 ring" cx="866.9" cy="505.2" r="4" stroke-width="2"><title>11-04: 2.344</title></circle>
+<circle class="s1 ring" cx="878.0" cy="528.5" r="4" stroke-width="2"><title>11-05: 1.908</title></circle>
+<path class="s2" d="M678.0,535.1 L689.1,544.4 L700.2,535.7 L711.3,524.5 L722.4,532.7 L733.6,517.5 L744.7,532.2 L755.8,544.3 L766.9,524.3 L778.0,536.7 L789.1,551.9 L800.2,551.4 L811.3,542.1 L822.4,547.0 L833.6,512.8 L844.7,548.9 L855.8,513.3 L866.9,524.6 L878.0,546.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="678.0" cy="535.1" r="4" stroke-width="2"><title>10-18: 1.786</title></circle>
-<circle class="s2 ring" cx="689.8" cy="544.4" r="4" stroke-width="2"><title>10-19: 1.612</title></circle>
-<circle class="s2 ring" cx="701.5" cy="535.7" r="4" stroke-width="2"><title>10-20: 1.773</title></circle>
-<circle class="s2 ring" cx="713.3" cy="524.5" r="4" stroke-width="2"><title>10-21: 1.983</title></circle>
-<circle class="s2 ring" cx="725.1" cy="532.7" r="4" stroke-width="2"><title>10-22: 1.831</title></circle>
-<circle class="s2 ring" cx="736.8" cy="517.5" r="4" stroke-width="2"><title>10-23: 2.113</title></circle>
-<circle class="s2 ring" cx="748.6" cy="532.2" r="4" stroke-width="2"><title>10-24: 1.84</title></circle>
-<circle class="s2 ring" cx="760.4" cy="544.3" r="4" stroke-width="2"><title>10-25: 1.615</title></circle>
-<circle class="s2 ring" cx="772.1" cy="524.3" r="4" stroke-width="2"><title>10-26: 1.986</title></circle>
-<circle class="s2 ring" cx="783.9" cy="536.7" r="4" stroke-width="2"><title>10-27: 1.755</title></circle>
-<circle class="s2 ring" cx="795.6" cy="551.9" r="4" stroke-width="2"><title>10-28: 1.473</title></circle>
-<circle class="s2 ring" cx="807.4" cy="551.4" r="4" stroke-width="2"><title>10-29: 1.481</title></circle>
-<circle class="s2 ring" cx="819.2" cy="542.1" r="4" stroke-width="2"><title>10-30: 1.655</title></circle>
-<circle class="s2 ring" cx="830.9" cy="547.0" r="4" stroke-width="2"><title>10-31: 1.563</title></circle>
-<circle class="s2 ring" cx="842.7" cy="512.8" r="4" stroke-width="2"><title>11-01: 2.202</title></circle>
-<circle class="s2 ring" cx="854.5" cy="548.9" r="4" stroke-width="2"><title>11-02: 1.528</title></circle>
-<circle class="s2 ring" cx="866.2" cy="513.3" r="4" stroke-width="2"><title>11-03: 2.191</title></circle>
-<circle class="s2 ring" cx="878.0" cy="524.6" r="4" stroke-width="2"><title>11-04: 1.981</title></circle>
+<circle class="s2 ring" cx="689.1" cy="544.4" r="4" stroke-width="2"><title>10-19: 1.612</title></circle>
+<circle class="s2 ring" cx="700.2" cy="535.7" r="4" stroke-width="2"><title>10-20: 1.773</title></circle>
+<circle class="s2 ring" cx="711.3" cy="524.5" r="4" stroke-width="2"><title>10-21: 1.983</title></circle>
+<circle class="s2 ring" cx="722.4" cy="532.7" r="4" stroke-width="2"><title>10-22: 1.831</title></circle>
+<circle class="s2 ring" cx="733.6" cy="517.5" r="4" stroke-width="2"><title>10-23: 2.113</title></circle>
+<circle class="s2 ring" cx="744.7" cy="532.2" r="4" stroke-width="2"><title>10-24: 1.84</title></circle>
+<circle class="s2 ring" cx="755.8" cy="544.3" r="4" stroke-width="2"><title>10-25: 1.615</title></circle>
+<circle class="s2 ring" cx="766.9" cy="524.3" r="4" stroke-width="2"><title>10-26: 1.986</title></circle>
+<circle class="s2 ring" cx="778.0" cy="536.7" r="4" stroke-width="2"><title>10-27: 1.755</title></circle>
+<circle class="s2 ring" cx="789.1" cy="551.9" r="4" stroke-width="2"><title>10-28: 1.473</title></circle>
+<circle class="s2 ring" cx="800.2" cy="551.4" r="4" stroke-width="2"><title>10-29: 1.481</title></circle>
+<circle class="s2 ring" cx="811.3" cy="542.1" r="4" stroke-width="2"><title>10-30: 1.655</title></circle>
+<circle class="s2 ring" cx="822.4" cy="547.0" r="4" stroke-width="2"><title>10-31: 1.563</title></circle>
+<circle class="s2 ring" cx="833.6" cy="512.8" r="4" stroke-width="2"><title>11-01: 2.202</title></circle>
+<circle class="s2 ring" cx="844.7" cy="548.9" r="4" stroke-width="2"><title>11-02: 1.528</title></circle>
+<circle class="s2 ring" cx="855.8" cy="513.3" r="4" stroke-width="2"><title>11-03: 2.191</title></circle>
+<circle class="s2 ring" cx="866.9" cy="524.6" r="4" stroke-width="2"><title>11-04: 1.981</title></circle>
+<circle class="s2 ring" cx="878.0" cy="546.6" r="4" stroke-width="2"><title>11-05: 1.57</title></circle>
 <text class="t" x="12.0" y="647.0" font-size="13" text-anchor="start" font-weight="600">qsort_func</text>
 <line class="grid" x1="64.0" y1="794.0" x2="292.0" y2="794.0" stroke-width="1"/>
 <text class="t2" x="58.0" y="798.0" font-size="11" text-anchor="end" font-weight="normal">0.8</text>
@@ -538,49 +556,51 @@
 <text class="t2" x="24.0" y="727.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 727.0)">ratio to C</text>
 <line class="ref" x1="64.0" y1="686.8" x2="292.0" y2="686.8" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="78.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="125.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="172.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="219.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="266.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="278.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M78.0,725.5 L89.8,762.9 L101.5,722.1 L113.3,721.7 L125.1,711.3 L136.8,730.5 L148.6,723.2 L160.4,748.0 L172.1,731.9 L183.9,722.4 L195.6,730.0 L207.4,727.6 L219.2,735.8 L230.9,751.5 L242.7,729.3 L254.5,745.6 L266.2,730.0 L278.0,724.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="122.4" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="166.9" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="211.3" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="255.8" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="278.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M78.0,725.5 L89.1,762.9 L100.2,722.1 L111.3,721.7 L122.4,711.3 L133.6,730.5 L144.7,723.2 L155.8,748.0 L166.9,731.9 L178.0,722.4 L189.1,730.0 L200.2,727.6 L211.3,735.8 L222.4,751.5 L233.6,729.3 L244.7,745.6 L255.8,730.0 L266.9,724.1 L278.0,743.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="725.5" r="4" stroke-width="2"><title>10-18: 0.928</title></circle>
-<circle class="s1 ring" cx="89.8" cy="762.9" r="4" stroke-width="2"><title>10-19: 0.858</title></circle>
-<circle class="s1 ring" cx="101.5" cy="722.1" r="4" stroke-width="2"><title>10-20: 0.934</title></circle>
-<circle class="s1 ring" cx="113.3" cy="721.7" r="4" stroke-width="2"><title>10-21: 0.935</title></circle>
-<circle class="s1 ring" cx="125.1" cy="711.3" r="4" stroke-width="2"><title>10-22: 0.954</title></circle>
-<circle class="s1 ring" cx="136.8" cy="730.5" r="4" stroke-width="2"><title>10-23: 0.918</title></circle>
-<circle class="s1 ring" cx="148.6" cy="723.2" r="4" stroke-width="2"><title>10-24: 0.932</title></circle>
-<circle class="s1 ring" cx="160.4" cy="748.0" r="4" stroke-width="2"><title>10-25: 0.886</title></circle>
-<circle class="s1 ring" cx="172.1" cy="731.9" r="4" stroke-width="2"><title>10-26: 0.916</title></circle>
-<circle class="s1 ring" cx="183.9" cy="722.4" r="4" stroke-width="2"><title>10-27: 0.934</title></circle>
-<circle class="s1 ring" cx="195.6" cy="730.0" r="4" stroke-width="2"><title>10-28: 0.919</title></circle>
-<circle class="s1 ring" cx="207.4" cy="727.6" r="4" stroke-width="2"><title>10-29: 0.924</title></circle>
-<circle class="s1 ring" cx="219.2" cy="735.8" r="4" stroke-width="2"><title>10-30: 0.909</title></circle>
-<circle class="s1 ring" cx="230.9" cy="751.5" r="4" stroke-width="2"><title>10-31: 0.879</title></circle>
-<circle class="s1 ring" cx="242.7" cy="729.3" r="4" stroke-width="2"><title>11-01: 0.921</title></circle>
-<circle class="s1 ring" cx="254.5" cy="745.6" r="4" stroke-width="2"><title>11-02: 0.89</title></circle>
-<circle class="s1 ring" cx="266.2" cy="730.0" r="4" stroke-width="2"><title>11-03: 0.919</title></circle>
-<circle class="s1 ring" cx="278.0" cy="724.1" r="4" stroke-width="2"><title>11-04: 0.93</title></circle>
-<path class="s2" d="M78.0,717.7 L89.8,760.1 L101.5,712.2 L113.3,729.2 L125.1,716.2 L136.8,739.1 L148.6,720.9 L160.4,749.9 L172.1,733.3 L183.9,724.6 L195.6,725.3 L207.4,721.9 L219.2,751.2 L230.9,753.2 L242.7,711.2 L254.5,746.9 L266.2,737.4 L278.0,726.3" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="89.1" cy="762.9" r="4" stroke-width="2"><title>10-19: 0.858</title></circle>
+<circle class="s1 ring" cx="100.2" cy="722.1" r="4" stroke-width="2"><title>10-20: 0.934</title></circle>
+<circle class="s1 ring" cx="111.3" cy="721.7" r="4" stroke-width="2"><title>10-21: 0.935</title></circle>
+<circle class="s1 ring" cx="122.4" cy="711.3" r="4" stroke-width="2"><title>10-22: 0.954</title></circle>
+<circle class="s1 ring" cx="133.6" cy="730.5" r="4" stroke-width="2"><title>10-23: 0.918</title></circle>
+<circle class="s1 ring" cx="144.7" cy="723.2" r="4" stroke-width="2"><title>10-24: 0.932</title></circle>
+<circle class="s1 ring" cx="155.8" cy="748.0" r="4" stroke-width="2"><title>10-25: 0.886</title></circle>
+<circle class="s1 ring" cx="166.9" cy="731.9" r="4" stroke-width="2"><title>10-26: 0.916</title></circle>
+<circle class="s1 ring" cx="178.0" cy="722.4" r="4" stroke-width="2"><title>10-27: 0.934</title></circle>
+<circle class="s1 ring" cx="189.1" cy="730.0" r="4" stroke-width="2"><title>10-28: 0.919</title></circle>
+<circle class="s1 ring" cx="200.2" cy="727.6" r="4" stroke-width="2"><title>10-29: 0.924</title></circle>
+<circle class="s1 ring" cx="211.3" cy="735.8" r="4" stroke-width="2"><title>10-30: 0.909</title></circle>
+<circle class="s1 ring" cx="222.4" cy="751.5" r="4" stroke-width="2"><title>10-31: 0.879</title></circle>
+<circle class="s1 ring" cx="233.6" cy="729.3" r="4" stroke-width="2"><title>11-01: 0.921</title></circle>
+<circle class="s1 ring" cx="244.7" cy="745.6" r="4" stroke-width="2"><title>11-02: 0.89</title></circle>
+<circle class="s1 ring" cx="255.8" cy="730.0" r="4" stroke-width="2"><title>11-03: 0.919</title></circle>
+<circle class="s1 ring" cx="266.9" cy="724.1" r="4" stroke-width="2"><title>11-04: 0.93</title></circle>
+<circle class="s1 ring" cx="278.0" cy="743.1" r="4" stroke-width="2"><title>11-05: 0.895</title></circle>
+<path class="s2" d="M78.0,717.7 L89.1,760.1 L100.2,712.2 L111.3,729.2 L122.4,716.2 L133.6,739.1 L144.7,720.9 L155.8,749.9 L166.9,733.3 L178.0,724.6 L189.1,725.3 L200.2,721.9 L211.3,751.2 L222.4,753.2 L233.6,711.2 L244.7,746.9 L255.8,737.4 L266.9,726.3 L278.0,745.2" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="78.0" cy="717.7" r="4" stroke-width="2"><title>10-18: 0.942</title></circle>
-<circle class="s2 ring" cx="89.8" cy="760.1" r="4" stroke-width="2"><title>10-19: 0.863</title></circle>
-<circle class="s2 ring" cx="101.5" cy="712.2" r="4" stroke-width="2"><title>10-20: 0.953</title></circle>
-<circle class="s2 ring" cx="113.3" cy="729.2" r="4" stroke-width="2"><title>10-21: 0.921</title></circle>
-<circle class="s2 ring" cx="125.1" cy="716.2" r="4" stroke-width="2"><title>10-22: 0.945</title></circle>
-<circle class="s2 ring" cx="136.8" cy="739.1" r="4" stroke-width="2"><title>10-23: 0.902</title></circle>
-<circle class="s2 ring" cx="148.6" cy="720.9" r="4" stroke-width="2"><title>10-24: 0.936</title></circle>
-<circle class="s2 ring" cx="160.4" cy="749.9" r="4" stroke-width="2"><title>10-25: 0.882</title></circle>
-<circle class="s2 ring" cx="172.1" cy="733.3" r="4" stroke-width="2"><title>10-26: 0.913</title></circle>
-<circle class="s2 ring" cx="183.9" cy="724.6" r="4" stroke-width="2"><title>10-27: 0.929</title></circle>
-<circle class="s2 ring" cx="195.6" cy="725.3" r="4" stroke-width="2"><title>10-28: 0.928</title></circle>
-<circle class="s2 ring" cx="207.4" cy="721.9" r="4" stroke-width="2"><title>10-29: 0.934</title></circle>
-<circle class="s2 ring" cx="219.2" cy="751.2" r="4" stroke-width="2"><title>10-30: 0.88</title></circle>
-<circle class="s2 ring" cx="230.9" cy="753.2" r="4" stroke-width="2"><title>10-31: 0.876</title></circle>
-<circle class="s2 ring" cx="242.7" cy="711.2" r="4" stroke-width="2"><title>11-01: 0.954</title></circle>
-<circle class="s2 ring" cx="254.5" cy="746.9" r="4" stroke-width="2"><title>11-02: 0.888</title></circle>
-<circle class="s2 ring" cx="266.2" cy="737.4" r="4" stroke-width="2"><title>11-03: 0.906</title></circle>
-<circle class="s2 ring" cx="278.0" cy="726.3" r="4" stroke-width="2"><title>11-04: 0.926</title></circle>
+<circle class="s2 ring" cx="89.1" cy="760.1" r="4" stroke-width="2"><title>10-19: 0.863</title></circle>
+<circle class="s2 ring" cx="100.2" cy="712.2" r="4" stroke-width="2"><title>10-20: 0.953</title></circle>
+<circle class="s2 ring" cx="111.3" cy="729.2" r="4" stroke-width="2"><title>10-21: 0.921</title></circle>
+<circle class="s2 ring" cx="122.4" cy="716.2" r="4" stroke-width="2"><title>10-22: 0.945</title></circle>
+<circle class="s2 ring" cx="133.6" cy="739.1" r="4" stroke-width="2"><title>10-23: 0.902</title></circle>
+<circle class="s2 ring" cx="144.7" cy="720.9" r="4" stroke-width="2"><title>10-24: 0.936</title></circle>
+<circle class="s2 ring" cx="155.8" cy="749.9" r="4" stroke-width="2"><title>10-25: 0.882</title></circle>
+<circle class="s2 ring" cx="166.9" cy="733.3" r="4" stroke-width="2"><title>10-26: 0.913</title></circle>
+<circle class="s2 ring" cx="178.0" cy="724.6" r="4" stroke-width="2"><title>10-27: 0.929</title></circle>
+<circle class="s2 ring" cx="189.1" cy="725.3" r="4" stroke-width="2"><title>10-28: 0.928</title></circle>
+<circle class="s2 ring" cx="200.2" cy="721.9" r="4" stroke-width="2"><title>10-29: 0.934</title></circle>
+<circle class="s2 ring" cx="211.3" cy="751.2" r="4" stroke-width="2"><title>10-30: 0.88</title></circle>
+<circle class="s2 ring" cx="222.4" cy="753.2" r="4" stroke-width="2"><title>10-31: 0.876</title></circle>
+<circle class="s2 ring" cx="233.6" cy="711.2" r="4" stroke-width="2"><title>11-01: 0.954</title></circle>
+<circle class="s2 ring" cx="244.7" cy="746.9" r="4" stroke-width="2"><title>11-02: 0.888</title></circle>
+<circle class="s2 ring" cx="255.8" cy="737.4" r="4" stroke-width="2"><title>11-03: 0.906</title></circle>
+<circle class="s2 ring" cx="266.9" cy="726.3" r="4" stroke-width="2"><title>11-04: 0.926</title></circle>
+<circle class="s2 ring" cx="278.0" cy="745.2" r="4" stroke-width="2"><title>11-05: 0.891</title></circle>
 <text class="t" x="312.0" y="647.0" font-size="13" text-anchor="start" font-weight="600">qsort_inplace</text>
 <line class="grid" x1="364.0" y1="794.0" x2="592.0" y2="794.0" stroke-width="1"/>
 <text class="t2" x="358.0" y="798.0" font-size="11" text-anchor="end" font-weight="normal">0.8</text>
@@ -595,49 +615,51 @@
 <text class="t2" x="324.0" y="727.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 324.0 727.0)">ratio to C</text>
 <line class="ref" x1="364.0" y1="760.5" x2="592.0" y2="760.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="378.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="425.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="472.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="519.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="566.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="578.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M378.0,704.5 L389.8,703.0 L401.5,703.9 L413.3,719.3 L425.1,708.8 L436.8,712.1 L448.6,699.9 L460.4,726.5 L472.1,715.1 L483.9,699.7 L495.6,705.6 L507.4,711.6 L519.2,732.2 L530.9,732.8 L542.7,716.4 L554.5,728.3 L566.2,715.8 L578.0,720.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="422.4" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="466.9" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="511.3" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="555.8" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="578.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M378.0,704.5 L389.1,703.0 L400.2,703.9 L411.3,719.3 L422.4,708.8 L433.6,712.1 L444.7,699.9 L455.8,726.5 L466.9,715.1 L478.0,699.7 L489.1,705.6 L500.2,711.6 L511.3,732.2 L522.4,732.8 L533.6,716.4 L544.7,728.3 L555.8,715.8 L566.9,720.0 L578.0,731.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="378.0" cy="704.5" r="4" stroke-width="2"><title>10-18: 1.334</title></circle>
-<circle class="s1 ring" cx="389.8" cy="703.0" r="4" stroke-width="2"><title>10-19: 1.343</title></circle>
-<circle class="s1 ring" cx="401.5" cy="703.9" r="4" stroke-width="2"><title>10-20: 1.338</title></circle>
-<circle class="s1 ring" cx="413.3" cy="719.3" r="4" stroke-width="2"><title>10-21: 1.246</title></circle>
-<circle class="s1 ring" cx="425.1" cy="708.8" r="4" stroke-width="2"><title>10-22: 1.309</title></circle>
-<circle class="s1 ring" cx="436.8" cy="712.1" r="4" stroke-width="2"><title>10-23: 1.289</title></circle>
-<circle class="s1 ring" cx="448.6" cy="699.9" r="4" stroke-width="2"><title>10-24: 1.361</title></circle>
-<circle class="s1 ring" cx="460.4" cy="726.5" r="4" stroke-width="2"><title>10-25: 1.203</title></circle>
-<circle class="s1 ring" cx="472.1" cy="715.1" r="4" stroke-width="2"><title>10-26: 1.271</title></circle>
-<circle class="s1 ring" cx="483.9" cy="699.7" r="4" stroke-width="2"><title>10-27: 1.363</title></circle>
-<circle class="s1 ring" cx="495.6" cy="705.6" r="4" stroke-width="2"><title>10-28: 1.328</title></circle>
-<circle class="s1 ring" cx="507.4" cy="711.6" r="4" stroke-width="2"><title>10-29: 1.292</title></circle>
-<circle class="s1 ring" cx="519.2" cy="732.2" r="4" stroke-width="2"><title>10-30: 1.169</title></circle>
-<circle class="s1 ring" cx="530.9" cy="732.8" r="4" stroke-width="2"><title>10-31: 1.165</title></circle>
-<circle class="s1 ring" cx="542.7" cy="716.4" r="4" stroke-width="2"><title>11-01: 1.263</title></circle>
-<circle class="s1 ring" cx="554.5" cy="728.3" r="4" stroke-width="2"><title>11-02: 1.192</title></circle>
-<circle class="s1 ring" cx="566.2" cy="715.8" r="4" stroke-width="2"><title>11-03: 1.267</title></circle>
-<circle class="s1 ring" cx="578.0" cy="720.0" r="4" stroke-width="2"><title>11-04: 1.242</title></circle>
-<path class="s2" d="M378.0,680.3 L389.8,707.3 L401.5,677.3 L413.3,718.7 L425.1,686.5 L436.8,710.7 L448.6,683.3 L460.4,730.1 L472.1,713.8 L483.9,681.3 L495.6,714.6 L507.4,719.2 L519.2,733.1 L530.9,738.3 L542.7,721.6 L554.5,733.3 L566.2,716.7 L578.0,718.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="389.1" cy="703.0" r="4" stroke-width="2"><title>10-19: 1.343</title></circle>
+<circle class="s1 ring" cx="400.2" cy="703.9" r="4" stroke-width="2"><title>10-20: 1.338</title></circle>
+<circle class="s1 ring" cx="411.3" cy="719.3" r="4" stroke-width="2"><title>10-21: 1.246</title></circle>
+<circle class="s1 ring" cx="422.4" cy="708.8" r="4" stroke-width="2"><title>10-22: 1.309</title></circle>
+<circle class="s1 ring" cx="433.6" cy="712.1" r="4" stroke-width="2"><title>10-23: 1.289</title></circle>
+<circle class="s1 ring" cx="444.7" cy="699.9" r="4" stroke-width="2"><title>10-24: 1.361</title></circle>
+<circle class="s1 ring" cx="455.8" cy="726.5" r="4" stroke-width="2"><title>10-25: 1.203</title></circle>
+<circle class="s1 ring" cx="466.9" cy="715.1" r="4" stroke-width="2"><title>10-26: 1.271</title></circle>
+<circle class="s1 ring" cx="478.0" cy="699.7" r="4" stroke-width="2"><title>10-27: 1.363</title></circle>
+<circle class="s1 ring" cx="489.1" cy="705.6" r="4" stroke-width="2"><title>10-28: 1.328</title></circle>
+<circle class="s1 ring" cx="500.2" cy="711.6" r="4" stroke-width="2"><title>10-29: 1.292</title></circle>
+<circle class="s1 ring" cx="511.3" cy="732.2" r="4" stroke-width="2"><title>10-30: 1.169</title></circle>
+<circle class="s1 ring" cx="522.4" cy="732.8" r="4" stroke-width="2"><title>10-31: 1.165</title></circle>
+<circle class="s1 ring" cx="533.6" cy="716.4" r="4" stroke-width="2"><title>11-01: 1.263</title></circle>
+<circle class="s1 ring" cx="544.7" cy="728.3" r="4" stroke-width="2"><title>11-02: 1.192</title></circle>
+<circle class="s1 ring" cx="555.8" cy="715.8" r="4" stroke-width="2"><title>11-03: 1.267</title></circle>
+<circle class="s1 ring" cx="566.9" cy="720.0" r="4" stroke-width="2"><title>11-04: 1.242</title></circle>
+<circle class="s1 ring" cx="578.0" cy="731.6" r="4" stroke-width="2"><title>11-05: 1.173</title></circle>
+<path class="s2" d="M378.0,680.3 L389.1,707.3 L400.2,677.3 L411.3,718.7 L422.4,686.5 L433.6,710.7 L444.7,683.3 L455.8,730.1 L466.9,713.8 L478.0,681.3 L489.1,714.6 L500.2,719.2 L511.3,733.1 L522.4,738.3 L533.6,721.6 L544.7,733.3 L555.8,716.7 L566.9,718.0 L578.0,736.9" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="378.0" cy="680.3" r="4" stroke-width="2"><title>10-18: 1.479</title></circle>
-<circle class="s2 ring" cx="389.8" cy="707.3" r="4" stroke-width="2"><title>10-19: 1.318</title></circle>
-<circle class="s2 ring" cx="401.5" cy="677.3" r="4" stroke-width="2"><title>10-20: 1.497</title></circle>
-<circle class="s2 ring" cx="413.3" cy="718.7" r="4" stroke-width="2"><title>10-21: 1.249</title></circle>
-<circle class="s2 ring" cx="425.1" cy="686.5" r="4" stroke-width="2"><title>10-22: 1.442</title></circle>
-<circle class="s2 ring" cx="436.8" cy="710.7" r="4" stroke-width="2"><title>10-23: 1.298</title></circle>
-<circle class="s2 ring" cx="448.6" cy="683.3" r="4" stroke-width="2"><title>10-24: 1.461</title></circle>
-<circle class="s2 ring" cx="460.4" cy="730.1" r="4" stroke-width="2"><title>10-25: 1.181</title></circle>
-<circle class="s2 ring" cx="472.1" cy="713.8" r="4" stroke-width="2"><title>10-26: 1.279</title></circle>
-<circle class="s2 ring" cx="483.9" cy="681.3" r="4" stroke-width="2"><title>10-27: 1.473</title></circle>
-<circle class="s2 ring" cx="495.6" cy="714.6" r="4" stroke-width="2"><title>10-28: 1.274</title></circle>
-<circle class="s2 ring" cx="507.4" cy="719.2" r="4" stroke-width="2"><title>10-29: 1.246</title></circle>
-<circle class="s2 ring" cx="519.2" cy="733.1" r="4" stroke-width="2"><title>10-30: 1.164</title></circle>
-<circle class="s2 ring" cx="530.9" cy="738.3" r="4" stroke-width="2"><title>10-31: 1.133</title></circle>
-<circle class="s2 ring" cx="542.7" cy="721.6" r="4" stroke-width="2"><title>11-01: 1.232</title></circle>
-<circle class="s2 ring" cx="554.5" cy="733.3" r="4" stroke-width="2"><title>11-02: 1.162</title></circle>
-<circle class="s2 ring" cx="566.2" cy="716.7" r="4" stroke-width="2"><title>11-03: 1.262</title></circle>
-<circle class="s2 ring" cx="578.0" cy="718.0" r="4" stroke-width="2"><title>11-04: 1.253</title></circle>
+<circle class="s2 ring" cx="389.1" cy="707.3" r="4" stroke-width="2"><title>10-19: 1.318</title></circle>
+<circle class="s2 ring" cx="400.2" cy="677.3" r="4" stroke-width="2"><title>10-20: 1.497</title></circle>
+<circle class="s2 ring" cx="411.3" cy="718.7" r="4" stroke-width="2"><title>10-21: 1.249</title></circle>
+<circle class="s2 ring" cx="422.4" cy="686.5" r="4" stroke-width="2"><title>10-22: 1.442</title></circle>
+<circle class="s2 ring" cx="433.6" cy="710.7" r="4" stroke-width="2"><title>10-23: 1.298</title></circle>
+<circle class="s2 ring" cx="444.7" cy="683.3" r="4" stroke-width="2"><title>10-24: 1.461</title></circle>
+<circle class="s2 ring" cx="455.8" cy="730.1" r="4" stroke-width="2"><title>10-25: 1.181</title></circle>
+<circle class="s2 ring" cx="466.9" cy="713.8" r="4" stroke-width="2"><title>10-26: 1.279</title></circle>
+<circle class="s2 ring" cx="478.0" cy="681.3" r="4" stroke-width="2"><title>10-27: 1.473</title></circle>
+<circle class="s2 ring" cx="489.1" cy="714.6" r="4" stroke-width="2"><title>10-28: 1.274</title></circle>
+<circle class="s2 ring" cx="500.2" cy="719.2" r="4" stroke-width="2"><title>10-29: 1.246</title></circle>
+<circle class="s2 ring" cx="511.3" cy="733.1" r="4" stroke-width="2"><title>10-30: 1.164</title></circle>
+<circle class="s2 ring" cx="522.4" cy="738.3" r="4" stroke-width="2"><title>10-31: 1.133</title></circle>
+<circle class="s2 ring" cx="533.6" cy="721.6" r="4" stroke-width="2"><title>11-01: 1.232</title></circle>
+<circle class="s2 ring" cx="544.7" cy="733.3" r="4" stroke-width="2"><title>11-02: 1.162</title></circle>
+<circle class="s2 ring" cx="555.8" cy="716.7" r="4" stroke-width="2"><title>11-03: 1.262</title></circle>
+<circle class="s2 ring" cx="566.9" cy="718.0" r="4" stroke-width="2"><title>11-04: 1.253</title></circle>
+<circle class="s2 ring" cx="578.0" cy="736.9" r="4" stroke-width="2"><title>11-05: 1.141</title></circle>
 <text class="t" x="612.0" y="647.0" font-size="13" text-anchor="start" font-weight="600">sieve</text>
 <line class="grid" x1="664.0" y1="794.0" x2="892.0" y2="794.0" stroke-width="1"/>
 <text class="t2" x="658.0" y="798.0" font-size="11" text-anchor="end" font-weight="normal">0.9</text>
@@ -652,49 +674,51 @@
 <text class="t2" x="624.0" y="727.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 624.0 727.0)">ratio to C</text>
 <line class="ref" x1="664.0" y1="760.5" x2="892.0" y2="760.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="678.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="725.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="772.1" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="819.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="866.2" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="878.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M678.0,723.8 L689.8,715.3 L701.5,719.3 L713.3,740.3 L725.1,737.9 L736.8,726.2 L748.6,723.8 L760.4,744.0 L772.1,695.6 L783.9,728.7 L795.6,729.8 L807.4,736.7 L819.2,756.6 L830.9,750.8 L842.7,717.0 L854.5,745.2 L866.2,723.5 L878.0,736.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="722.4" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="766.9" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="811.3" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="855.8" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="878.0" y="809.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M678.0,723.8 L689.1,715.3 L700.2,719.3 L711.3,740.3 L722.4,737.9 L733.6,726.2 L744.7,723.8 L755.8,744.0 L766.9,695.6 L778.0,728.7 L789.1,729.8 L800.2,736.7 L811.3,756.6 L822.4,750.8 L833.6,717.0 L844.7,745.2 L855.8,723.5 L866.9,736.1 L878.0,747.3" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="678.0" cy="723.8" r="4" stroke-width="2"><title>10-18: 1.11</title></circle>
-<circle class="s1 ring" cx="689.8" cy="715.3" r="4" stroke-width="2"><title>10-19: 1.135</title></circle>
-<circle class="s1 ring" cx="701.5" cy="719.3" r="4" stroke-width="2"><title>10-20: 1.123</title></circle>
-<circle class="s1 ring" cx="713.3" cy="740.3" r="4" stroke-width="2"><title>10-21: 1.06</title></circle>
-<circle class="s1 ring" cx="725.1" cy="737.9" r="4" stroke-width="2"><title>10-22: 1.067</title></circle>
-<circle class="s1 ring" cx="736.8" cy="726.2" r="4" stroke-width="2"><title>10-23: 1.102</title></circle>
-<circle class="s1 ring" cx="748.6" cy="723.8" r="4" stroke-width="2"><title>10-24: 1.109</title></circle>
-<circle class="s1 ring" cx="760.4" cy="744.0" r="4" stroke-width="2"><title>10-25: 1.049</title></circle>
-<circle class="s1 ring" cx="772.1" cy="695.6" r="4" stroke-width="2"><title>10-26: 1.194</title></circle>
-<circle class="s1 ring" cx="783.9" cy="728.7" r="4" stroke-width="2"><title>10-27: 1.095</title></circle>
-<circle class="s1 ring" cx="795.6" cy="729.8" r="4" stroke-width="2"><title>10-28: 1.092</title></circle>
-<circle class="s1 ring" cx="807.4" cy="736.7" r="4" stroke-width="2"><title>10-29: 1.071</title></circle>
-<circle class="s1 ring" cx="819.2" cy="756.6" r="4" stroke-width="2"><title>10-30: 1.012</title></circle>
-<circle class="s1 ring" cx="830.9" cy="750.8" r="4" stroke-width="2"><title>10-31: 1.029</title></circle>
-<circle class="s1 ring" cx="842.7" cy="717.0" r="4" stroke-width="2"><title>11-01: 1.13</title></circle>
-<circle class="s1 ring" cx="854.5" cy="745.2" r="4" stroke-width="2"><title>11-02: 1.046</title></circle>
-<circle class="s1 ring" cx="866.2" cy="723.5" r="4" stroke-width="2"><title>11-03: 1.11</title></circle>
-<circle class="s1 ring" cx="878.0" cy="736.1" r="4" stroke-width="2"><title>11-04: 1.073</title></circle>
-<path class="s2" d="M678.0,705.8 L689.8,758.9 L701.5,714.2 L713.3,718.6 L725.1,742.2 L736.8,699.0 L748.6,718.1 L760.4,742.5 L772.1,702.8 L783.9,715.9 L795.6,743.2 L807.4,739.7 L819.2,755.4 L830.9,755.6 L842.7,717.4 L854.5,744.5 L866.2,712.0 L878.0,710.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="689.1" cy="715.3" r="4" stroke-width="2"><title>10-19: 1.135</title></circle>
+<circle class="s1 ring" cx="700.2" cy="719.3" r="4" stroke-width="2"><title>10-20: 1.123</title></circle>
+<circle class="s1 ring" cx="711.3" cy="740.3" r="4" stroke-width="2"><title>10-21: 1.06</title></circle>
+<circle class="s1 ring" cx="722.4" cy="737.9" r="4" stroke-width="2"><title>10-22: 1.067</title></circle>
+<circle class="s1 ring" cx="733.6" cy="726.2" r="4" stroke-width="2"><title>10-23: 1.102</title></circle>
+<circle class="s1 ring" cx="744.7" cy="723.8" r="4" stroke-width="2"><title>10-24: 1.109</title></circle>
+<circle class="s1 ring" cx="755.8" cy="744.0" r="4" stroke-width="2"><title>10-25: 1.049</title></circle>
+<circle class="s1 ring" cx="766.9" cy="695.6" r="4" stroke-width="2"><title>10-26: 1.194</title></circle>
+<circle class="s1 ring" cx="778.0" cy="728.7" r="4" stroke-width="2"><title>10-27: 1.095</title></circle>
+<circle class="s1 ring" cx="789.1" cy="729.8" r="4" stroke-width="2"><title>10-28: 1.092</title></circle>
+<circle class="s1 ring" cx="800.2" cy="736.7" r="4" stroke-width="2"><title>10-29: 1.071</title></circle>
+<circle class="s1 ring" cx="811.3" cy="756.6" r="4" stroke-width="2"><title>10-30: 1.012</title></circle>
+<circle class="s1 ring" cx="822.4" cy="750.8" r="4" stroke-width="2"><title>10-31: 1.029</title></circle>
+<circle class="s1 ring" cx="833.6" cy="717.0" r="4" stroke-width="2"><title>11-01: 1.13</title></circle>
+<circle class="s1 ring" cx="844.7" cy="745.2" r="4" stroke-width="2"><title>11-02: 1.046</title></circle>
+<circle class="s1 ring" cx="855.8" cy="723.5" r="4" stroke-width="2"><title>11-03: 1.11</title></circle>
+<circle class="s1 ring" cx="866.9" cy="736.1" r="4" stroke-width="2"><title>11-04: 1.073</title></circle>
+<circle class="s1 ring" cx="878.0" cy="747.3" r="4" stroke-width="2"><title>11-05: 1.039</title></circle>
+<path class="s2" d="M678.0,705.8 L689.1,758.9 L700.2,714.2 L711.3,718.6 L722.4,742.2 L733.6,699.0 L744.7,718.1 L755.8,742.5 L766.9,702.8 L778.0,715.9 L789.1,743.2 L800.2,739.7 L811.3,755.4 L822.4,755.6 L833.6,717.4 L844.7,744.5 L855.8,712.0 L866.9,710.1 L878.0,748.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="678.0" cy="705.8" r="4" stroke-width="2"><title>10-18: 1.163</title></circle>
-<circle class="s2 ring" cx="689.8" cy="758.9" r="4" stroke-width="2"><title>10-19: 1.005</title></circle>
-<circle class="s2 ring" cx="701.5" cy="714.2" r="4" stroke-width="2"><title>10-20: 1.138</title></circle>
-<circle class="s2 ring" cx="713.3" cy="718.6" r="4" stroke-width="2"><title>10-21: 1.125</title></circle>
-<circle class="s2 ring" cx="725.1" cy="742.2" r="4" stroke-width="2"><title>10-22: 1.054</title></circle>
-<circle class="s2 ring" cx="736.8" cy="699.0" r="4" stroke-width="2"><title>10-23: 1.183</title></circle>
-<circle class="s2 ring" cx="748.6" cy="718.1" r="4" stroke-width="2"><title>10-24: 1.127</title></circle>
-<circle class="s2 ring" cx="760.4" cy="742.5" r="4" stroke-width="2"><title>10-25: 1.054</title></circle>
-<circle class="s2 ring" cx="772.1" cy="702.8" r="4" stroke-width="2"><title>10-26: 1.172</title></circle>
-<circle class="s2 ring" cx="783.9" cy="715.9" r="4" stroke-width="2"><title>10-27: 1.133</title></circle>
-<circle class="s2 ring" cx="795.6" cy="743.2" r="4" stroke-width="2"><title>10-28: 1.052</title></circle>
-<circle class="s2 ring" cx="807.4" cy="739.7" r="4" stroke-width="2"><title>10-29: 1.062</title></circle>
-<circle class="s2 ring" cx="819.2" cy="755.4" r="4" stroke-width="2"><title>10-30: 1.015</title></circle>
-<circle class="s2 ring" cx="830.9" cy="755.6" r="4" stroke-width="2"><title>10-31: 1.015</title></circle>
-<circle class="s2 ring" cx="842.7" cy="717.4" r="4" stroke-width="2"><title>11-01: 1.129</title></circle>
-<circle class="s2 ring" cx="854.5" cy="744.5" r="4" stroke-width="2"><title>11-02: 1.048</title></circle>
-<circle class="s2 ring" cx="866.2" cy="712.0" r="4" stroke-width="2"><title>11-03: 1.145</title></circle>
-<circle class="s2 ring" cx="878.0" cy="710.1" r="4" stroke-width="2"><title>11-04: 1.15</title></circle>
+<circle class="s2 ring" cx="689.1" cy="758.9" r="4" stroke-width="2"><title>10-19: 1.005</title></circle>
+<circle class="s2 ring" cx="700.2" cy="714.2" r="4" stroke-width="2"><title>10-20: 1.138</title></circle>
+<circle class="s2 ring" cx="711.3" cy="718.6" r="4" stroke-width="2"><title>10-21: 1.125</title></circle>
+<circle class="s2 ring" cx="722.4" cy="742.2" r="4" stroke-width="2"><title>10-22: 1.054</title></circle>
+<circle class="s2 ring" cx="733.6" cy="699.0" r="4" stroke-width="2"><title>10-23: 1.183</title></circle>
+<circle class="s2 ring" cx="744.7" cy="718.1" r="4" stroke-width="2"><title>10-24: 1.127</title></circle>
+<circle class="s2 ring" cx="755.8" cy="742.5" r="4" stroke-width="2"><title>10-25: 1.054</title></circle>
+<circle class="s2 ring" cx="766.9" cy="702.8" r="4" stroke-width="2"><title>10-26: 1.172</title></circle>
+<circle class="s2 ring" cx="778.0" cy="715.9" r="4" stroke-width="2"><title>10-27: 1.133</title></circle>
+<circle class="s2 ring" cx="789.1" cy="743.2" r="4" stroke-width="2"><title>10-28: 1.052</title></circle>
+<circle class="s2 ring" cx="800.2" cy="739.7" r="4" stroke-width="2"><title>10-29: 1.062</title></circle>
+<circle class="s2 ring" cx="811.3" cy="755.4" r="4" stroke-width="2"><title>10-30: 1.015</title></circle>
+<circle class="s2 ring" cx="822.4" cy="755.6" r="4" stroke-width="2"><title>10-31: 1.015</title></circle>
+<circle class="s2 ring" cx="833.6" cy="717.4" r="4" stroke-width="2"><title>11-01: 1.129</title></circle>
+<circle class="s2 ring" cx="844.7" cy="744.5" r="4" stroke-width="2"><title>11-02: 1.048</title></circle>
+<circle class="s2 ring" cx="855.8" cy="712.0" r="4" stroke-width="2"><title>11-03: 1.145</title></circle>
+<circle class="s2 ring" cx="866.9" cy="710.1" r="4" stroke-width="2"><title>11-04: 1.15</title></circle>
+<circle class="s2 ring" cx="878.0" cy="748.0" r="4" stroke-width="2"><title>11-05: 1.037</title></circle>
 <text class="t" x="12.0" y="837.0" font-size="13" text-anchor="start" font-weight="600">strings</text>
 <line class="grid" x1="64.0" y1="984.0" x2="292.0" y2="984.0" stroke-width="1"/>
 <text class="t2" x="58.0" y="988.0" font-size="11" text-anchor="end" font-weight="normal">0.8</text>
@@ -711,49 +735,51 @@
 <text class="t2" x="24.0" y="917.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 24.0 917.0)">ratio to C</text>
 <line class="ref" x1="64.0" y1="930.4" x2="292.0" y2="930.4" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="78.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="125.1" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="172.1" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="219.2" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="266.2" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="278.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M78.0,893.4 L89.8,917.9 L101.5,901.3 L113.3,915.5 L125.1,882.2 L136.8,925.8 L148.6,884.9 L160.4,871.1 L172.1,922.9 L183.9,884.4 L195.6,925.3 L207.4,917.7 L219.2,874.9 L230.9,878.3 L242.7,892.5 L254.5,894.2 L266.2,918.5 L278.0,917.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="122.4" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="166.9" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="211.3" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="255.8" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="278.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M78.0,893.4 L89.1,917.9 L100.2,901.3 L111.3,915.5 L122.4,882.2 L133.6,925.8 L144.7,884.9 L155.8,871.1 L166.9,922.9 L178.0,884.4 L189.1,925.3 L200.2,917.7 L211.3,874.9 L222.4,878.3 L233.6,892.5 L244.7,894.2 L255.8,918.5 L266.9,917.7 L278.0,882.8" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="78.0" cy="893.4" r="4" stroke-width="2"><title>10-18: 1.138</title></circle>
-<circle class="s1 ring" cx="89.8" cy="917.9" r="4" stroke-width="2"><title>10-19: 1.047</title></circle>
-<circle class="s1 ring" cx="101.5" cy="901.3" r="4" stroke-width="2"><title>10-20: 1.108</title></circle>
-<circle class="s1 ring" cx="113.3" cy="915.5" r="4" stroke-width="2"><title>10-21: 1.056</title></circle>
-<circle class="s1 ring" cx="125.1" cy="882.2" r="4" stroke-width="2"><title>10-22: 1.18</title></circle>
-<circle class="s1 ring" cx="136.8" cy="925.8" r="4" stroke-width="2"><title>10-23: 1.017</title></circle>
-<circle class="s1 ring" cx="148.6" cy="884.9" r="4" stroke-width="2"><title>10-24: 1.17</title></circle>
-<circle class="s1 ring" cx="160.4" cy="871.1" r="4" stroke-width="2"><title>10-25: 1.221</title></circle>
-<circle class="s1 ring" cx="172.1" cy="922.9" r="4" stroke-width="2"><title>10-26: 1.028</title></circle>
-<circle class="s1 ring" cx="183.9" cy="884.4" r="4" stroke-width="2"><title>10-27: 1.172</title></circle>
-<circle class="s1 ring" cx="195.6" cy="925.3" r="4" stroke-width="2"><title>10-28: 1.019</title></circle>
-<circle class="s1 ring" cx="207.4" cy="917.7" r="4" stroke-width="2"><title>10-29: 1.047</title></circle>
-<circle class="s1 ring" cx="219.2" cy="874.9" r="4" stroke-width="2"><title>10-30: 1.207</title></circle>
-<circle class="s1 ring" cx="230.9" cy="878.3" r="4" stroke-width="2"><title>10-31: 1.194</title></circle>
-<circle class="s1 ring" cx="242.7" cy="892.5" r="4" stroke-width="2"><title>11-01: 1.141</title></circle>
-<circle class="s1 ring" cx="254.5" cy="894.2" r="4" stroke-width="2"><title>11-02: 1.135</title></circle>
-<circle class="s1 ring" cx="266.2" cy="918.5" r="4" stroke-width="2"><title>11-03: 1.045</title></circle>
-<circle class="s1 ring" cx="278.0" cy="917.7" r="4" stroke-width="2"><title>11-04: 1.047</title></circle>
-<path class="s2" d="M78.0,901.4 L89.8,920.7 L101.5,905.4 L113.3,930.0 L125.1,895.0 L136.8,937.9 L148.6,893.0 L160.4,906.9 L172.1,937.2 L183.9,887.8 L195.6,951.4 L207.4,951.8 L219.2,906.0 L230.9,912.6 L242.7,911.9 L254.5,912.6 L266.2,933.6 L278.0,928.6" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="89.1" cy="917.9" r="4" stroke-width="2"><title>10-19: 1.047</title></circle>
+<circle class="s1 ring" cx="100.2" cy="901.3" r="4" stroke-width="2"><title>10-20: 1.108</title></circle>
+<circle class="s1 ring" cx="111.3" cy="915.5" r="4" stroke-width="2"><title>10-21: 1.056</title></circle>
+<circle class="s1 ring" cx="122.4" cy="882.2" r="4" stroke-width="2"><title>10-22: 1.18</title></circle>
+<circle class="s1 ring" cx="133.6" cy="925.8" r="4" stroke-width="2"><title>10-23: 1.017</title></circle>
+<circle class="s1 ring" cx="144.7" cy="884.9" r="4" stroke-width="2"><title>10-24: 1.17</title></circle>
+<circle class="s1 ring" cx="155.8" cy="871.1" r="4" stroke-width="2"><title>10-25: 1.221</title></circle>
+<circle class="s1 ring" cx="166.9" cy="922.9" r="4" stroke-width="2"><title>10-26: 1.028</title></circle>
+<circle class="s1 ring" cx="178.0" cy="884.4" r="4" stroke-width="2"><title>10-27: 1.172</title></circle>
+<circle class="s1 ring" cx="189.1" cy="925.3" r="4" stroke-width="2"><title>10-28: 1.019</title></circle>
+<circle class="s1 ring" cx="200.2" cy="917.7" r="4" stroke-width="2"><title>10-29: 1.047</title></circle>
+<circle class="s1 ring" cx="211.3" cy="874.9" r="4" stroke-width="2"><title>10-30: 1.207</title></circle>
+<circle class="s1 ring" cx="222.4" cy="878.3" r="4" stroke-width="2"><title>10-31: 1.194</title></circle>
+<circle class="s1 ring" cx="233.6" cy="892.5" r="4" stroke-width="2"><title>11-01: 1.141</title></circle>
+<circle class="s1 ring" cx="244.7" cy="894.2" r="4" stroke-width="2"><title>11-02: 1.135</title></circle>
+<circle class="s1 ring" cx="255.8" cy="918.5" r="4" stroke-width="2"><title>11-03: 1.045</title></circle>
+<circle class="s1 ring" cx="266.9" cy="917.7" r="4" stroke-width="2"><title>11-04: 1.047</title></circle>
+<circle class="s1 ring" cx="278.0" cy="882.8" r="4" stroke-width="2"><title>11-05: 1.178</title></circle>
+<path class="s2" d="M78.0,901.4 L89.1,920.7 L100.2,905.4 L111.3,930.0 L122.4,895.0 L133.6,937.9 L144.7,893.0 L155.8,906.9 L166.9,937.2 L178.0,887.8 L189.1,951.4 L200.2,951.8 L211.3,906.0 L222.4,912.6 L233.6,911.9 L244.7,912.6 L255.8,933.6 L266.9,928.6 L278.0,908.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="78.0" cy="901.4" r="4" stroke-width="2"><title>10-18: 1.108</title></circle>
-<circle class="s2 ring" cx="89.8" cy="920.7" r="4" stroke-width="2"><title>10-19: 1.036</title></circle>
-<circle class="s2 ring" cx="101.5" cy="905.4" r="4" stroke-width="2"><title>10-20: 1.093</title></circle>
-<circle class="s2 ring" cx="113.3" cy="930.0" r="4" stroke-width="2"><title>10-21: 1.001</title></circle>
-<circle class="s2 ring" cx="125.1" cy="895.0" r="4" stroke-width="2"><title>10-22: 1.132</title></circle>
-<circle class="s2 ring" cx="136.8" cy="937.9" r="4" stroke-width="2"><title>10-23: 0.972</title></circle>
-<circle class="s2 ring" cx="148.6" cy="893.0" r="4" stroke-width="2"><title>10-24: 1.139</title></circle>
-<circle class="s2 ring" cx="160.4" cy="906.9" r="4" stroke-width="2"><title>10-25: 1.088</title></circle>
-<circle class="s2 ring" cx="172.1" cy="937.2" r="4" stroke-width="2"><title>10-26: 0.974</title></circle>
-<circle class="s2 ring" cx="183.9" cy="887.8" r="4" stroke-width="2"><title>10-27: 1.159</title></circle>
-<circle class="s2 ring" cx="195.6" cy="951.4" r="4" stroke-width="2"><title>10-28: 0.922</title></circle>
-<circle class="s2 ring" cx="207.4" cy="951.8" r="4" stroke-width="2"><title>10-29: 0.92</title></circle>
-<circle class="s2 ring" cx="219.2" cy="906.0" r="4" stroke-width="2"><title>10-30: 1.091</title></circle>
-<circle class="s2 ring" cx="230.9" cy="912.6" r="4" stroke-width="2"><title>10-31: 1.066</title></circle>
-<circle class="s2 ring" cx="242.7" cy="911.9" r="4" stroke-width="2"><title>11-01: 1.069</title></circle>
-<circle class="s2 ring" cx="254.5" cy="912.6" r="4" stroke-width="2"><title>11-02: 1.067</title></circle>
-<circle class="s2 ring" cx="266.2" cy="933.6" r="4" stroke-width="2"><title>11-03: 0.988</title></circle>
-<circle class="s2 ring" cx="278.0" cy="928.6" r="4" stroke-width="2"><title>11-04: 1.007</title></circle>
+<circle class="s2 ring" cx="89.1" cy="920.7" r="4" stroke-width="2"><title>10-19: 1.036</title></circle>
+<circle class="s2 ring" cx="100.2" cy="905.4" r="4" stroke-width="2"><title>10-20: 1.093</title></circle>
+<circle class="s2 ring" cx="111.3" cy="930.0" r="4" stroke-width="2"><title>10-21: 1.001</title></circle>
+<circle class="s2 ring" cx="122.4" cy="895.0" r="4" stroke-width="2"><title>10-22: 1.132</title></circle>
+<circle class="s2 ring" cx="133.6" cy="937.9" r="4" stroke-width="2"><title>10-23: 0.972</title></circle>
+<circle class="s2 ring" cx="144.7" cy="893.0" r="4" stroke-width="2"><title>10-24: 1.139</title></circle>
+<circle class="s2 ring" cx="155.8" cy="906.9" r="4" stroke-width="2"><title>10-25: 1.088</title></circle>
+<circle class="s2 ring" cx="166.9" cy="937.2" r="4" stroke-width="2"><title>10-26: 0.974</title></circle>
+<circle class="s2 ring" cx="178.0" cy="887.8" r="4" stroke-width="2"><title>10-27: 1.159</title></circle>
+<circle class="s2 ring" cx="189.1" cy="951.4" r="4" stroke-width="2"><title>10-28: 0.922</title></circle>
+<circle class="s2 ring" cx="200.2" cy="951.8" r="4" stroke-width="2"><title>10-29: 0.92</title></circle>
+<circle class="s2 ring" cx="211.3" cy="906.0" r="4" stroke-width="2"><title>10-30: 1.091</title></circle>
+<circle class="s2 ring" cx="222.4" cy="912.6" r="4" stroke-width="2"><title>10-31: 1.066</title></circle>
+<circle class="s2 ring" cx="233.6" cy="911.9" r="4" stroke-width="2"><title>11-01: 1.069</title></circle>
+<circle class="s2 ring" cx="244.7" cy="912.6" r="4" stroke-width="2"><title>11-02: 1.067</title></circle>
+<circle class="s2 ring" cx="255.8" cy="933.6" r="4" stroke-width="2"><title>11-03: 0.988</title></circle>
+<circle class="s2 ring" cx="266.9" cy="928.6" r="4" stroke-width="2"><title>11-04: 1.007</title></circle>
+<circle class="s2 ring" cx="278.0" cy="908.7" r="4" stroke-width="2"><title>11-05: 1.081</title></circle>
 <text class="t" x="312.0" y="837.0" font-size="13" text-anchor="start" font-weight="600">wordfreq</text>
 <line class="grid" x1="364.0" y1="984.0" x2="592.0" y2="984.0" stroke-width="1"/>
 <text class="t2" x="358.0" y="988.0" font-size="11" text-anchor="end" font-weight="normal">0.9</text>
@@ -768,47 +794,49 @@
 <text class="t2" x="324.0" y="917.0" font-size="11" text-anchor="middle" font-weight="normal" transform="rotate(-90 324.0 917.0)">ratio to C</text>
 <line class="ref" x1="364.0" y1="950.5" x2="592.0" y2="950.5" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text class="t2" x="378.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-18</text>
-<text class="t2" x="425.1" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
-<text class="t2" x="472.1" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
-<text class="t2" x="519.2" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
-<text class="t2" x="566.2" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
-<text class="t2" x="578.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-04</text>
-<path class="s1" d="M378.0,889.0 L389.8,901.6 L401.5,910.5 L413.3,909.2 L425.1,907.4 L436.8,901.4 L448.6,890.0 L460.4,889.1 L472.1,897.5 L483.9,890.6 L495.6,919.2 L507.4,919.0 L519.2,874.8 L530.9,877.2 L542.7,915.2 L554.5,884.4 L566.2,901.3 L578.0,909.9" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<text class="t2" x="422.4" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-22</text>
+<text class="t2" x="466.9" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-26</text>
+<text class="t2" x="511.3" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">10-30</text>
+<text class="t2" x="555.8" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-03</text>
+<text class="t2" x="578.0" y="999.0" font-size="11" text-anchor="middle" font-weight="normal">11-05</text>
+<path class="s1" d="M378.0,889.0 L389.1,901.6 L400.2,910.5 L411.3,909.2 L422.4,907.4 L433.6,901.4 L444.7,890.0 L455.8,889.1 L466.9,897.5 L478.0,890.6 L489.1,919.2 L500.2,919.0 L511.3,874.8 L522.4,877.2 L533.6,915.2 L544.7,884.4 L555.8,901.3 L566.9,909.9 L578.0,876.7" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s1 ring" cx="378.0" cy="889.0" r="4" stroke-width="2"><title>10-18: 1.184</title></circle>
-<circle class="s1 ring" cx="389.8" cy="901.6" r="4" stroke-width="2"><title>10-19: 1.146</title></circle>
-<circle class="s1 ring" cx="401.5" cy="910.5" r="4" stroke-width="2"><title>10-20: 1.119</title></circle>
-<circle class="s1 ring" cx="413.3" cy="909.2" r="4" stroke-width="2"><title>10-21: 1.123</title></circle>
-<circle class="s1 ring" cx="425.1" cy="907.4" r="4" stroke-width="2"><title>10-22: 1.129</title></circle>
-<circle class="s1 ring" cx="436.8" cy="901.4" r="4" stroke-width="2"><title>10-23: 1.147</title></circle>
-<circle class="s1 ring" cx="448.6" cy="890.0" r="4" stroke-width="2"><title>10-24: 1.181</title></circle>
-<circle class="s1 ring" cx="460.4" cy="889.1" r="4" stroke-width="2"><title>10-25: 1.183</title></circle>
-<circle class="s1 ring" cx="472.1" cy="897.5" r="4" stroke-width="2"><title>10-26: 1.158</title></circle>
-<circle class="s1 ring" cx="483.9" cy="890.6" r="4" stroke-width="2"><title>10-27: 1.179</title></circle>
-<circle class="s1 ring" cx="495.6" cy="919.2" r="4" stroke-width="2"><title>10-28: 1.093</title></circle>
-<circle class="s1 ring" cx="507.4" cy="919.0" r="4" stroke-width="2"><title>10-29: 1.094</title></circle>
-<circle class="s1 ring" cx="519.2" cy="874.8" r="4" stroke-width="2"><title>10-30: 1.226</title></circle>
-<circle class="s1 ring" cx="530.9" cy="877.2" r="4" stroke-width="2"><title>10-31: 1.219</title></circle>
-<circle class="s1 ring" cx="542.7" cy="915.2" r="4" stroke-width="2"><title>11-01: 1.105</title></circle>
-<circle class="s1 ring" cx="554.5" cy="884.4" r="4" stroke-width="2"><title>11-02: 1.197</title></circle>
-<circle class="s1 ring" cx="566.2" cy="901.3" r="4" stroke-width="2"><title>11-03: 1.147</title></circle>
-<circle class="s1 ring" cx="578.0" cy="909.9" r="4" stroke-width="2"><title>11-04: 1.121</title></circle>
-<path class="s2" d="M378.0,893.8 L389.8,911.2 L401.5,918.6 L413.3,913.4 L425.1,902.9 L436.8,909.5 L448.6,894.1 L460.4,911.5 L472.1,904.0 L483.9,895.0 L495.6,925.5 L507.4,924.7 L519.2,904.6 L530.9,896.7 L542.7,920.6 L554.5,907.6 L566.2,907.0 L578.0,916.0" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle class="s1 ring" cx="389.1" cy="901.6" r="4" stroke-width="2"><title>10-19: 1.146</title></circle>
+<circle class="s1 ring" cx="400.2" cy="910.5" r="4" stroke-width="2"><title>10-20: 1.119</title></circle>
+<circle class="s1 ring" cx="411.3" cy="909.2" r="4" stroke-width="2"><title>10-21: 1.123</title></circle>
+<circle class="s1 ring" cx="422.4" cy="907.4" r="4" stroke-width="2"><title>10-22: 1.129</title></circle>
+<circle class="s1 ring" cx="433.6" cy="901.4" r="4" stroke-width="2"><title>10-23: 1.147</title></circle>
+<circle class="s1 ring" cx="444.7" cy="890.0" r="4" stroke-width="2"><title>10-24: 1.181</title></circle>
+<circle class="s1 ring" cx="455.8" cy="889.1" r="4" stroke-width="2"><title>10-25: 1.183</title></circle>
+<circle class="s1 ring" cx="466.9" cy="897.5" r="4" stroke-width="2"><title>10-26: 1.158</title></circle>
+<circle class="s1 ring" cx="478.0" cy="890.6" r="4" stroke-width="2"><title>10-27: 1.179</title></circle>
+<circle class="s1 ring" cx="489.1" cy="919.2" r="4" stroke-width="2"><title>10-28: 1.093</title></circle>
+<circle class="s1 ring" cx="500.2" cy="919.0" r="4" stroke-width="2"><title>10-29: 1.094</title></circle>
+<circle class="s1 ring" cx="511.3" cy="874.8" r="4" stroke-width="2"><title>10-30: 1.226</title></circle>
+<circle class="s1 ring" cx="522.4" cy="877.2" r="4" stroke-width="2"><title>10-31: 1.219</title></circle>
+<circle class="s1 ring" cx="533.6" cy="915.2" r="4" stroke-width="2"><title>11-01: 1.105</title></circle>
+<circle class="s1 ring" cx="544.7" cy="884.4" r="4" stroke-width="2"><title>11-02: 1.197</title></circle>
+<circle class="s1 ring" cx="555.8" cy="901.3" r="4" stroke-width="2"><title>11-03: 1.147</title></circle>
+<circle class="s1 ring" cx="566.9" cy="909.9" r="4" stroke-width="2"><title>11-04: 1.121</title></circle>
+<circle class="s1 ring" cx="578.0" cy="876.7" r="4" stroke-width="2"><title>11-05: 1.22</title></circle>
+<path class="s2" d="M378.0,893.8 L389.1,911.2 L400.2,918.6 L411.3,913.4 L422.4,902.9 L433.6,909.5 L444.7,894.1 L455.8,911.5 L466.9,904.0 L478.0,895.0 L489.1,925.5 L500.2,924.7 L511.3,904.6 L522.4,896.7 L533.6,920.6 L544.7,907.6 L555.8,907.0 L566.9,916.0 L578.0,900.1" style="fill:none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle class="s2 ring" cx="378.0" cy="893.8" r="4" stroke-width="2"><title>10-18: 1.169</title></circle>
-<circle class="s2 ring" cx="389.8" cy="911.2" r="4" stroke-width="2"><title>10-19: 1.117</title></circle>
-<circle class="s2 ring" cx="401.5" cy="918.6" r="4" stroke-width="2"><title>10-20: 1.095</title></circle>
-<circle class="s2 ring" cx="413.3" cy="913.4" r="4" stroke-width="2"><title>10-21: 1.111</title></circle>
-<circle class="s2 ring" cx="425.1" cy="902.9" r="4" stroke-width="2"><title>10-22: 1.142</title></circle>
-<circle class="s2 ring" cx="436.8" cy="909.5" r="4" stroke-width="2"><title>10-23: 1.122</title></circle>
-<circle class="s2 ring" cx="448.6" cy="894.1" r="4" stroke-width="2"><title>10-24: 1.168</title></circle>
-<circle class="s2 ring" cx="460.4" cy="911.5" r="4" stroke-width="2"><title>10-25: 1.117</title></circle>
-<circle class="s2 ring" cx="472.1" cy="904.0" r="4" stroke-width="2"><title>10-26: 1.139</title></circle>
-<circle class="s2 ring" cx="483.9" cy="895.0" r="4" stroke-width="2"><title>10-27: 1.166</title></circle>
-<circle class="s2 ring" cx="495.6" cy="925.5" r="4" stroke-width="2"><title>10-28: 1.075</title></circle>
-<circle class="s2 ring" cx="507.4" cy="924.7" r="4" stroke-width="2"><title>10-29: 1.077</title></circle>
-<circle class="s2 ring" cx="519.2" cy="904.6" r="4" stroke-width="2"><title>10-30: 1.137</title></circle>
-<circle class="s2 ring" cx="530.9" cy="896.7" r="4" stroke-width="2"><title>10-31: 1.161</title></circle>
-<circle class="s2 ring" cx="542.7" cy="920.6" r="4" stroke-width="2"><title>11-01: 1.089</title></circle>
-<circle class="s2 ring" cx="554.5" cy="907.6" r="4" stroke-width="2"><title>11-02: 1.128</title></circle>
-<circle class="s2 ring" cx="566.2" cy="907.0" r="4" stroke-width="2"><title>11-03: 1.13</title></circle>
-<circle class="s2 ring" cx="578.0" cy="916.0" r="4" stroke-width="2"><title>11-04: 1.103</title></circle>
+<circle class="s2 ring" cx="389.1" cy="911.2" r="4" stroke-width="2"><title>10-19: 1.117</title></circle>
+<circle class="s2 ring" cx="400.2" cy="918.6" r="4" stroke-width="2"><title>10-20: 1.095</title></circle>
+<circle class="s2 ring" cx="411.3" cy="913.4" r="4" stroke-width="2"><title>10-21: 1.111</title></circle>
+<circle class="s2 ring" cx="422.4" cy="902.9" r="4" stroke-width="2"><title>10-22: 1.142</title></circle>
+<circle class="s2 ring" cx="433.6" cy="909.5" r="4" stroke-width="2"><title>10-23: 1.122</title></circle>
+<circle class="s2 ring" cx="444.7" cy="894.1" r="4" stroke-width="2"><title>10-24: 1.168</title></circle>
+<circle class="s2 ring" cx="455.8" cy="911.5" r="4" stroke-width="2"><title>10-25: 1.117</title></circle>
+<circle class="s2 ring" cx="466.9" cy="904.0" r="4" stroke-width="2"><title>10-26: 1.139</title></circle>
+<circle class="s2 ring" cx="478.0" cy="895.0" r="4" stroke-width="2"><title>10-27: 1.166</title></circle>
+<circle class="s2 ring" cx="489.1" cy="925.5" r="4" stroke-width="2"><title>10-28: 1.075</title></circle>
+<circle class="s2 ring" cx="500.2" cy="924.7" r="4" stroke-width="2"><title>10-29: 1.077</title></circle>
+<circle class="s2 ring" cx="511.3" cy="904.6" r="4" stroke-width="2"><title>10-30: 1.137</title></circle>
+<circle class="s2 ring" cx="522.4" cy="896.7" r="4" stroke-width="2"><title>10-31: 1.161</title></circle>
+<circle class="s2 ring" cx="533.6" cy="920.6" r="4" stroke-width="2"><title>11-01: 1.089</title></circle>
+<circle class="s2 ring" cx="544.7" cy="907.6" r="4" stroke-width="2"><title>11-02: 1.128</title></circle>
+<circle class="s2 ring" cx="555.8" cy="907.0" r="4" stroke-width="2"><title>11-03: 1.13</title></circle>
+<circle class="s2 ring" cx="566.9" cy="916.0" r="4" stroke-width="2"><title>11-04: 1.103</title></circle>
+<circle class="s2 ring" cx="578.0" cy="900.1" r="4" stroke-width="2"><title>11-05: 1.15</title></circle>
 </svg>
