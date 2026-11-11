@@ -1,0 +1,5 @@
+// error: E0404
+function main(): void {
+  const a: u32 = 200;
+  console.log(a.bitNot(1).toString());
+}

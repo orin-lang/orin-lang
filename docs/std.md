@@ -302,8 +302,8 @@ Contracts that matter: every `read*` is `Ok` **iff** at least that many bytes re
 (old(this.remaining()) >= n)`), advances the cursor by exactly the bytes read on `Ok` and leaves it unchanged on
 `Err`, and the value read equals the bytes at the old cursor (`readU16be` = `b0 * 256 + b1`, ...). Builder appends
 grow the length by exactly the bytes appended and put the right bytes at the end. `slice` states its first and last
-byte; `concat` states length and both seams. There are no bitwise operators in Orin, so multi-byte values use `*`,
-`/` and `%` on `int`. `reserve` is bookkeeping (`capacity`): the runtime has no array reserve, arrays still grow
+byte; `concat` states length and both seams. Multi-byte values are built with `*`, `/` and `%` on `int`
+(integers also have the bit methods `shl`, `shr`, `bitAnd`, ... of reference rule TYP-6a). `reserve` is bookkeeping (`capacity`): the runtime has no array reserve, arrays still grow
 geometrically on `push`. A `u8` array element costs 8 bytes at run time (ADR-0022); strings are the compact form
 (`toRawString` / `fromString` are O(n) conversions, byte for byte, no validation).
 

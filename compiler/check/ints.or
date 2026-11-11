@@ -148,6 +148,29 @@ export function arithExpr(mode: int, a: HExpr, b: HExpr, span: Span): HExpr {
   return mk(XBuiltin(BIntOp, [intLit(mode, span), a, b, intLit(k, span)]), a.ty, span);
 }
 
+// `a.bitAnd(b)` etc. (bit operations on the two's complement pattern of the receiver's width): the mode of the method, or -1.
+// 0 bitAnd, 1 bitOr, 2 bitXor, 3 bitNot, 4 shl, 5 shr, 6 rotl, 7 rotr.
+export function bitMethodMode(name: string): int {
+  const names = ["bitAnd", "bitOr", "bitXor", "bitNot", "shl", "shr", "rotl", "rotr"];
+  let i: usize = 0;
+  while (i < names.length) {
+    if (names[i] == name) {
+      return i.toInt();
+    }
+    i += 1;
+  }
+  return -1;
+}
+
+// The built-in call for a bit method; `b` is the second operand (the other integer, or the `int` count); `bitNot` has none (None).
+export function bitExpr(mode: int, a: HExpr, b: Option<HExpr>, span: Span): HExpr {
+  const second = match (b) {
+    Some(x) => x,
+    None => intLit(0, span),
+  };
+  return mk(XBuiltin(BIntBit, [intLit(mode, span), a, second, intLit(intKindOf(a.ty), span)]), a.ty, span);
+}
+
 // `parseI32(s)` etc.: the kind, or -1.
 export function parseFnKind(name: string): int {
   const names = ["parseI8", "parseI16", "parseI32", "parseI64", "parseIsize", "parseU8", "parseU16", "parseU32", "parseU64", "parseUsize"];

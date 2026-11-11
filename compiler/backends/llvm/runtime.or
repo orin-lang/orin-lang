@@ -22,6 +22,7 @@ export function fixedMsgs(): string[] {
     "integer conversion out of range", // 8
     "field access on a value of the wrong shape (compiler bug)", // 9, orin_trap_shape
     "charCodeAt index out of range", // 10
+    "shift count out of range", // 11
   ];
 }
 
