@@ -1,0 +1,1871 @@
+{
+ "benchmarks": {
+  "appends": {
+   "instructions": {
+    "c": {
+     "count": 18927362
+    },
+    "llvm": {
+     "count": 43975658
+    },
+    "orin": {
+     "count": 60400606
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.04757744600001956,
+     "cpu_median": 0.0033889999999999997,
+     "output_matched": true,
+     "rss_kb": 4872,
+     "sys_median": 0.001449,
+     "user_median": 0.0019399999999999999,
+     "wall_max": 0.0036500340000031883,
+     "wall_median": 0.003597544999990987,
+     "wall_min": 0.0035264169999891237
+    },
+    "go": {
+     "build_s": 2.800603551999984,
+     "cpu_median": 0.008549,
+     "output_matched": true,
+     "rss_kb": 7508,
+     "sys_median": 0.004787,
+     "user_median": 0.0037619999999999997,
+     "wall_max": 0.006678742999980614,
+     "wall_median": 0.006463968000019804,
+     "wall_min": 0.005387248000005229
+    },
+    "java": {
+     "cpu_median": 0.07237,
+     "java_warm_ms": [
+      20,
+      11,
+      6,
+      5,
+      5,
+      5,
+      7,
+      7
+     ],
+     "output_matched": true,
+     "rss_kb": 49984,
+     "sys_median": 0.023465999999999997,
+     "user_median": 0.050804999999999996,
+     "wall_max": 0.0704041479999944,
+     "wall_median": 0.05672193099999845,
+     "wall_min": 0.04626608700002066
+    },
+    "llvm": {
+     "build_s": 3.007153238000001,
+     "cpu_median": 0.003908999999999999,
+     "output_matched": true,
+     "rss_kb": 5052,
+     "sys_median": 0.001607,
+     "user_median": 0.002275,
+     "wall_max": 0.00419622400002595,
+     "wall_median": 0.004104611000002478,
+     "wall_min": 0.004063067000004139
+    },
+    "orin": {
+     "build_s": 1.2620923380000022,
+     "cpu_median": 0.004784999999999999,
+     "output_matched": true,
+     "rss_kb": 4888,
+     "sys_median": 0.0015739999999999999,
+     "user_median": 0.003168,
+     "wall_max": 0.005027493999989474,
+     "wall_median": 0.004956837000008818,
+     "wall_min": 0.0048785689999988335
+    },
+    "rust": {
+     "cpu_median": 0.002606,
+     "output_matched": true,
+     "rss_kb": 5332,
+     "sys_median": 0.002061,
+     "user_median": 0.0005589999999999999,
+     "wall_max": 0.005250354999986939,
+     "wall_median": 0.002808098000002701,
+     "wall_min": 0.0027828130000102647
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 5,
+    "alloc_string": 10,
+    "alloc_struct": 4,
+    "alloc_total": 19,
+    "array_grows": 33,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 700000,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 19,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 4326016,
+    "peak_live_objs": 14,
+    "releases": 19,
+    "retains": 0,
+    "string_grows": 60,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "bintrees": {
+   "instructions": {
+    "c": {
+     "count": 11630513487
+    },
+    "llvm": {
+     "count": 4213208414
+    },
+    "orin": {
+     "count": 4217620511
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.09063082199998007,
+     "cpu_median": 0.563039,
+     "output_matched": true,
+     "rss_kb": 9844,
+     "sys_median": 0.13294,
+     "user_median": 0.43009899999999995,
+     "wall_max": 0.5662523889999989,
+     "wall_median": 0.5634393999999929,
+     "wall_min": 0.5611936269999944
+    },
+    "go": {
+     "build_s": 0.08915498299998603,
+     "cpu_median": 1.5434629999999998,
+     "output_matched": true,
+     "rss_kb": 13584,
+     "sys_median": 0.058917,
+     "user_median": 1.4946899999999999,
+     "wall_max": 0.7335884169999929,
+     "wall_median": 0.717295407999984,
+     "wall_min": 0.7002482329999964
+    },
+    "java": {
+     "cpu_median": 0.23626,
+     "java_warm_ms": [
+      159,
+      144,
+      70,
+      208,
+      70,
+      70,
+      156,
+      69
+     ],
+     "output_matched": true,
+     "rss_kb": 308484,
+     "sys_median": 0.104264,
+     "user_median": 0.13164399999999998,
+     "wall_max": 0.21015768899999898,
+     "wall_median": 0.20356623699998977,
+     "wall_min": 0.2009930860000111
+    },
+    "llvm": {
+     "build_s": 1.2965746069999966,
+     "cpu_median": 0.222932,
+     "output_matched": true,
+     "rss_kb": 18248,
+     "sys_median": 0.006985,
+     "user_median": 0.217465,
+     "wall_max": 0.2683539779999933,
+     "wall_median": 0.22438828899998953,
+     "wall_min": 0.22038912799999366
+    },
+    "orin": {
+     "build_s": 1.2116267030000074,
+     "cpu_median": 0.2341,
+     "output_matched": true,
+     "rss_kb": 18076,
+     "sys_median": 0.006005,
+     "user_median": 0.228095,
+     "wall_max": 0.238641862999998,
+     "wall_median": 0.23441369400001122,
+     "wall_min": 0.23075204300002383
+    },
+    "rust": {
+     "cpu_median": 0.661567,
+     "output_matched": true,
+     "rss_kb": 10348,
+     "sys_median": 0.12391999999999999,
+     "user_median": 0.530446,
+     "wall_max": 0.6636009430000058,
+     "wall_median": 0.6619273350000014,
+     "wall_min": 0.6544406419999973
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 0,
+    "alloc_string": 6,
+    "alloc_struct": 33405887,
+    "alloc_total": 33405893,
+    "array_grows": 0,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 0,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 33405893,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 12582816,
+    "peak_live_objs": 262142,
+    "releases": 33405893,
+    "retains": 0,
+    "string_grows": 4,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "bytesstr": {
+   "instructions": {
+    "c": {
+     "count": 103926179
+    },
+    "llvm": {
+     "count": 259441956
+    },
+    "orin": {
+     "count": 349647141
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.04228229400001737,
+     "cpu_median": 0.014114999999999999,
+     "output_matched": true,
+     "rss_kb": 11884,
+     "sys_median": 0.005823,
+     "user_median": 0.008268,
+     "wall_max": 0.014430007000015621,
+     "wall_median": 0.014347704000016392,
+     "wall_min": 0.014263806000002432
+    },
+    "go": {
+     "build_s": 0.08979194500000176,
+     "cpu_median": 0.007493,
+     "output_matched": true,
+     "rss_kb": 6416,
+     "sys_median": 0.0043159999999999995,
+     "user_median": 0.003941,
+     "wall_max": 0.008398836999987225,
+     "wall_median": 0.005619799000015746,
+     "wall_min": 0.005541870999991261
+    },
+    "java": {
+     "cpu_median": 0.08553,
+     "java_warm_ms": [
+      35,
+      5,
+      20,
+      6,
+      5,
+      4,
+      23,
+      20
+     ],
+     "output_matched": true,
+     "rss_kb": 105732,
+     "sys_median": 0.047237,
+     "user_median": 0.041365,
+     "wall_max": 0.07902074099999368,
+     "wall_median": 0.07583189400000379,
+     "wall_min": 0.07230816599999912
+    },
+    "llvm": {
+     "build_s": 1.3018741079999927,
+     "cpu_median": 0.019806999999999998,
+     "output_matched": true,
+     "rss_kb": 12092,
+     "sys_median": 0.006951,
+     "user_median": 0.012808,
+     "wall_max": 0.022606568000014704,
+     "wall_median": 0.02009680800000524,
+     "wall_min": 0.019731616000001395
+    },
+    "orin": {
+     "build_s": 1.2189648410000018,
+     "cpu_median": 0.022968999999999996,
+     "output_matched": true,
+     "rss_kb": 11988,
+     "sys_median": 0.006065999999999999,
+     "user_median": 0.016866,
+     "wall_max": 0.023762194999989106,
+     "wall_median": 0.023248418999997966,
+     "wall_min": 0.0231955389999996
+    },
+    "rust": {
+     "cpu_median": 0.028109,
+     "output_matched": true,
+     "rss_kb": 5136,
+     "sys_median": 0.025731,
+     "user_median": 0.002653,
+     "wall_max": 0.028801567000016348,
+     "wall_median": 0.028391658000003872,
+     "wall_min": 0.028201420000016242
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 40,
+    "alloc_string": 43,
+    "alloc_struct": 40,
+    "alloc_total": 123,
+    "array_grows": 0,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 0,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 123,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 10485930,
+    "peak_live_objs": 4,
+    "releases": 123,
+    "retains": 0,
+    "string_grows": 15,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "fib": {
+   "instructions": {
+    "c": {
+     "count": 2780168025
+    },
+    "llvm": {
+     "count": 2342472432
+    },
+    "orin": {
+     "count": 3200259808
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.04612575600000923,
+     "cpu_median": 0.089199,
+     "output_matched": true,
+     "rss_kb": 1544,
+     "sys_median": 0.00081,
+     "user_median": 0.08825899999999999,
+     "wall_max": 0.08982447400001092,
+     "wall_median": 0.08948997299998496,
+     "wall_min": 0.08890194500000348
+    },
+    "go": {
+     "build_s": 0.08712798199999838,
+     "cpu_median": 0.35686199999999996,
+     "output_matched": true,
+     "rss_kb": 1776,
+     "sys_median": 0.001908,
+     "user_median": 0.354973,
+     "wall_max": 0.36211926500001823,
+     "wall_median": 0.35635592500000257,
+     "wall_min": 0.35194444100000055
+    },
+    "java": {
+     "cpu_median": 0.26265499999999997,
+     "java_warm_ms": [
+      231,
+      219,
+      218,
+      221,
+      220,
+      217,
+      217,
+      218
+     ],
+     "output_matched": true,
+     "rss_kb": 39640,
+     "sys_median": 0.015867,
+     "user_median": 0.24612199999999998,
+     "wall_max": 0.25573794999999677,
+     "wall_median": 0.25420041699999274,
+     "wall_min": 0.2526007049999919
+    },
+    "llvm": {
+     "build_s": 1.293396193999996,
+     "cpu_median": 0.189136,
+     "output_matched": true,
+     "rss_kb": 1868,
+     "sys_median": 0.000906,
+     "user_median": 0.189136,
+     "wall_max": 0.19472443399999406,
+     "wall_median": 0.18945894099999805,
+     "wall_min": 0.18757106900000053
+    },
+    "orin": {
+     "build_s": 1.2146875050000006,
+     "cpu_median": 0.17302099999999998,
+     "output_matched": true,
+     "rss_kb": 1624,
+     "sys_median": 0.000864,
+     "user_median": 0.17194399999999999,
+     "wall_max": 0.1746225089999882,
+     "wall_median": 0.1740265480000005,
+     "wall_min": 0.17314234400001283
+    },
+    "rust": {
+     "cpu_median": 0.191432,
+     "output_matched": true,
+     "rss_kb": 2124,
+     "sys_median": 0.000909,
+     "user_median": 0.19084299999999998,
+     "wall_max": 0.19497570900000483,
+     "wall_median": 0.19173542299998303,
+     "wall_min": 0.19105871600001478
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 0,
+    "alloc_string": 1,
+    "alloc_struct": 0,
+    "alloc_total": 1,
+    "array_grows": 0,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 0,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 66,
+    "peak_live_objs": 1,
+    "releases": 1,
+    "retains": 0,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "html": {
+   "instructions": {
+    "c": {
+     "count": 1521579597
+    },
+    "llvm": {
+     "count": 1381614046
+    },
+    "orin": {
+     "count": 1578539715
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.06566201999999066,
+     "cpu_median": 0.080787,
+     "output_matched": true,
+     "rss_kb": 2184,
+     "sys_median": 0.0018319999999999999,
+     "user_median": 0.079256,
+     "wall_max": 0.08285684899999524,
+     "wall_median": 0.08111793099999431,
+     "wall_min": 0.07927705200000901
+    },
+    "go": {
+     "build_s": 0.09938066499998399,
+     "cpu_median": 0.17273299999999997,
+     "output_matched": true,
+     "rss_kb": 7648,
+     "sys_median": 0.035918,
+     "user_median": 0.135662,
+     "wall_max": 0.13193984899999123,
+     "wall_median": 0.130773798000007,
+     "wall_min": 0.1280203289999804
+    },
+    "llvm": {
+     "build_s": 1.394262093000009,
+     "cpu_median": 0.06832099999999999,
+     "output_matched": true,
+     "rss_kb": 4232,
+     "sys_median": 0.002828,
+     "user_median": 0.06648,
+     "wall_max": 0.07103076999999303,
+     "wall_median": 0.07036596500000769,
+     "wall_min": 0.06796606500000735
+    },
+    "orin": {
+     "build_s": 1.3038269879999973,
+     "cpu_median": 0.086347,
+     "output_matched": true,
+     "rss_kb": 4028,
+     "sys_median": 0.0028369999999999997,
+     "user_median": 0.08431899999999999,
+     "wall_max": 0.08880940200003806,
+     "wall_median": 0.08667694000001802,
+     "wall_min": 0.08594304100000727
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 403,
+    "alloc_string": 919203,
+    "alloc_struct": 800400,
+    "alloc_total": 1720006,
+    "array_grows": 4030,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 806000,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1720006,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 2355099,
+    "peak_live_objs": 8007,
+    "releases": 3322406,
+    "retains": 1602400,
+    "string_grows": 244287,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "html_hand": {
+   "instructions": {
+    "llvm": {
+     "count": 981754879
+    },
+    "orin": {
+     "count": 1201359326
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 1.4662414659999854,
+     "cpu_median": 0.054257999999999994,
+     "output_matched": true,
+     "rss_kb": 2932,
+     "sys_median": 0.001913,
+     "user_median": 0.052344999999999996,
+     "wall_max": 0.054942173000029015,
+     "wall_median": 0.05461686199998894,
+     "wall_min": 0.052751435000004676
+    },
+    "orin": {
+     "build_s": 1.31912597500002,
+     "cpu_median": 0.072948,
+     "output_matched": true,
+     "rss_kb": 2712,
+     "sys_median": 0.001939,
+     "user_median": 0.071009,
+     "wall_max": 0.0772491989999935,
+     "wall_median": 0.0732915610000191,
+     "wall_min": 0.07169229499999119
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 3,
+    "alloc_string": 118803,
+    "alloc_struct": 0,
+    "alloc_total": 118806,
+    "array_grows": 30,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 6000,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 118806,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 1094113,
+    "peak_live_objs": 4006,
+    "releases": 1720806,
+    "retains": 1602000,
+    "string_grows": 233487,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "http_parse": {
+   "instructions": {
+    "llvm": {
+     "count": 1315702334
+    },
+    "orin": {
+     "count": 1466351609
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 2.076040098999954,
+     "cpu_median": 0.051553,
+     "output_matched": true,
+     "rss_kb": 1992,
+     "sys_median": 0.0017519999999999999,
+     "user_median": 0.049948,
+     "wall_max": 0.05202109499998642,
+     "wall_median": 0.05181652600003872,
+     "wall_min": 0.05160717999996223
+    },
+    "orin": {
+     "build_s": 2.071614079000028,
+     "cpu_median": 0.063175,
+     "output_matched": true,
+     "rss_kb": 1884,
+     "sys_median": 0.0006889999999999999,
+     "user_median": 0.062855,
+     "wall_max": 0.0670146659999773,
+     "wall_median": 0.06339915299997756,
+     "wall_min": 0.06202551799998446
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 145118,
+    "alloc_string": 983627,
+    "alloc_struct": 896984,
+    "alloc_total": 2025729,
+    "array_grows": 328405,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 18270119,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 2025729,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 56244,
+    "peak_live_objs": 550,
+    "releases": 4519017,
+    "retains": 2493288,
+    "string_grows": 53909,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "mapfreq": {
+   "instructions": {
+    "c": {
+     "count": 681408294
+    },
+    "llvm": {
+     "count": 996589343
+    },
+    "orin": {
+     "count": 1013671870
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.042002760999992006,
+     "cpu_median": 0.044615,
+     "output_matched": true,
+     "rss_kb": 5128,
+     "sys_median": 0.0028179999999999998,
+     "user_median": 0.041797,
+     "wall_max": 0.04654464300000427,
+     "wall_median": 0.044912556999975095,
+     "wall_min": 0.0435908200000199
+    },
+    "go": {
+     "build_s": 0.09390665899996975,
+     "cpu_median": 0.07081799999999999,
+     "output_matched": true,
+     "rss_kb": 8080,
+     "sys_median": 0.004922,
+     "user_median": 0.065672,
+     "wall_max": 0.0660736440000278,
+     "wall_median": 0.06352870000000621,
+     "wall_min": 0.06307810800001334
+    },
+    "llvm": {
+     "build_s": 1.4210962509999945,
+     "cpu_median": 0.089578,
+     "output_matched": true,
+     "rss_kb": 11704,
+     "sys_median": 0.005985,
+     "user_median": 0.08399799999999999,
+     "wall_max": 0.09127413300001308,
+     "wall_median": 0.08989554999999427,
+     "wall_min": 0.08928286499997284
+    },
+    "orin": {
+     "build_s": 1.3316200749999894,
+     "cpu_median": 0.090491,
+     "output_matched": true,
+     "rss_kb": 11452,
+     "sys_median": 0.003901,
+     "user_median": 0.08742899999999999,
+     "wall_max": 0.0942857719999779,
+     "wall_median": 0.09083434899997656,
+     "wall_min": 0.0907003359999976
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 13,
+    "alloc_string": 1000003,
+    "alloc_struct": 50001,
+    "alloc_total": 1050017,
+    "array_grows": 132,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 2396612,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1050017,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 8024830,
+    "peak_live_objs": 100006,
+    "releases": 1100017,
+    "retains": 50000,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "mutres": {
+   "instructions": {
+    "c": {
+     "count": 267648838
+    },
+    "llvm": {
+     "count": 1420196407
+    },
+    "orin": {
+     "count": 2280222342
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.03769651600003954,
+     "cpu_median": 0.021501999999999997,
+     "output_matched": true,
+     "rss_kb": 1544,
+     "sys_median": 0.000968,
+     "user_median": 0.020617999999999997,
+     "wall_max": 0.022134361999974317,
+     "wall_median": 0.02171477799998911,
+     "wall_min": 0.021335480000004736
+    },
+    "go": {
+     "build_s": 0.09358480399998825,
+     "cpu_median": 0.022971,
+     "output_matched": true,
+     "rss_kb": 1904,
+     "sys_median": 0.000421,
+     "user_median": 0.022556,
+     "wall_max": 0.022948621999944407,
+     "wall_median": 0.022789631999955873,
+     "wall_min": 0.022509259000003112
+    },
+    "java": {
+     "cpu_median": 0.07826,
+     "java_warm_ms": [
+      30,
+      25,
+      9,
+      9,
+      10,
+      10,
+      9,
+      9
+     ],
+     "output_matched": true,
+     "rss_kb": 40024,
+     "sys_median": 0.019240999999999998,
+     "user_median": 0.060132,
+     "wall_max": 0.05832611100004215,
+     "wall_median": 0.057772846000034406,
+     "wall_min": 0.055040838000024905
+    },
+    "llvm": {
+     "build_s": 1.343024722999985,
+     "cpu_median": 0.052986,
+     "output_matched": true,
+     "rss_kb": 1896,
+     "sys_median": 0.0010019999999999999,
+     "user_median": 0.051983999999999995,
+     "wall_max": 0.05775686599997698,
+     "wall_median": 0.053289586999994754,
+     "wall_min": 0.052067900999986705
+    },
+    "orin": {
+     "build_s": 1.290342679000048,
+     "cpu_median": 0.08456,
+     "output_matched": true,
+     "rss_kb": 1624,
+     "sys_median": 0.000993,
+     "user_median": 0.08265499999999999,
+     "wall_max": 0.08518711300001769,
+     "wall_median": 0.08489583800002265,
+     "wall_min": 0.08262195800000427
+    },
+    "rust": {
+     "cpu_median": 0.024982999999999998,
+     "output_matched": true,
+     "rss_kb": 2160,
+     "sys_median": 0.0018479999999999998,
+     "user_median": 0.023143999999999998,
+     "wall_max": 0.02739225999999917,
+     "wall_median": 0.025295103000019026,
+     "wall_min": 0.02523155599999427
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 1,
+    "alloc_string": 4,
+    "alloc_struct": 3,
+    "alloc_total": 8,
+    "array_grows": 0,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 40000000,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 8,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 392,
+    "peak_live_objs": 5,
+    "releases": 10,
+    "retains": 2,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "nbody": {
+   "instructions": {
+    "c": {
+     "count": 386175662
+    },
+    "llvm": {
+     "count": 768198964
+    },
+    "orin": {
+     "count": 655257509
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.061686979000000974,
+     "cpu_median": 0.045778,
+     "output_matched": true,
+     "rss_kb": 1848,
+     "sys_median": 0.0008669999999999999,
+     "user_median": 0.044911,
+     "wall_max": 0.046167804999981854,
+     "wall_median": 0.04610023199995794,
+     "wall_min": 0.046021413000005396
+    },
+    "go": {
+     "build_s": 0.10437596799999938,
+     "cpu_median": 0.055439,
+     "output_matched": true,
+     "rss_kb": 1712,
+     "sys_median": 0.00189,
+     "user_median": 0.053741,
+     "wall_max": 0.0554191699999933,
+     "wall_median": 0.055247831000031056,
+     "wall_min": 0.047356349999972736
+    },
+    "llvm": {
+     "build_s": 1.3868958709999788,
+     "cpu_median": 0.04335599999999999,
+     "output_matched": true,
+     "rss_kb": 1860,
+     "sys_median": 0.0018599999999999999,
+     "user_median": 0.042366999999999995,
+     "wall_max": 0.05361317199998439,
+     "wall_median": 0.04361485800001219,
+     "wall_min": 0.04291480000000547
+    },
+    "orin": {
+     "build_s": 1.3570584560000043,
+     "cpu_median": 0.041081,
+     "output_matched": true,
+     "rss_kb": 1860,
+     "sys_median": 0.000985,
+     "user_median": 0.040097999999999995,
+     "wall_max": 0.041605793000030644,
+     "wall_median": 0.04142160399999284,
+     "wall_min": 0.04098731800002042
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 7,
+    "alloc_string": 2,
+    "alloc_struct": 0,
+    "alloc_total": 9,
+    "array_grows": 0,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 0,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 9,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 685,
+    "peak_live_objs": 8,
+    "releases": 9,
+    "retains": 0,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "pqueue": {
+   "instructions": {
+    "c": {
+     "count": 359470793
+    },
+    "llvm": {
+     "count": 1321812336
+    },
+    "orin": {
+     "count": 1345424376
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.05100012500003004,
+     "cpu_median": 0.04731199999999999,
+     "output_matched": true,
+     "rss_kb": 4872,
+     "sys_median": 0.00296,
+     "user_median": 0.044351999999999996,
+     "wall_max": 0.048103770000011536,
+     "wall_median": 0.04763890800001036,
+     "wall_min": 0.04743740300000354
+    },
+    "go": {
+     "build_s": 0.1579851569999846,
+     "cpu_median": 0.130884,
+     "output_matched": true,
+     "rss_kb": 15208,
+     "sys_median": 0.010473,
+     "user_median": 0.11950999999999999,
+     "wall_max": 0.12713349000000562,
+     "wall_median": 0.12530681100002994,
+     "wall_min": 0.1237357659999816
+    },
+    "java": {
+     "cpu_median": 0.214984,
+     "java_warm_ms": [
+      135,
+      105,
+      96,
+      88,
+      97,
+      88,
+      92,
+      91
+     ],
+     "output_matched": true,
+     "rss_kb": 62872,
+     "sys_median": 0.030229,
+     "user_median": 0.18483,
+     "wall_max": 0.18069974000002276,
+     "wall_median": 0.1696977700000275,
+     "wall_min": 0.15120819800000618
+    },
+    "llvm": {
+     "build_s": 1.432319156999995,
+     "cpu_median": 0.078245,
+     "output_matched": true,
+     "rss_kb": 6656,
+     "sys_median": 0.002982,
+     "user_median": 0.076747,
+     "wall_max": 0.08216747000000169,
+     "wall_median": 0.0785735210000098,
+     "wall_min": 0.07678083299998661
+    },
+    "orin": {
+     "build_s": 1.371146183999997,
+     "cpu_median": 0.09203700000000001,
+     "output_matched": true,
+     "rss_kb": 6488,
+     "sys_median": 0.002957,
+     "user_median": 0.089081,
+     "wall_max": 0.09762084599998389,
+     "wall_median": 0.09235357900001873,
+     "wall_min": 0.09140382300000738
+    },
+    "rust": {
+     "cpu_median": 0.055993999999999995,
+     "output_matched": true,
+     "rss_kb": 5308,
+     "sys_median": 0.001971,
+     "user_median": 0.052851999999999996,
+     "wall_max": 0.05853568899999573,
+     "wall_median": 0.056490270000040255,
+     "wall_min": 0.054218846999958714
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 3,
+    "alloc_string": 3,
+    "alloc_struct": 1,
+    "alloc_total": 7,
+    "array_grows": 51,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 28198026,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 7,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 6291736,
+    "peak_live_objs": 5,
+    "releases": 7,
+    "retains": 0,
+    "string_grows": 1,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "qsort_func": {
+   "instructions": {
+    "c": {
+     "count": 1064640580
+    },
+    "llvm": {
+     "count": 1278327655
+    },
+    "orin": {
+     "count": 1321582510
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.05819084699999166,
+     "cpu_median": 0.13345200000000002,
+     "output_matched": true,
+     "rss_kb": 22516,
+     "sys_median": 0.013933,
+     "user_median": 0.118404,
+     "wall_max": 0.1344545609999841,
+     "wall_median": 0.1337644189999878,
+     "wall_min": 0.13192461900001717
+    },
+    "go": {
+     "build_s": 0.09463009099999908,
+     "cpu_median": 0.29331799999999997,
+     "output_matched": true,
+     "rss_kb": 37300,
+     "sys_median": 0.065956,
+     "user_median": 0.22719599999999998,
+     "wall_max": 0.24761139299999968,
+     "wall_median": 0.2408140339999818,
+     "wall_min": 0.2383031800000026
+    },
+    "llvm": {
+     "build_s": 1.3151902750000204,
+     "cpu_median": 0.15037399999999998,
+     "output_matched": true,
+     "rss_kb": 37488,
+     "sys_median": 0.018923,
+     "user_median": 0.132554,
+     "wall_max": 0.15528627399999095,
+     "wall_median": 0.15069141200001468,
+     "wall_min": 0.1485525100000018
+    },
+    "orin": {
+     "build_s": 1.3312674410000227,
+     "cpu_median": 0.147507,
+     "output_matched": true,
+     "rss_kb": 37228,
+     "sys_median": 0.019423,
+     "user_median": 0.127082,
+     "wall_max": 0.14985649099998,
+     "wall_median": 0.1478744959999858,
+     "wall_min": 0.1468101580000507
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 1911125,
+    "alloc_string": 2,
+    "alloc_struct": 0,
+    "alloc_total": 1911127,
+    "array_grows": 2099446,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 25099007,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1911127,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 28520120,
+    "peak_live_objs": 93,
+    "releases": 1911128,
+    "retains": 1,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "qsort_inplace": {
+   "instructions": {
+    "c": {
+     "count": 275674807
+    },
+    "llvm": {
+     "count": 521083870
+    },
+    "orin": {
+     "count": 609054278
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.04996926699999449,
+     "cpu_median": 0.069598,
+     "output_matched": true,
+     "rss_kb": 17160,
+     "sys_median": 0.006912,
+     "user_median": 0.06268599999999999,
+     "wall_max": 0.07063799799999515,
+     "wall_median": 0.0699593119999804,
+     "wall_min": 0.06840023799998107
+    },
+    "go": {
+     "build_s": 0.09465969900003302,
+     "cpu_median": 0.08849399999999999,
+     "output_matched": true,
+     "rss_kb": 25004,
+     "sys_median": 0.014187,
+     "user_median": 0.074458,
+     "wall_max": 0.08106291699999701,
+     "wall_median": 0.07914232500002072,
+     "wall_min": 0.07855103200000713
+    },
+    "llvm": {
+     "build_s": 1.3506089989999737,
+     "cpu_median": 0.079404,
+     "output_matched": true,
+     "rss_kb": 17508,
+     "sys_median": 0.006972,
+     "user_median": 0.07271799999999999,
+     "wall_max": 0.08043642999996337,
+     "wall_median": 0.07980591799997683,
+     "wall_min": 0.07924066300000732
+    },
+    "orin": {
+     "build_s": 1.3067575509999756,
+     "cpu_median": 0.087072,
+     "output_matched": true,
+     "rss_kb": 17368,
+     "sys_median": 0.007934,
+     "user_median": 0.079122,
+     "wall_max": 0.08926152200001525,
+     "wall_median": 0.08741714500001763,
+     "wall_min": 0.08636197100003074
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 3,
+    "alloc_string": 2,
+    "alloc_struct": 0,
+    "alloc_total": 5,
+    "array_grows": 24,
+    "counters": "all",
+    "cow_copies": 1,
+    "cow_inplace": 16162616,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 5,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 16389264,
+    "peak_live_objs": 3,
+    "releases": 6,
+    "retains": 1,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "sieve": {
+   "instructions": {
+    "c": {
+     "count": 161705036
+    },
+    "llvm": {
+     "count": 451732345
+    },
+    "orin": {
+     "count": 423203312
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.04260909600003515,
+     "cpu_median": 0.068577,
+     "output_matched": true,
+     "rss_kb": 79600,
+     "sys_median": 0.02786,
+     "user_median": 0.040068,
+     "wall_max": 0.07144403299997748,
+     "wall_median": 0.06892386599997735,
+     "wall_min": 0.0668251750000195
+    },
+    "go": {
+     "build_s": 0.09824355000000651,
+     "cpu_median": 0.23381000000000002,
+     "output_matched": true,
+     "rss_kb": 209492,
+     "sys_median": 0.099617,
+     "user_median": 0.14635599999999999,
+     "wall_max": 0.16141397300003746,
+     "wall_median": 0.14796445500002164,
+     "wall_min": 0.1414879900000301
+    },
+    "java": {
+     "cpu_median": 0.14182,
+     "java_warm_ms": [
+      86,
+      66,
+      62,
+      63,
+      63,
+      62,
+      63,
+      64
+     ],
+     "output_matched": true,
+     "rss_kb": 118996,
+     "sys_median": 0.051233,
+     "user_median": 0.090587,
+     "wall_max": 0.1246360850000201,
+     "wall_median": 0.1199227249999808,
+     "wall_min": 0.11560863799996923
+    },
+    "llvm": {
+     "build_s": 1.3382869380000102,
+     "cpu_median": 0.070626,
+     "output_matched": true,
+     "rss_kb": 80128,
+     "sys_median": 0.026771,
+     "user_median": 0.043144999999999996,
+     "wall_max": 0.07211849099996925,
+     "wall_median": 0.07091358100001344,
+     "wall_min": 0.06855020099999365
+    },
+    "orin": {
+     "build_s": 1.275434113000017,
+     "cpu_median": 0.073263,
+     "output_matched": true,
+     "rss_kb": 79768,
+     "sys_median": 0.027082,
+     "user_median": 0.045494,
+     "wall_max": 0.07393104099998027,
+     "wall_median": 0.07364479799997525,
+     "wall_min": 0.06956554599997844
+    },
+    "rust": {
+     "cpu_median": 0.06868199999999999,
+     "output_matched": true,
+     "rss_kb": 80304,
+     "sys_median": 0.027868,
+     "user_median": 0.041086,
+     "wall_max": 0.07391351399996893,
+     "wall_median": 0.06904657499995892,
+     "wall_min": 0.0684968359999516
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 1,
+    "alloc_string": 1,
+    "alloc_struct": 0,
+    "alloc_total": 2,
+    "array_grows": 23,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 10000002,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 2,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 134217776,
+    "peak_live_objs": 1,
+    "releases": 2,
+    "retains": 0,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "sortedmap": {
+   "instructions": {
+    "llvm": {
+     "count": 1338880433
+    },
+    "orin": {
+     "count": 1332999715
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 1.6706577100000004,
+     "cpu_median": 0.164928,
+     "output_matched": true,
+     "rss_kb": 11648,
+     "sys_median": 0.005353999999999999,
+     "user_median": 0.15993,
+     "wall_max": 0.2096767600000362,
+     "wall_median": 0.16526621500003102,
+     "wall_min": 0.1572647269999834
+    },
+    "orin": {
+     "build_s": 1.7913990530000206,
+     "cpu_median": 0.157678,
+     "output_matched": true,
+     "rss_kb": 11508,
+     "sys_median": 0.007029,
+     "user_median": 0.154949,
+     "wall_max": 0.22842970499999637,
+     "wall_median": 0.15805207200003224,
+     "wall_min": 0.1524386510000113
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 69437,
+    "alloc_string": 5,
+    "alloc_struct": 17158,
+    "alloc_total": 86600,
+    "array_grows": 59539,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 45460121,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 86600,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 6177992,
+    "peak_live_objs": 34323,
+    "releases": 112325,
+    "retains": 25725,
+    "string_grows": 3,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "streams": {
+   "instructions": {
+    "llvm": {
+     "count": 1173802976
+    },
+    "orin": {
+     "count": 1207160677
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 1.3460120260000394,
+     "cpu_median": 0.069177,
+     "output_matched": true,
+     "rss_kb": 41064,
+     "sys_median": 0.028044,
+     "user_median": 0.042123,
+     "wall_max": 0.07078042299997378,
+     "wall_median": 0.06953215199996521,
+     "wall_min": 0.06896058400002403
+    },
+    "orin": {
+     "build_s": 1.2411322599999721,
+     "cpu_median": 0.084002,
+     "output_matched": true,
+     "rss_kb": 40808,
+     "sys_median": 0.027107,
+     "user_median": 0.057089999999999995,
+     "wall_max": 0.08583618799997339,
+     "wall_median": 0.08431077299997014,
+     "wall_min": 0.08351704900002233
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 3,
+    "alloc_string": 2,
+    "alloc_struct": 1,
+    "alloc_total": 6,
+    "array_grows": 44,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 10000000,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 6,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 67109059,
+    "peak_live_objs": 4,
+    "releases": 6,
+    "retains": 0,
+    "string_grows": 2,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "strings": {
+   "instructions": {
+    "c": {
+     "count": 734241501
+    },
+    "llvm": {
+     "count": 578559242
+    },
+    "orin": {
+     "count": 653262497
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.05467188800002987,
+     "cpu_median": 0.042745,
+     "output_matched": true,
+     "rss_kb": 35592,
+     "sys_median": 0.011027,
+     "user_median": 0.031527,
+     "wall_max": 0.04334573199997749,
+     "wall_median": 0.04302231299999448,
+     "wall_min": 0.042683511999996426
+    },
+    "go": {
+     "build_s": 0.09510443400000668,
+     "cpu_median": 0.055392,
+     "output_matched": true,
+     "rss_kb": 24192,
+     "sys_median": 0.018428999999999997,
+     "user_median": 0.036962999999999996,
+     "wall_max": 0.04419158000001744,
+     "wall_median": 0.04310971000001018,
+     "wall_min": 0.03665591999998696
+    },
+    "java": {
+     "cpu_median": 0.309658,
+     "java_warm_ms": [
+      132,
+      92,
+      58,
+      29,
+      31,
+      26,
+      49,
+      25
+     ],
+     "output_matched": true,
+     "rss_kb": 142544,
+     "sys_median": 0.068646,
+     "user_median": 0.242141,
+     "wall_max": 0.17774209700002075,
+     "wall_median": 0.16268006199999263,
+     "wall_min": 0.15926169699997672
+    },
+    "llvm": {
+     "build_s": 1.348970195999982,
+     "cpu_median": 0.04381499999999999,
+     "output_matched": true,
+     "rss_kb": 47620,
+     "sys_median": 0.019899999999999998,
+     "user_median": 0.023936,
+     "wall_max": 0.04492312999997239,
+     "wall_median": 0.04410555000004024,
+     "wall_min": 0.043912313000021186
+    },
+    "orin": {
+     "build_s": 1.2357912669999678,
+     "cpu_median": 0.047086,
+     "output_matched": true,
+     "rss_kb": 47448,
+     "sys_median": 0.019774999999999997,
+     "user_median": 0.026861,
+     "wall_max": 0.04785445299995672,
+     "wall_median": 0.04735671200000979,
+     "wall_min": 0.0467589739999994
+    },
+    "rust": {
+     "cpu_median": 0.018764,
+     "output_matched": true,
+     "rss_kb": 20600,
+     "sys_median": 0.007821,
+     "user_median": 0.011039,
+     "wall_max": 0.019157387999996445,
+     "wall_median": 0.0190628959999799,
+     "wall_min": 0.018821962000004078
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 1,
+    "alloc_string": 1000007,
+    "alloc_struct": 0,
+    "alloc_total": 1000008,
+    "array_grows": 18,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 500001,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1000008,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 40787758,
+    "peak_live_objs": 500005,
+    "releases": 1000008,
+    "retains": 0,
+    "string_grows": 39,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "tasks": {
+   "instructions": {
+    "llvm": {
+     "skipped": "multi-threaded (20,000 tasks, channels): valgrind serialises threads, so the count would include scheduler waits"
+    },
+    "orin": {
+     "skipped": "multi-threaded (20,000 tasks, channels): valgrind serialises threads, so the count would include scheduler waits"
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 1.542242898999973,
+     "cpu_median": 3.0641369999999997,
+     "output_matched": true,
+     "rss_kb": 14700,
+     "sys_median": 2.3152,
+     "user_median": 0.7162769999999999,
+     "wall_max": 2.7360496459999695,
+     "wall_median": 2.667584992000002,
+     "wall_min": 2.6443067840000367
+    },
+    "orin": {
+     "build_s": 1.7881485569999995,
+     "cpu_median": 3.155317,
+     "output_matched": true,
+     "rss_kb": 14508,
+     "sys_median": 2.387706,
+     "user_median": 0.751324,
+     "wall_max": 2.752809481999975,
+     "wall_median": 2.737177841999994,
+     "wall_min": 2.725554666999983
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 204,
+    "alloc_string": 3,
+    "alloc_struct": 2680665,
+    "alloc_total": 2680872,
+    "array_grows": 1200,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 80208,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 2680872,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 40000040,
+    "peak_live_objs": 1000001,
+    "releases": 3921085,
+    "retains": 1240213,
+    "string_grows": 0,
+    "tasks_spawned": 20002,
+    "transfer_copies": 20002,
+    "transfer_moves": 0
+   }
+  },
+  "url": {
+   "instructions": {
+    "llvm": {
+     "count": 4071298635
+    },
+    "orin": {
+     "count": 4188201717
+    }
+   },
+   "langs": {
+    "llvm": {
+     "build_s": 1.438176793000025,
+     "cpu_median": 0.162707,
+     "output_matched": true,
+     "rss_kb": 6932,
+     "sys_median": 0.019981,
+     "user_median": 0.142727,
+     "wall_max": 0.16803584100000535,
+     "wall_median": 0.16306950400002052,
+     "wall_min": 0.16188369299999295
+    },
+    "orin": {
+     "build_s": 1.433174226999995,
+     "cpu_median": 0.17983899999999997,
+     "output_matched": true,
+     "rss_kb": 6648,
+     "sys_median": 0.022021,
+     "user_median": 0.158853,
+     "wall_max": 0.18483362800003533,
+     "wall_median": 0.18036007500001006,
+     "wall_min": 0.17675597499999185
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 2692,
+    "alloc_string": 2310,
+    "alloc_struct": 5958,
+    "alloc_total": 10960,
+    "array_grows": 17895,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 148809408,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 10960,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 6079254,
+    "peak_live_objs": 17,
+    "releases": 14419,
+    "retains": 3459,
+    "string_grows": 195,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  },
+  "wordfreq": {
+   "instructions": {
+    "c": {
+     "count": 864991374
+    },
+    "llvm": {
+     "count": 707702180
+    },
+    "orin": {
+     "count": 758664398
+    }
+   },
+   "langs": {
+    "c": {
+     "build_s": 0.047857998000040425,
+     "cpu_median": 0.059696,
+     "output_matched": true,
+     "rss_kb": 1928,
+     "sys_median": 0.000743,
+     "user_median": 0.058953,
+     "wall_max": 0.06055718300001445,
+     "wall_median": 0.06005509400000619,
+     "wall_min": 0.05941482700001188
+    },
+    "go": {
+     "build_s": 0.08818035199999485,
+     "cpu_median": 0.076635,
+     "output_matched": true,
+     "rss_kb": 6768,
+     "sys_median": 0.0034939999999999997,
+     "user_median": 0.073141,
+     "wall_max": 0.07558266199998798,
+     "wall_median": 0.07523928299997351,
+     "wall_min": 0.07467957799997293
+    },
+    "llvm": {
+     "build_s": 1.3038795609999738,
+     "cpu_median": 0.07048600000000001,
+     "output_matched": true,
+     "rss_kb": 2664,
+     "sys_median": 0.00296,
+     "user_median": 0.067562,
+     "wall_max": 0.07188918200000671,
+     "wall_median": 0.07078592499999559,
+     "wall_min": 0.0693465509999669
+    },
+    "orin": {
+     "build_s": 1.2567762439999797,
+     "cpu_median": 0.072564,
+     "output_matched": true,
+     "rss_kb": 2392,
+     "sys_median": 0.0005,
+     "user_median": 0.072076,
+     "wall_max": 0.07374263099995915,
+     "wall_median": 0.07287947900005065,
+     "wall_min": 0.07244768599997542
+    }
+   },
+   "orin_stats": {
+    "alloc_array": 1025,
+    "alloc_string": 1000003,
+    "alloc_struct": 5000,
+    "alloc_total": 1006028,
+    "array_grows": 1351,
+    "counters": "all",
+    "cow_copies": 0,
+    "cow_inplace": 2996024,
+    "file_closes": 0,
+    "file_opens": 0,
+    "frees": 1006028,
+    "live_objs_at_exit": 0,
+    "peak_live_bytes": 595575,
+    "peak_live_objs": 11026,
+    "releases": 1011029,
+    "retains": 5001,
+    "string_grows": 0,
+    "tasks_spawned": 0,
+    "transfer_copies": 0,
+    "transfer_moves": 0
+   }
+  }
+ },
+ "commit": "148472c2cdb025d701598706b95f6b90f7f7fa44",
+ "date": "2026-11-22T12:22:22Z",
+ "dirty": false,
+ "machine": {
+  "cores": 4,
+  "cpu": "AMD EPYC 9V45 96-Core Processor",
+  "mem": "15.6 GiB",
+  "os": "Linux-7.0.0-1020-azure-x86_64-with-glibc2.43",
+  "runner": "GitHub Actions 1000005251"
+ },
+ "mismatches": [],
+ "only": [],
+ "parallel": {
+  "parallel_collatz": {
+   "instructions": {
+    "orin": {
+     "skipped": "multi-threaded (parallel benchmark); valgrind serialises threads"
+    }
+   },
+   "threads": {
+    "1": {
+     "cpu_median": 0.424052,
+     "cpu_ratio": 1.0,
+     "efficiency": 1.0,
+     "output_matched": true,
+     "rss_kb": 32924,
+     "speedup": 1.0,
+     "sys_median": 0.011977,
+     "user_median": 0.413581,
+     "wall_max": 0.4378957840000339,
+     "wall_median": 0.42437300500000674,
+     "wall_min": 0.42054216900010033
+    },
+    "2": {
+     "cpu_median": 0.458512,
+     "cpu_ratio": 1.0812636186128117,
+     "efficiency": 0.8114602707088169,
+     "output_matched": true,
+     "rss_kb": 64992,
+     "speedup": 1.6229205414176338,
+     "sys_median": 0.036951,
+     "user_median": 0.423962,
+     "wall_max": 0.28789238599995315,
+     "wall_median": 0.26148723500000415,
+     "wall_min": 0.24652499299997999
+    },
+    "4": {
+     "cpu_median": 0.520786,
+     "cpu_ratio": 1.228118249648628,
+     "efficiency": 0.686918626166191,
+     "output_matched": true,
+     "rss_kb": 60888,
+     "speedup": 2.747674504664764,
+     "sys_median": 0.031960999999999996,
+     "user_median": 0.488821,
+     "wall_max": 0.15648418900002525,
+     "wall_median": 0.154448063000018,
+     "wall_min": 0.15294682499995815
+    }
+   }
+  },
+  "streams_parallel": {
+   "instructions": {
+    "orin": {
+     "skipped": "multi-threaded (parallel benchmark); valgrind serialises threads"
+    }
+   },
+   "threads": {
+    "1": {
+     "cpu_median": 0.432095,
+     "cpu_ratio": 1.0,
+     "efficiency": 1.0,
+     "output_matched": true,
+     "rss_kb": 32932,
+     "speedup": 1.0,
+     "sys_median": 0.012007,
+     "user_median": 0.42185799999999996,
+     "wall_max": 0.4371567299999697,
+     "wall_median": 0.43363418900003126,
+     "wall_min": 0.4310619330000236
+    },
+    "2": {
+     "cpu_median": 0.428056,
+     "cpu_ratio": 0.9906525185433759,
+     "efficiency": 0.972877586739454,
+     "output_matched": true,
+     "rss_kb": 32932,
+     "speedup": 1.945755173478908,
+     "sys_median": 0.011942,
+     "user_median": 0.415466,
+     "wall_max": 0.22536861800006136,
+     "wall_median": 0.22286164000001918,
+     "wall_min": 0.22247889200002646
+    },
+    "4": {
+     "cpu_median": 0.531925,
+     "cpu_ratio": 1.2310371561809323,
+     "efficiency": 0.7363073056704286,
+     "output_matched": true,
+     "rss_kb": 32932,
+     "speedup": 2.9452292226817143,
+     "sys_median": 0.012978,
+     "user_median": 0.5189469999999999,
+     "wall_max": 0.14739683400000558,
+     "wall_median": 0.14723274699997546,
+     "wall_min": 0.1461465259999386
+    }
+   }
+  }
+ },
+ "ref": "main",
+ "runs": 5,
+ "schema": 1,
+ "selfcompile": {
+  "cpu_median": 3.479098,
+  "identical_to_stage2": true,
+  "instructions": {
+   "count": 32508585656
+  },
+  "orin_stats": {
+   "alloc_array": 6547718,
+   "alloc_string": 2667026,
+   "alloc_struct": 14661623,
+   "alloc_total": 23876367,
+   "array_grows": 3961652,
+   "counters": "all",
+   "cow_copies": 1161536,
+   "cow_inplace": 213402694,
+   "file_closes": 0,
+   "file_opens": 0,
+   "frees": 23876367,
+   "live_objs_at_exit": 0,
+   "peak_live_bytes": 221931565,
+   "peak_live_objs": 4056030,
+   "releases": 54002744,
+   "retains": 30126377,
+   "string_grows": 1017749,
+   "tasks_spawned": 8,
+   "transfer_copies": 12,
+   "transfer_moves": 4
+  },
+  "rss_kb": 437588,
+  "sys_median": 0.221055,
+  "user_median": 3.245022,
+  "wall_max": 2.303628953000043,
+  "wall_median": 2.2175364880000643,
+  "wall_min": 2.2048854380000193
+ },
+ "tools": {
+  "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "clang": "Ubuntu clang version 21.1.8 (6ubuntu1)",
+  "go": "go version go1.24.13 linux/amd64",
+  "java": "openjdk version \"21.0.13\" 2026-10-20 LTS",
+  "python": "3.14.4",
+  "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "valgrind": "valgrind-3.26.0"
+ }
+}
